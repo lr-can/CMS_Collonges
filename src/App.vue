@@ -5,27 +5,50 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="First modif!" />
-
+    <div class="top-menu" id="logoCell">
+        <nav>
+        <RouterLink to="/">
+          <img alt="CMS logo" class="logo" src="@/assets/logoTitle.png" width="170vh" height="auto" />
+        </RouterLink>
+      </nav>
+    </div>
+    <div class="top-menu" id="profile">
+      <nav>
+        <RouterLink to="/profile"><img alt="Profile" src="@/assets/icons/profile.svg" width="30" height="auto" /></RouterLink>
+      </nav>
+    </div>
+  </header>
+  <div id="RouterView">
+    <RouterView />
+  </div>
+  <div class="wrapper">
       <nav>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>
     </div>
-  </header>
-
-  <RouterView />
 </template>
 
 <style scoped>
 header {
   line-height: 1.5;
   max-height: 100vh;
+  display: flex;
+  justify-content: space-between;
 }
 
+.top-menu{
+  height: 15vh;
+  padding: 0px;
+}
+
+#profile{
+  padding: auto; 
+}
+
+#RouterView{
+  padding: 1.5rem;
+}
 .logo {
   display: block;
   margin: 0 auto 2rem;

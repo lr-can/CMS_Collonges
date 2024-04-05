@@ -58,6 +58,20 @@
   font-weight: normal;
 }
 
+@font-face {
+  font-family: 'Marianne';
+  src: url('@/fonts/marianne-regular-webfont.woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Marianne Bold';
+  src: url('@/fonts/marianne-bold-webfont.woff');
+  font-weight: bolder;
+  font-style: normal;
+}
+
 body {
   min-height: 100vh;
   color: var(--color-text);
@@ -67,6 +81,8 @@ body {
     background-color 0.5s;
   line-height: 1.6;
   font-family:
+    'Marianne',
+    'Marianne Bold',
     Inter,
     -apple-system,
     BlinkMacSystemFont,
