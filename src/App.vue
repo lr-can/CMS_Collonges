@@ -1,5 +1,13 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView } from 'vue-router';
+import { useAuth0 } from '@auth0/auth0-vue';
+import {ref} from 'vue';
+const auth0 = useAuth0();
+const isAuthenticated = ref(auth0.isAuthenticated.value);
+setTimeout(()=>{
+  isAuthenticated.value = auth0.isAuthenticated.value
+}, 1000)
+
 </script>
 
 <template>
@@ -11,7 +19,7 @@ import { RouterLink, RouterView } from 'vue-router'
     </div>
     <div class="top-menu" id="profile">
       <nav>
-        <RouterLink to="/profile"><img alt="Profile" src="@/assets/icons/profile.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/profile" v-if="isAuthenticated"><img alt="Profile" src="@/assets/icons/profile.svg" width="30" height="auto" /></RouterLink>
       </nav>
     </div>
   </header>
@@ -21,10 +29,10 @@ import { RouterLink, RouterView } from 'vue-router'
   <div class="wrapper">
       <nav>
         <RouterLink to="/"><img alt="Profile" src="@/assets/icons/home.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/reception"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/disposition"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/search"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/order"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/reception" v-if="isAuthenticated"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/disposition" v-if="isAuthenticated"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/search" v-if="isAuthenticated"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/order" v-if="isAuthenticated"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
       </nav>
     </div>
 </template>

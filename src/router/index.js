@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+
 import HomeView from '../views/HomeView.vue'
 import order from '../views/order.vue'
 import reception from '../views/reception.vue'
