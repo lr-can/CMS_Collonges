@@ -28,8 +28,11 @@ a,
   }
 
   #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+      padding-left: 25vw;
+      padding-right: 25vw;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      border-radius: 15px;
+      box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
   }
 }

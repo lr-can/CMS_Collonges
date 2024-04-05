@@ -1,16 +1,13 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
   <header>
     <div class="top-menu" id="logoCell">
-        <nav>
-        <RouterLink to="/">
-          <img alt="CMS logo" class="logo" src="@/assets/logoTitle.png" width="170vh" height="auto" />
-        </RouterLink>
-      </nav>
+      <a href="/">
+        <img alt="CMS logo" class="logo" src="@/assets/logoTitle.png" width="170vh" height="auto" />
+      </a>
     </div>
     <div class="top-menu" id="profile">
       <nav>
@@ -23,8 +20,11 @@ import HelloWorld from './components/HelloWorld.vue'
   </div>
   <div class="wrapper">
       <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/"><img alt="Profile" src="@/assets/icons/home.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/reception"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/disposition"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/search"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/order"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
       </nav>
     </div>
 </template>
@@ -54,15 +54,18 @@ header {
   margin: 0 auto 2rem;
 }
 
+#logoNav{
+  opacity: 1;
+}
+
 nav {
   width: 100%;
   font-size: 12px;
   text-align: center;
-  margin-top: 2rem;
 }
 
 nav a.router-link-exact-active {
-  color: var(--color-text);
+  opacity: 0.25;
 }
 
 nav a.router-link-exact-active:hover {
@@ -79,30 +82,28 @@ nav a:first-of-type {
   border: 0;
 }
 
+.wrapper{
+    position: fixed; 
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 15vw;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+}
 @media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+  .wrapper{
+    height: 5vw;
+    left: 20vw;
+    right: 20vw;
+    bottom: 0.5rem;
+    border-radius: 15px;
+    opacity: 0.95;
   }
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
 }
 </style>
