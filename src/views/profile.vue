@@ -37,7 +37,7 @@ const grade = ref(utilisateur.profile[1]);
 const nom = ref(utilisateur.name);
 
 const image_grade = (current_grade) => {
-  return `./src/assets/grades/${current_grade}.png`
+  return `@/assets/grades/${current_grade}.png`
 };
 
 const logout = () => {
