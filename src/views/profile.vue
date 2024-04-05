@@ -37,7 +37,7 @@ const grade = ref(utilisateur.profile[1]);
 const nom = ref(utilisateur.name);
 
 const image_grade = (current_grade) => {
-  return `/assets/grades/${current_grade}.png`
+  return `https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${current_grade}.png?raw=true`
 };
 
 const logout = () => {
