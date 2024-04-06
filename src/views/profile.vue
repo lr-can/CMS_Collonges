@@ -4,7 +4,7 @@
     </div>
     <div class="information-layout">
       <div class="information-grade">
-        <img :src="image_grade(grade)" width="85vw" height="auto">
+        <img :src="image_grade(grade)" width="80vw" height="auto">
       </div>
       <div class="information-texte">
         <span id="grade">
@@ -23,9 +23,9 @@
     </div>
     <div class="information-layout">
       <div class="information-grade">
-        <img :src="image_role(role)" width="85vw" height="auto">
+        <img :src="image_role(role)" width="80vw" height="auto">
       </div>
-      <div class="information-texte">
+      <div class="information-texte" id="information-role">
         <span>
           {{ role }}
         </span>
@@ -71,6 +71,7 @@ const logout = () => {
 .title{
   font-weight: bolder;
   font-size: 24px;
+  margin-bottom: 0.3rem;
 }
 #grade{
   font-size: 12px;
@@ -94,11 +95,15 @@ const logout = () => {
   grid-template-areas:
     'grade texte texte'
     'grade texte texte';
+  margin-bottom: 1rem;
 }
 #logout{
   margin-top: 4rem;
   color: red;
   font-size: 16px;
   text-align: center;
+}
+#information_role{
+  padding-top: 2rem;
 }
 </style>
