@@ -51,7 +51,6 @@ a,
   margin-top: 1rem;
   margin-bottom: 1rem;
   font-size: 12px;
-  border-radius: 5px;
   width: 30vw;
   text-align: center;
   height: 1.5rem;
@@ -59,6 +58,7 @@ a,
 }
 .messageErreur > span{
   padding: 5px;
+  border-radius: 5px;
 }
 
 #redAlert{

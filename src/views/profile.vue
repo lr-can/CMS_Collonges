@@ -4,7 +4,7 @@
     </div>
     <div class="information-layout">
       <div class="information-grade">
-        <img :src="image_grade(grade)" width="80vw" height="auto">
+        <img :src="image_grade(grade)" width="85vw" height="auto">
       </div>
       <div class="information-texte">
         <span id="grade">
@@ -23,10 +23,10 @@
     </div>
     <div class="information-layout">
       <div class="information-grade">
-        <img :src="image_role(role)" width="80vw" height="auto">
+        <img :src="image_role(role)" width="85vw" height="auto">
       </div>
-      <div class="information-texte" id="information-role">
-        <span>
+      <div class="information-texte">
+        <span id="information-role">
           {{ role }}
         </span>
       </div>
@@ -71,7 +71,7 @@ const logout = () => {
 .title{
   font-weight: bolder;
   font-size: 24px;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.6rem;
 }
 #grade{
   font-size: 12px;
