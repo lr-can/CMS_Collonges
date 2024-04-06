@@ -57,6 +57,10 @@ a,
   height: 1.5rem;
   padding: 0.2rem 0;
 }
+.messageErreur > span{
+  padding: 5px;
+}
+
 #redAlert{
   background-color: #fff4f4;
   color: #f60700;
