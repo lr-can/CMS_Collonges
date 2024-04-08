@@ -1,5 +1,8 @@
 <template>
 <div class="Alerte">
+    <div id="notConnected">
+        
+    </div>
     <div class="messageErreur">
         <span id="redAlert">
         Non connecté
@@ -13,6 +16,9 @@
     </div>
     <div class="validationBtn" @click="redirect">
         Se connecter
+    </div>
+    <div id="access">
+        <a href="mailto:lorcan@brenders.fr">Demander un accès</a>
     </div>
 </div>
 </template>
@@ -30,5 +36,11 @@ const redirect = () => {
 </script>
 
 <style>
+#access{
+    margin: auto;
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 12px;
+}
 
 </style>

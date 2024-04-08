@@ -106,8 +106,8 @@ nav a:first-of-type {
 @media (min-width: 1024px) {
   .wrapper{
     height: 5vw;
-    left: 20vw;
-    right: 20vw;
+    left: 35vw;
+    right: 35vw;
     bottom: 0.5rem;
     border-radius: 15px;
     opacity: 0.95;

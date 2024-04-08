@@ -71,7 +71,7 @@ const logout = () => {
 .title{
   font-weight: bolder;
   font-size: 24px;
-  margin-bottom: 0.6rem;
+  margin-bottom: 1rem;
 }
 #grade{
   font-size: 12px;
@@ -95,15 +95,15 @@ const logout = () => {
   grid-template-areas:
     'grade texte texte'
     'grade texte texte';
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 }
 #logout{
-  margin-top: 4rem;
+  margin-top: 5rem;
   color: red;
   font-size: 16px;
   text-align: center;
 }
 #information_role{
-  padding-top: 2rem;
+  margin-top: 1rem;
 }
 </style>

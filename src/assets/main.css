@@ -1,23 +1,24 @@
 @import './base.css';
 
 #app {
-  max-width: 1280px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 1rem;
   font-weight: normal;
 }
 
 a,
-.green {
+.blue {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
+  color: #0078f3;
   transition: 0.4s;
   padding: 3px;
 }
 
 @media (hover: hover) {
   a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+    background-color: #f4f6ff;
+    color: #0078f3;
   }
 }
 
@@ -28,10 +29,12 @@ a,
   }
 
   #app {
-      padding-left: 25vw;
-      padding-right: 25vw;
-      margin-top: 15px;
-      margin-bottom: 15px;
+      max-width: 500px;
+      min-width: 500px;
+      min-height: 90vh;
+      padding-left: 3vw;
+      padding-right: 3vw;
+      margin-bottom: 20px;
       border-radius: 15px;
       box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
   }
