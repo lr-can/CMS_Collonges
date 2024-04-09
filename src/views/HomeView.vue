@@ -10,6 +10,7 @@
 
   <div v-if="isAuthenticated">
     Bienvenue, {{ nomUtilisateur }} !
+    <nextExpiration/>
   </div>
 </div>
 </template>
@@ -17,6 +18,7 @@
 import { ref } from "vue";
 import { useAuth0 } from '@auth0/auth0-vue';
 import notConnected from '../components/notConnected.vue';
+import nextExpiration from '../components/nextExpiration.vue';
 
 const isAuthenticated = ref(true);
 const nomUtilisateur = ref();
