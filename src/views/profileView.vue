@@ -40,7 +40,7 @@
 
 <script setup>
 import { useAuth0 } from '@auth0/auth0-vue';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 
 const auth0 = useAuth0();
 
@@ -68,11 +68,6 @@ const logout = () => {
     };
 </script>
 <style>
-.title{
-  font-weight: bolder;
-  font-size: 24px;
-  margin-bottom: 1rem;
-}
 #grade{
   font-size: 12px;
 }

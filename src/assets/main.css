@@ -1,5 +1,16 @@
 @import './base.css';
 
+.title{
+  font-weight: bolder;
+  font-size: 24px;
+  margin-bottom: 1rem;
+}
+.subtitle{
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 1rem;
+}
+
 #app {
   max-width: 1000px;
   margin: 0 auto;

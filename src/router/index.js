@@ -2,11 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 
 import HomeView from '../views/HomeView.vue'
-import order from '../views/order.vue'
-import reception from '../views/reception.vue'
-import search from '../views/search.vue'
-import disposition from '../views/disposition.vue'
-import profile from '../views/profile.vue'
+import orderView from '../views/orderView.vue'
+import receptionView from '../views/receptionView.vue'
+import searchView from '../views/searchView.vue'
+import dispositionView from '../views/dispositionView.vue'
+import profileView from '../views/profileView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,32 +19,32 @@ const router = createRouter({
     {
       path: '/order',
       name: 'order',
-      component: order
+      component: orderView
     },
     {
       path: '/disposition',
       name: 'disposition',
-      component: disposition
+      component: dispositionView
     },
     {
       path: '/search',
       name: 'search',
-      component: search
+      component: searchView
     },
     {
       path: '/reception',
       name: 'reception',
-      component: reception
+      component: receptionView
     },
     {
       path: '/search',
       name: 'search',
-      component: search
+      component: searchView
     },
     {
       path: '/profile',
       name: 'profile',
-      component: profile
+      component: profileView
     },
   ]
 })

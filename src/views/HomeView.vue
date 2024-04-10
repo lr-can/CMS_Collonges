@@ -9,10 +9,17 @@
   </div>
 
   <div v-if="isAuthenticated">
-    Bienvenue, {{ nomUtilisateur }} !
-    <nextExpiration/>
+    <div class="subtitle">
+      Bienvenue, {{ nomUtilisateur }} !
+    </div>
+    <div class="introText">
+      Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi dolorum veniam iure quam numquam distinctio laudantium eaque possimus esse sed, corrupti neque. Perspiciatis dicta iure cumque! In doloremque deleniti cumque.
+    </div>
+    <div class="Expiration">
+      <nextExpiration/>
+    </div>
   </div>
-</div>
+  </div>
 </template>
 <script setup>
 import { ref } from "vue";
@@ -45,5 +52,11 @@ setTimeout(getAuthentification, 1000)
 </script>
 
 <style>
-
+.Expiration {
+  margin-top: 20px;
+}
+.introText {
+  margin-top: 20px;
+  text-align: justify;
+}
 </style>
