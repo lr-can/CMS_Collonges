@@ -10,13 +10,22 @@
 
   <div v-if="isAuthenticated">
     <div class="subtitle">
-      {{ greeting }} {{ grade }} !
+      {{ greeting }} {{ grade }} 🫡 !
     </div>
     <div class="introText">
       <introText/>
     </div>
-    <div class="Expiration">
-      <nextExpiration/>
+    <div @click="clicking">
+      <div class="subsubtitle">
+        <span id="toggle">
+          <img src="@/assets/illustrations/arrow.svg" alt="" width="14px" height="auto" :class="isClicked()"></span>
+        Prochaines péremptions
+      </div>
+      <Transition>
+        <div class="Expiration" v-show="showExpiration">
+          <nextExpiration/>
+        </div>
+    </Transition>
     </div>
   </div>
   </div>
@@ -32,10 +41,24 @@ const isAuthenticated = ref(true);
 const grade = ref();
 const greeting = ref("Bonjour");
 const isloading = ref(false);
+const showExpiration = ref(false);
 
 const auth0 = useAuth0();
 
 getAuthentification()
+
+const clicking = () => {
+  showExpiration.value = !showExpiration.value;
+}
+
+const isClicked  = ()=> {
+  if (showExpiration.value == true){
+    return "clicked"
+  }
+  else{
+    return "notClicked"
+  }
+}
 
 async function changeGreeting(grade) {
   const mesRespectsGrades = ['Lieutenant', 'Capitaine', 'Commandant', 'Colonel', 'Contrôleur Général'];
@@ -68,7 +91,30 @@ setTimeout(getAuthentification, 1000)
   margin-top: 20px;
 }
 .introText {
-  margin-top: 20px;
+  margin-top: 10px;
+  margin-bottom: 15px;
   text-align: justify;
+  font-size: 14px;
+}
+#toggle{
+  vertical-align: middle;
+}
+.clicked{
+  transform: rotate(90deg);
+  transition: transform 0.3s ease-in-out;
+}
+
+.notClicked{
+  transform: rotate(0deg);
+  transition: transform 0.3s ease-in-out;
+}
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
 }
 </style>

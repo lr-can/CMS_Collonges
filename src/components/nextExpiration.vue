@@ -1,13 +1,17 @@
 <template>
-    <div class="title">
-        Prochaines péremptions
-    </div>
-    <div v-for="row in NextPeremptions" :key="row.numeroLot" class="prochain-peremption">
-        <div class="expirant" :class="giveClass(row.datePeremption)" @click="getSummary(row.numLot)">
-            <div class="materiel">{{ row.nomMateriel }}</div>
-            <div class="lot">Lot {{ row.numLot }}</div>
+    <div v-if="NextPeremptions.length > 0">
+        <div v-for="row in NextPeremptions" :key="row.numeroLot" class="prochain-peremption">
+            <div class="expirant" :class="giveClass(row.datePeremption)" @click="getSummary(row.numLot)">
+                <div class="materiel">{{ row.nomMateriel }}</div>
+                <div class="lot">Lot {{ row.numLot }}</div>
+            </div>
+            <div class="peremption" :class="giveClassBis(row.datePeremption)">{{ prettyDate(row.datePeremption) }}</div>
         </div>
-        <div class="peremption" :class="giveClassBis(row.datePeremption)">{{ prettyDate(row.datePeremption) }}</div>
+    </div>
+    <div v-else>
+        <div class="expirant">
+            <div class="materiel OK">Aucune péremption à signaler dans les 6 prochains mois</div>
+        </div>
     </div>
 </template>
 <script setup>
@@ -110,7 +114,6 @@ getNextExpiration();
     text-align: left;
     padding-top: 20%;
     font-size: 120%;
-    font-weight: bold;
 }
 
 .materiel{
@@ -128,20 +131,21 @@ getNextExpiration();
     }
 }
 .over{
-    background-color: #000000;
-    color: white;
+    color: #e1000f;
+    background-color: #fff4f4;
 }
 .days{
-    background-color: #f60700;
-    color: white;
+    color: #fc5d00;
+    background-color: #fff4f3;
+
 }
 .weeks{
-    background-color: #fc5d00;
-    color: white;
+    color: #C3992A;
+    background-color: #fef5e8;
 }
 .months{
-    background-color: #FFCA00;
-    color: white;
+    color: #666666;
+    background-color: #f6f6f6;
 }
 .expirant{
     padding: 3%;
@@ -149,15 +153,22 @@ getNextExpiration();
     opacity: 0.95;
 }
 .over_date{
-    color: #000000;
+    color: #e1000f;
 }
 .days_date{
-    color: #f60700;
-}
-.weeks_date{
     color: #fc5d00;
 }
+.weeks_date{
+    color: #C3992A;
+}
 .months_date{
-    color: #FFCA00;
+    color: #666666;
+}
+.OK{
+    color: #1f8d49;
+    background-color: #dffee6;
+    padding: 10px;
+    width: 100%;
+    border-radius: 10px;
 }
 </style>

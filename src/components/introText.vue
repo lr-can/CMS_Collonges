@@ -1,18 +1,26 @@
 <template>
-  <div class="text">
     <p>
-      Bienvenue sur l'application de gestion de la cellule médico-secouriste de la Caserne de Collonges-Au-Mont-D'Or.
+        Bienvenue sur l'application de la gestion de la cellule médico-secouriste.
     </p>
-    <p>
-      Notre base de données recense {{  displayPeremptions.nbReserve }} produits dans la réserve, {{ displayPeremptions.nbVSAV }} disponibles pour les VSAV, soit un total de {{ displayPeremptions.nbTotal }} produits de {{ displayPeremptions.nbLotsTotal }} lots différents.
-    </p>
-    <p v-if="displayPeremptions.nbProduits == 0">
-      Bonne nouvelle ! Aucune péremption n'est à signaler sur les 6 prochains mois !
-    </p>
-    <p v-else>
-      Oh, oh ! <br> {{ displayPeremptions.nbProduits }} produits sont périmés ou vont l'être dans les 6 prochains mois.
-      A titre informatif, {{ displayPeremptions.nbLots }} <span v-if="displayPeremptions.nbLots > 1">lots sont</span><span v-else>lot est</span> concerné<span v-if="displayPeremptions.nbLots > 1">s</span>.
-    </p>
+<div class="subsubtitle">
+    Etat de la base de données
+</div>
+  <div class="display">
+    <div class="total">
+        <span class="number">{{ displayPeremptions.nbTotal }}</span> produits
+    </div>
+    <div class="lots">
+        <span class="number">{{ displayPeremptions.nbLots }}</span>
+        <br> lots
+    </div>
+    <div class="reserve">
+        <span class="number">{{ displayPeremptions.nbReserve }}</span>
+        <br> en réserve
+    </div>
+    <div class="vsav">
+        <span class="number">{{ displayPeremptions.nbVSAV }}</span>
+        <br> à disposition
+    </div>
   </div>
 </template>
 <script setup>
@@ -33,5 +41,52 @@ getDisplayData();
 <style>
 p{
     margin-top: 10px
+}
+.number{
+    font-size: 2rem;
+    font-weight: bold;
+}
+.display{
+    margin-top: 20px;
+    margin-left: 20px;
+    display: grid;
+    grid-template-areas: 
+    'total total lots'
+    'reserve vsav lots';
+    column-gap: 5px;
+    row-gap: 3px;
+    align-content: space-evenly;
+    align-items: center;
+    text-align: center;
+}
+.display > div{
+    border-radius: 10px;
+}
+.total{
+    grid-area: total;
+    background-color: #f6f6f6;
+    color: #666666;
+    padding: 5px;
+
+}
+.lots{
+    grid-area: lots;
+    background-color: #fef4f4;
+    color: #e1000f;
+    padding: 10px;
+    padding-top: 5vh;
+    padding-bottom: 5vh;
+}
+.reserve{
+    grid-area: reserve;
+    background-color: #f4f6ff;
+    color: #0063cb;
+    padding: 5px;
+}
+.vsav{
+    grid-area: vsav;
+    background-color: #f4f6ff;
+    color: #0063cb;
+    padding: 5px;
 }
 </style>

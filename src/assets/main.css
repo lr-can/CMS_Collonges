@@ -3,12 +3,18 @@
 .title{
   font-weight: bolder;
   font-size: 24px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.7rem;
 }
 .subtitle{
   font-weight: bold;
   font-size: 20px;
   margin-bottom: 1rem;
+}
+.subsubtitle{
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 1rem;
+  margin-bottom: 1.2rem;
 }
 
 #app {

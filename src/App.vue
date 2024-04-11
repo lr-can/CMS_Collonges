@@ -39,14 +39,14 @@ setTimeout(()=>{
 
 <style scoped>
 header {
-  line-height: 1.5;
-  max-height: 100vh;
+  line-height: 1;
+  max-height: 20vh;
   display: flex;
   justify-content: space-between;
 }
 
 .top-menu{
-  height: 15vh;
+  height: 12vh;
   padding: 0px;
 }
 
