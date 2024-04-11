@@ -30,7 +30,7 @@ import introText from '../components/introText.vue';
 
 const isAuthenticated = ref(true);
 const grade = ref();
-const greeting = ref("Bonjour");
+const greeting = ref("Bonjour,");
 const isloading = ref(false);
 
 const auth0 = useAuth0();
@@ -39,11 +39,19 @@ getAuthentification()
 
 async function changeGreeting(grade) {
   const mesRespectsGrades = ['Lieutenant', 'Capitaine', 'Commandant', 'Colonel', 'Contrôleur Général'];
+  const BonjourGradesAdj = ['Adjudant', 'Adjudant-Chef'];
+
+  for (let j = 0; j < mesRespectsGrades.length; j++)
+  if (grade ==BonjourGradesAdj[j]) {
+    greeting.value = `Bonjour, mon`;
+  }
+
   for (let i = 0; i < mesRespectsGrades.length; i++) {
     if (grade == mesRespectsGrades[i]) {
       greeting.value = `Mes respects, mon`;
     }
   }
+  
 }
 
 async function getAuthentification() {
@@ -51,14 +59,20 @@ async function getAuthentification() {
   let authentification_status = auth0.isAuthenticated.value;
   isAuthenticated.value = authentification_status;
   let utilisateur = auth0.user.value;
-  console.log(utilisateur)
   grade.value = utilisateur.profile[1];
+
+  const sapeurs = ['Sap 1CL', 'Sap 2CL']
+  if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
+    grade.value = `Sapeur`;
+  }
+
   changeGreeting(grade.value);
 }
 
 isloading.value = false;
 
 setTimeout(getAuthentification, 1000)
+setTimeout(getAuthentification, 2000)
 
 
 </script>
@@ -72,26 +86,5 @@ setTimeout(getAuthentification, 1000)
   margin-bottom: 15px;
   text-align: justify;
   font-size: 14px;
-}
-#toggle{
-  vertical-align: middle;
-}
-.clicked{
-  transform: rotate(90deg);
-  transition: transform 0.3s ease-in-out;
-}
-
-.notClicked{
-  transform: rotate(0deg);
-  transition: transform 0.3s ease-in-out;
-}
-.v-enter-active,
-.v-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.v-enter-from,
-.v-leave-to {
-  opacity: 0;
 }
 </style>
