@@ -16,16 +16,7 @@
       <introText/>
     </div>
     <div @click="clicking">
-      <div class="subsubtitle">
-        <span id="toggle">
-          <img src="@/assets/illustrations/arrow.svg" alt="" width="14px" height="auto" :class="isClicked()"></span>
-        Prochaines péremptions
-      </div>
-      <Transition>
-        <div class="Expiration" v-show="showExpiration">
-          <nextExpiration/>
-        </div>
-    </Transition>
+      <nextExpiration/>
     </div>
   </div>
   </div>
@@ -41,24 +32,10 @@ const isAuthenticated = ref(true);
 const grade = ref();
 const greeting = ref("Bonjour");
 const isloading = ref(false);
-const showExpiration = ref(false);
 
 const auth0 = useAuth0();
 
 getAuthentification()
-
-const clicking = () => {
-  showExpiration.value = !showExpiration.value;
-}
-
-const isClicked  = ()=> {
-  if (showExpiration.value == true){
-    return "clicked"
-  }
-  else{
-    return "notClicked"
-  }
-}
 
 async function changeGreeting(grade) {
   const mesRespectsGrades = ['Lieutenant', 'Capitaine', 'Commandant', 'Colonel', 'Contrôleur Général'];

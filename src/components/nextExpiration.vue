@@ -1,5 +1,15 @@
 <template>
-    <div v-if="NextPeremptions.length > 0">
+    <div class="subsubtitle" @click="clicking()" id="prochainePeremption">
+        <span id="toggle">
+          <img src="@/assets/illustrations/arrow.svg" alt="" width="14px" height="auto" :class="isClicked()"></span>
+        Prochaines péremptions
+        <span id="notification">
+          <img :src="notificationSource" alt="" width="20px" height="auto" >
+        </span>
+      </div>
+      <Transition>
+        <div class="Expiration" v-show="showExpiration">
+            <div v-if="NextPeremptions.length > 0">
         <div v-for="row in NextPeremptions" :key="row.numeroLot" class="prochain-peremption">
             <div class="expirant" :class="giveClass(row.datePeremption)" @click="getSummary(row.numLot)">
                 <div class="materiel">{{ row.nomMateriel }}</div>
@@ -13,6 +23,8 @@
             <div class="materiel OK">Aucune péremption à signaler dans les 6 prochains mois</div>
         </div>
     </div>
+        </div>
+    </Transition>
 </template>
 <script setup>
 import { ref } from 'vue';
@@ -20,10 +32,13 @@ import { useSqlStore } from "@/stores/database.js";
 
 const sqlStore = useSqlStore();
 const NextPeremptions = ref([]);
+const showExpiration = ref(false);
+const notificationSource = ref("");
 
 async function getNextExpiration(){
     await sqlStore.getNextPeremptions();
     NextPeremptions.value = await sqlStore.NextPeremptions;
+    getImgSource();
 }
 const prettyDate = (date) => {
     const today = new Date();
@@ -91,6 +106,37 @@ const getSummary = (numLot) => {
 }
 
 getNextExpiration();
+
+const clicking = () => {
+  showExpiration.value = !showExpiration.value;
+}
+
+const isClicked  = ()=> {
+  if (showExpiration.value == true){
+    return "clicked"
+  }
+  else{
+    return "notClicked"
+  }
+}
+const getImgSource = () => {
+    if (NextPeremptions.value.length == 0){
+        notificationSource.value = "src/assets/illustrations/ok.svg";
+    } else {
+        let closestExpiration = NextPeremptions.value[0].datePeremption;
+        const closestExpirationClass = giveClass(closestExpiration);
+        if (closestExpirationClass == 'over'){
+            notificationSource.value = "src/assets/illustrations/warning.svg";
+        } else if (closestExpirationClass == 'days'){
+            notificationSource.value = "src/assets/illustrations/beware.svg";
+        } else if (closestExpirationClass == 'weeks'){
+            notificationSource.value = "src/assets/illustrations/attention.svg";
+        } else {
+            notificationSource.value = "src/assets/illustrations/takecare.svg";
+        }
+}
+}
+
 </script>
 <style>
 .prochain-peremption {
@@ -170,5 +216,29 @@ getNextExpiration();
     padding: 10px;
     width: 100%;
     border-radius: 10px;
+}
+#toggle{
+  vertical-align: middle;
+}
+.clicked{
+  transform: rotate(90deg);
+  transition: transform 0.3s ease-in-out;
+}
+
+.notClicked{
+  transform: rotate(0deg);
+  transition: transform 0.3s ease-in-out;
+}
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+}
+#prochainePeremption{
+    margin-top: 20px;
 }
 </style>
