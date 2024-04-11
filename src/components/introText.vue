@@ -64,8 +64,8 @@ p{
 }
 .total{
     grid-area: total;
-    background-color: #f6f6f6;
-    color: #666666;
+    background-color: #f4f6ff;
+    color: #0063cb;
     padding: 5px;
 
 }
@@ -79,14 +79,14 @@ p{
 }
 .reserve{
     grid-area: reserve;
-    background-color: #f4f6ff;
-    color: #0063cb;
+    background-color: #f6f6f6;
+    color: #666666;
     padding: 5px;
 }
 .vsav{
     grid-area: vsav;
-    background-color: #f4f6ff;
-    color: #0063cb;
+    background-color: #f6f6f6;
+    color: #666666;
     padding: 5px;
 }
 </style>
