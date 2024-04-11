@@ -10,10 +10,10 @@
 
   <div v-if="isAuthenticated">
     <div class="subtitle">
-      Bienvenue, {{ nomUtilisateur }} !
+      {{ greeting }} {{ grade }} !
     </div>
     <div class="introText">
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi dolorum veniam iure quam numquam distinctio laudantium eaque possimus esse sed, corrupti neque. Perspiciatis dicta iure cumque! In doloremque deleniti cumque.
+      <introText/>
     </div>
     <div class="Expiration">
       <nextExpiration/>
@@ -26,14 +26,25 @@ import { ref } from "vue";
 import { useAuth0 } from '@auth0/auth0-vue';
 import notConnected from '../components/notConnected.vue';
 import nextExpiration from '../components/nextExpiration.vue';
+import introText from '../components/introText.vue';
 
 const isAuthenticated = ref(true);
-const nomUtilisateur = ref();
+const grade = ref();
+const greeting = ref("Bonjour");
 const isloading = ref(false);
 
 const auth0 = useAuth0();
 
 getAuthentification()
+
+async function changeGreeting(grade) {
+  const mesRespectsGrades = ['Lieutenant', 'Capitaine', 'Commandant', 'Colonel', 'Contrôleur Général'];
+  for (let i = 0; i < mesRespectsGrades.length; i++) {
+    if (grade == mesRespectsGrades[i]) {
+      greeting.value = `Mes respects, mon`;
+    }
+  }
+}
 
 async function getAuthentification() {
   await auth0.isAuthenticated.value;
@@ -41,7 +52,8 @@ async function getAuthentification() {
   isAuthenticated.value = authentification_status;
   let utilisateur = auth0.user.value;
   console.log(utilisateur)
-  nomUtilisateur.value = utilisateur.name;
+  grade.value = utilisateur.profile[1];
+  changeGreeting(grade.value);
 }
 
 isloading.value = false;

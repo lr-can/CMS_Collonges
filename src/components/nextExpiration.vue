@@ -36,6 +36,8 @@ const prettyDate = (date) => {
             let absDaysDelta = Math.abs(daysDelta);
             return '+' + absDaysDelta + ' j.';
         }
+    } else if (daysDelta == 0) {
+        return 'Auj.'; 
     } else if (daysDelta == 1) {
         return 'Demain';
     } else if (daysDelta < 7) {
@@ -52,7 +54,7 @@ const giveClass = (date) => {
     const timeDelta = expirationDate.getTime() - today.getTime();
     const daysDelta = Math.floor(timeDelta / (1000 * 60 * 60 * 24));
 
-    if (daysDelta < 0) {
+    if (daysDelta <= 0) {
         return 'over';
     } else if (daysDelta < 7) {
         return 'days';
@@ -68,7 +70,7 @@ const giveClassBis = (date) => {
     const timeDelta = expirationDate.getTime() - today.getTime();
     const daysDelta = Math.floor(timeDelta / (1000 * 60 * 60 * 24));
 
-    if (daysDelta < 0) {
+    if (daysDelta <= 0) {
         return 'over_date';
     }
     if (daysDelta < 7) {
@@ -92,7 +94,7 @@ getNextExpiration();
         grid-template-areas: 
         'materiel materiel materiel peremption'
         'lot lot lot peremption';
-        column-gap: 10px;
+        column-gap: 5px;
         row-gap: 10px;
         margin-left: 0;
 }
@@ -126,7 +128,7 @@ getNextExpiration();
     }
 }
 .over{
-    background-color: #301717;
+    background-color: #000000;
     color: white;
 }
 .days{
@@ -147,7 +149,7 @@ getNextExpiration();
     opacity: 0.95;
 }
 .over_date{
-    color: #301717;
+    color: #000000;
 }
 .days_date{
     color: #f60700;
