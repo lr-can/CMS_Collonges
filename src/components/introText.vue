@@ -10,7 +10,7 @@
         <span class="number">{{ displayPeremptions.nbTotal }}</span> produits
     </div>
     <div class="lots">
-        <span class="number">{{ displayPeremptions.nbLots }}</span>
+        <span class="number">{{ displayPeremptions.nbLotsTotal }}</span>
         <br> lots
     </div>
     <div class="reserve">

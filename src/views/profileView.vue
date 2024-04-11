@@ -52,11 +52,11 @@ const nom = ref(utilisateur.name);
 const role = ref(utilisateur.profile[2]);
 
 const image_grade = (current_grade) => {
-  return `src/assets/grades/${current_grade}.png?raw=true`
+  return `https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${current_grade}.png?raw=true`
 };
 
 const image_role = (current_role) => {
-  return `src/assets/roles/${current_role}.png?raw=true`
+  return `https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/roles/${current_role}.png?raw=true`
 };
 
 const logout = () => {

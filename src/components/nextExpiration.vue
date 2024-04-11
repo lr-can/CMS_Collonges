@@ -125,14 +125,15 @@ const getImgSource = () => {
     } else {
         let closestExpiration = NextPeremptions.value[0].datePeremption;
         const closestExpirationClass = giveClass(closestExpiration);
+        const base_URL = 'https://raw.githubusercontent.com/lr-can/CMS_Collonges/5a344a95117201da949fe971432b9d59b57a0b20/src/assets/illustrations/'
         if (closestExpirationClass == 'over'){
-            notificationSource.value = "src/assets/illustrations/warning.svg";
+            notificationSource.value = base_URL+"warning.svg";
         } else if (closestExpirationClass == 'days'){
-            notificationSource.value = "src/assets/illustrations/beware.svg";
+            notificationSource.value = base_URL+"beware.svg";
         } else if (closestExpirationClass == 'weeks'){
-            notificationSource.value = "src/assets/illustrations/attention.svg";
+            notificationSource.value = base_URL+"attention.svg";
         } else {
-            notificationSource.value = "src/assets/illustrations/takecare.svg";
+            notificationSource.value = base_URL+"takecare.svg";
         }
 }
 }
