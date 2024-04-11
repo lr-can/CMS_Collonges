@@ -121,7 +121,7 @@ const isClicked  = ()=> {
 }
 const getImgSource = () => {
     if (NextPeremptions.value.length == 0){
-        notificationSource.value = "src/assets/illustrations/ok.svg";
+        notificationSource.value = "https://raw.githubusercontent.com/lr-can/CMS_Collonges/5a344a95117201da949fe971432b9d59b57a0b20/src/assets/illustrations/ok.svg";
     } else {
         let closestExpiration = NextPeremptions.value[0].datePeremption;
         const closestExpirationClass = giveClass(closestExpiration);
