@@ -4,6 +4,7 @@ import { defineStore } from 'pinia';
 export const useSqlStore = defineStore('database', () => {
   const NextPeremptions = ref({});
   const PeremptionsDisplayData = ref({});
+  const materielsList = ref({});
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -20,6 +21,8 @@ export const useSqlStore = defineStore('database', () => {
       console.error(error);
     }
   }
+
+
   async function getPeremptionDisplay() {
     const requestOptions = {
       method: "GET",
@@ -36,12 +39,30 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function getMateriels() {
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch("https://cms-collonges-api.adaptable.app/materielstheoriques", requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      materielsList.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
 
 
   return {
     NextPeremptions,
     getNextPeremptions,
     PeremptionsDisplayData,
-    getPeremptionDisplay
+    getPeremptionDisplay,
+    materielsList,
+    getMateriels
   };
 });

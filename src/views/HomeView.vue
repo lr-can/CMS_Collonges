@@ -55,6 +55,7 @@ async function changeGreeting(grade) {
 }
 
 async function getAuthentification() {
+  isAuthenticated.value = false;
   await auth0.isAuthenticated.value;
   let authentification_status = auth0.isAuthenticated.value;
   isAuthenticated.value = authentification_status;
@@ -69,7 +70,6 @@ async function getAuthentification() {
   changeGreeting(grade.value);
 }
 
-isloading.value = false;
 
 setTimeout(getAuthentification, 1000)
 setTimeout(getAuthentification, 2000)
