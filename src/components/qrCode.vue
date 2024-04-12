@@ -74,7 +74,7 @@ const timeout = function(ms) {
     color: #18753c;
     border-radius: 5px;
     text-align: center;
-    width: 35%;
+    max-width: 50%;
 }
 
 .validation-error {
@@ -82,7 +82,7 @@ const timeout = function(ms) {
     color: #ce0500;
     border-radius: 5px;
     text-align: center;
-    width: 35%;
+    max-width: 50%;
 }
 
 .validation-pending {
@@ -90,6 +90,6 @@ const timeout = function(ms) {
     color: #0078f3;
     border-radius: 5px;
     text-align: center;
-    width: 35%;
+    max-width: 50%;
 }
 </style>
