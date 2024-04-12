@@ -5,6 +5,7 @@
         @detect="onDetect"
         @error="onError"
         @camera-on="resetValidationState"
+        :constraints="{zoom: 1}"
         id="readerComponent"></QrcodeStream>
         <div v-if="validationSuccess" class="validation-success">
             <p> ID-{{ result }} ajouté</p>
