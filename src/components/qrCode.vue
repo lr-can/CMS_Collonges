@@ -119,6 +119,7 @@ const newSelection = () => {
         align-items: center;
         overflow: hidden;
         border-radius: 30px;
+        max-height: 30vh;
     }
     #readerComponent {
         scale: 1.2;
