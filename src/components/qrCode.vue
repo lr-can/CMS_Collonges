@@ -5,9 +5,10 @@
             <QrcodeStream 
             :paused="paused"
             @detect="onDetect"
+            v-if="selected"
             @error="onError"
             @camera-on="resetValidationState"
-            :constraints="{audio: false, facingMode: 'environment'}"
+            :constraints="{audio: false, facingMode: 'environment', deviceId: selected.deviceId}"
             id="readerComponent"></QrcodeStream>
             <div v-if="validationSuccess" class="validation-success">
                 <p> ID-{{ result }} ajouté</p>
