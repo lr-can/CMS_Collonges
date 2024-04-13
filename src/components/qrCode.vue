@@ -1,20 +1,23 @@
 <template>
     <div class="reader">
-        <QrcodeStream 
-        :paused="paused"
-        @detect="onDetect"
-        @error="onError"
-        @camera-on="resetValidationState"
-        :constraints="{video : {zoom: 1}, audio: false, facingMode: 'environment'}"
-        id="readerComponent"></QrcodeStream>
-        <div v-if="validationSuccess" class="validation-success">
-            <p> ID-{{ result }} ajouté</p>
-        </div>
-        <div v-if="validationError" class="validation-error">
-            <p>Erreur</p>
-        </div>
-        <div v-if="validationPending" class="validation-pending">
-            <p>Ajout de ID-{{ result }}...</p>
+        <Dropdown v-model="selected" :options="devices" optionLabel="label" optionsValue="deviceId" placeholder="Sélectionnez une camera" @change="newSelection" class="form-item"/>
+        <div id="camera">
+            <QrcodeStream 
+            :paused="paused"
+            @detect="onDetect"
+            @error="onError"
+            @camera-on="resetValidationState"
+            :constraints="{audio: false, facingMode: 'environment'}"
+            id="readerComponent"></QrcodeStream>
+            <div v-if="validationSuccess" class="validation-success">
+                <p> ID-{{ result }} ajouté</p>
+            </div>
+            <div v-if="validationError" class="validation-error">
+                <p>Erreur</p>
+            </div>
+            <div v-if="validationPending" class="validation-pending">
+                <p>Ajout de ID-{{ result }}...</p>
+            </div>
         </div>
     </div>
 </template>
@@ -22,6 +25,7 @@
 <script setup>
 import { QrcodeStream } from 'vue-qrcode-reader';
 import { ref, computed } from 'vue';
+import Dropdown from 'primevue/dropdown';
 
 const isValid = ref(false);
 const paused = ref(false);
@@ -61,6 +65,21 @@ const timeout = function(ms) {
 		window.setTimeout(resolve, ms)
 	})
 }
+const devices = ref([]);
+const selected = ref();
+
+const getDevices = async () => {
+    devices.value = (await navigator.mediaDevices.enumerateDevices()).filter(
+        ({ kind }) => kind === 'videoinput'
+    );
+    
+    selected.value = devices.value[0]
+};
+
+getDevices();
+const newSelection = () => {
+    console.log(selected.value);
+}
 </script>
 
 <style scoped>  
@@ -93,4 +112,14 @@ const timeout = function(ms) {
     text-align: center;
     max-width: 50%;
 }
+#camera {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        border-radius: 30px;
+    }
+    #readerComponent {
+        scale: 1.2;
+    }
 </style>
