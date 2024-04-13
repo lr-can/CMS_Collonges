@@ -10,7 +10,8 @@
             @camera-on="resetValidationState"
             :constraints="{audio: false, facingMode: 'environment', deviceId: selected.deviceId}"
             id="readerComponent"></QrcodeStream>
-            <div v-if="validationSuccess" class="validation-success">
+        </div>
+        <div v-if="validationSuccess" class="validation-success">
                 <p> ID-{{ result }} ajouté</p>
             </div>
             <div v-if="validationError" class="validation-error">
@@ -19,7 +20,6 @@
             <div v-if="validationPending" class="validation-pending">
                 <p>Ajout de ID-{{ result }}...</p>
             </div>
-        </div>
     </div>
 </template>
 
@@ -121,7 +121,7 @@ const newSelection = () => {
         border-radius: 30px;
         max-height: 30vh;
     }
-    #readerComponent {
+#readerComponent {
         scale: 1.2;
     }
 </style>
