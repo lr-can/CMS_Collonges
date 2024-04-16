@@ -4,7 +4,7 @@
           <img src="@/assets/illustrations/arrow.svg" alt="" width="14px" height="auto" :class="isClicked()"></span>
         Prochaines péremptions
         <span id="notification">
-          <img :src="notificationSource" alt="" width="20px" height="auto" >
+          <img :src="notificationSource" alt="" width="25px" height="auto" >
         </span>
       </div>
       <Transition>

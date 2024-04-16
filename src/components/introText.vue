@@ -7,18 +7,18 @@
 </div>
   <div class="display">
     <div class="total">
-        <span class="number">{{ displayPeremptions.nbTotal }}</span> produits
+        <span class="number">{{ displayPeremptions.nbTotal }}</span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"> produits
     </div>
     <div class="lots">
-        <span class="number">{{ displayPeremptions.nbLotsTotal }}</span>
+        <span class="number">{{ displayPeremptions.nbLotsTotal }}<img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"></span>
         <br> lots
     </div>
     <div class="reserve">
-        <span class="number">{{ displayPeremptions.nbReserve }}</span>
+        <span class="number">{{ displayPeremptions.nbReserve }}<img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"></span>
         <br> en réserve
     </div>
     <div class="vsav">
-        <span class="number">{{ displayPeremptions.nbVSAV }}</span>
+        <span class="number">{{ displayPeremptions.nbVSAV }}<img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"></span>
         <br> à disposition
     </div>
   </div>
@@ -29,10 +29,12 @@ import { useSqlStore } from "@/stores/database.js";
 
 const displayPeremptions = ref({});
 const sqlStore = useSqlStore();
+const notLoading = ref(true);
 
 async function getDisplayData(){
     await sqlStore.getPeremptionDisplay();
     displayPeremptions.value = await sqlStore.PeremptionsDisplayData;
+    notLoading.value = false;
 }
 
 getDisplayData();

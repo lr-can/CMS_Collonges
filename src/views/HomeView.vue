@@ -10,7 +10,7 @@
 
   <div v-if="isAuthenticated">
     <div class="subtitle">
-      {{ greeting }} {{ grade }} 🫡 !
+      {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
     </div>
     <div class="introText">
       <introText/>
@@ -32,6 +32,7 @@ const isAuthenticated = ref(true);
 const grade = ref();
 const greeting = ref("Bonjour,");
 const isloading = ref(false);
+const grade_url = ref("https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logo.png?raw=true");
 
 const auth0 = useAuth0();
 
@@ -53,6 +54,9 @@ async function changeGreeting(grade) {
   }
   
 }
+const image_grade = (current_grade) => {
+  return `https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${current_grade}.png?raw=true`
+};
 
 async function getAuthentification() {
   isAuthenticated.value = false;
@@ -61,6 +65,8 @@ async function getAuthentification() {
   isAuthenticated.value = authentification_status;
   let utilisateur = auth0.user.value;
   grade.value = utilisateur.profile[1];
+  grade_url.value = image_grade(grade.value);
+
 
   const sapeurs = ['Sap 1CL', 'Sap 2CL']
   if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
@@ -70,10 +76,10 @@ async function getAuthentification() {
   changeGreeting(grade.value);
 }
 
-
-setTimeout(getAuthentification, 1000)
-setTimeout(getAuthentification, 2000)
-
+if (auth0.isAuthenticated.value == false) {
+  setTimeout(getAuthentification, 1000)
+  console.log("ici")
+}
 
 </script>
 
@@ -87,4 +93,14 @@ setTimeout(getAuthentification, 2000)
   text-align: justify;
   font-size: 14px;
 }
+#grade_img {
+  display: inline-block;
+  vertical-align: text-bottom;
+  margin-left: 5px;
+  margin-right: 5px;
+  border-radius: 7px;
+  overflow: hidden;
+  height: 25px;
+}
+
 </style>

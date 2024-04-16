@@ -1,6 +1,9 @@
 <template>
     <div class="reader">
-        <Dropdown v-model="selected" :options="devices" optionLabel="label" optionsValue="deviceId" placeholder="Sélectionnez une autre camera" @change="newSelection" class="form-item"/>
+        <div class="subtitle">
+            Scan des étiquettes
+        </div>
+        <Dropdown v-model="selected" :options="devices" optionLabel="label" optionsValue="deviceId" placeholder="Sélectionnez une autre camera" @change="newSelection" class="form-item" v-if="devices.length > 1"/>
         <div id="camera">
             <QrcodeStream 
             :paused="paused"
