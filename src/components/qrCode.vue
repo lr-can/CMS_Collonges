@@ -18,7 +18,7 @@
                 <p> ID-{{ result }} ajouté</p>
             </div>
             <div v-if="validationError" class="validation-error">
-                <p>Erreur</p>
+                <p>Erreur : {{ dbResponse.message }}</p>
             </div>
             <div v-if="validationPending" class="validation-pending">
                 <p>Ajout de ID-{{ result }}...</p>
@@ -30,10 +30,33 @@
 import { QrcodeStream } from 'vue-qrcode-reader';
 import { ref, computed } from 'vue';
 import Dropdown from 'primevue/dropdown';
+import { useSqlStore } from "@/stores/database.js";
+import { useAuth0 } from '@auth0/auth0-vue';
 
 const isValid = ref(false);
 const paused = ref(false);
 const result = ref('null');
+const sqlStore = useSqlStore();
+const dbResponse = ref("Chargement en cours...");
+
+const auth0 = useAuth0();
+let utilisateur = auth0.user.value;
+const props = defineProps(['info']);
+
+async function sendRequest() {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const request = {
+        'idStock': parseInt(result.value),
+        'idMateriel': props.info.idMateriel,
+        'idStatut': 1,
+        'dateCreation': currentDate,
+        'datePeremption': props.info.datePeremption,
+        'numLot': props.info.numLot,
+        'idAgent': utilisateur.profile[0],
+    };
+    await sqlStore.createMateriel(request);
+    dbResponse.value = await sqlStore.responseCreation;
+}
 
 const validationPending = computed(() => {
 	return isValid.value === undefined && paused.value
@@ -57,9 +80,14 @@ const onDetect = async function([firstDetectedCode]) {
 	result.value = firstDetectedCode.rawValue
 	paused.value = true
 
-	await timeout(3000)
-	isValid.value = result.value.startsWith('http')
-
+	await sendRequest()
+    console.log(await dbResponse.value);
+    if (dbResponse.value.message == "Le matériel a bien été créé."){
+	isValid.value = true;
+    } else {
+        isValid.value = false
+    }
+    
 	await timeout(2000)
 	paused.value = false
 }
@@ -106,7 +134,7 @@ const newSelection = () => {
     color: #ce0500;
     border-radius: 5px;
     text-align: center;
-    max-width: 50%;
+    max-width: 100%;
 }
 
 .validation-pending {

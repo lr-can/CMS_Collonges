@@ -21,7 +21,11 @@
             <div class="return">
                 <div class="returnBtn" @click="switching">Retour</div>
             </div>
-            <qrCode/>
+            <qrCode :info="{
+                idMateriel: selectedMateriel.idMateriel,
+                datePeremption: peremptionDate,
+                numLot: numLot
+            }" />
         </div>
 </template>
 
@@ -59,7 +63,8 @@ async function submitForm() {
     if (!peremptionDate.value){
         peremptionDate.value = '2999-12-31';
     } else {
-        peremptionDate.value = peremptionDate.value.toISOString().split('T')[0];
+        let peremptionDateStr = new Date(peremptionDate.value);
+        peremptionDate.value = peremptionDateStr.toISOString().split('T')[0];
     }
     switching();
 }
