@@ -21,7 +21,7 @@
                 <p>Erreur : {{ dbResponse.message }}</p>
             </div>
             <div v-if="validationPending" class="validation-pending">
-                <p>Ajout de ID-{{ result }}...</p>
+                <p><img src="@/assets/loading.gif" alt="" width="50px" height="auto">Ajout de ID-{{ result }}...</p>
             </div>
     </div>
 </template>
