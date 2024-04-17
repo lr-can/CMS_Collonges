@@ -6,6 +6,7 @@ export const useSqlStore = defineStore('database', () => {
   const PeremptionsDisplayData = ref({});
   const materielsList = ref({});
   const responseCreation = ref("");
+  const todayCreationList = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -79,6 +80,22 @@ export const useSqlStore = defineStore('database', () => {
       responseCreation.value = error;
     }
   }
+  
+  async function getTodayCreation(idMateriel) {
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/todayCreation/${idMateriel}`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      todayCreationList.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
 
 
@@ -90,6 +107,8 @@ export const useSqlStore = defineStore('database', () => {
     materielsList,
     getMateriels,
     responseCreation,
-    createMateriel
+    createMateriel,
+    todayCreationList,
+    getTodayCreation
   };
 });

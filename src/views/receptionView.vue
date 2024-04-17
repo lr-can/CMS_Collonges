@@ -3,7 +3,7 @@
             <div class="subtitle">
                 Réception d'un commande
             </div>
-            <form>
+            <form autocomplete="off">
                     <label for="materiel">Matériel<span class="mandatory">*</span>
                         <Dropdown id='materiel' v-model="selectedMateriel" editable :options="materiels" optionLabel="nomMateriel" placeholder="Sélectionnez un matériel" required class="form-item"/>
                     </label>
@@ -24,7 +24,8 @@
             <qrCode :info="{
                 idMateriel: selectedMateriel.idMateriel,
                 datePeremption: peremptionDate,
-                numLot: numLot
+                numLot: numLot,
+                nomMateriel: selectedMateriel.nomMateriel
             }" />
         </div>
 </template>

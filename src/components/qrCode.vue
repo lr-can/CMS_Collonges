@@ -24,6 +24,13 @@
                 <p><img src="@/assets/loading.gif" alt="" width="50px" height="auto">Ajout de ID-{{ result }}...</p>
             </div>
     </div>
+    <div class="subsubtitle">
+        Ajoutés aujourd'hui
+    </div>
+    <div class="visualisation">
+        <div v-if="visualisationAjout.length == 0">Aucun {{ props.info.nomMateriel }} a encore été ajouté.</div>
+        <div class="todayItem" v-else v-for="row in visualisationAjout" :key="row.idStock">{{ row.idStock }}</div>
+    </div>
 </template>
 
 <script setup>
@@ -38,13 +45,14 @@ const paused = ref(false);
 const result = ref('null');
 const sqlStore = useSqlStore();
 const dbResponse = ref("Chargement en cours...");
+const visualisationAjout = ref([]);
 
 const auth0 = useAuth0();
 let utilisateur = auth0.user.value;
 const props = defineProps(['info']);
 
 async function sendRequest() {
-    const currentDate = new Date().toISOString().split('T')[0];
+    const currentDate = new Date();
     const request = {
         'idStock': parseInt(result.value),
         'idMateriel': props.info.idMateriel,
@@ -56,6 +64,11 @@ async function sendRequest() {
     };
     await sqlStore.createMateriel(request);
     dbResponse.value = await sqlStore.responseCreation;
+}
+
+async function getTodayItems(){
+    await sqlStore.getTodayCreation(props.info.idMateriel);
+    visualisationAjout.value = await sqlStore.todayCreationList;
 }
 
 const validationPending = computed(() => {
@@ -87,9 +100,11 @@ const onDetect = async function([firstDetectedCode]) {
     } else {
         isValid.value = false
     }
-    
+    getTodayItems();
 	await timeout(2000)
 	paused.value = false
+
+    resetValidationState()
 }
 
 const timeout = function(ms) {
@@ -112,6 +127,7 @@ getDevices();
 const newSelection = () => {
     console.log(selected.value);
 }
+getTodayItems();
 </script>
 
 <style scoped>  
@@ -142,7 +158,7 @@ const newSelection = () => {
     color: #0078f3;
     border-radius: 5px;
     text-align: center;
-    max-width: 50%;
+    max-width: 70%;
 }
 #camera {
         display: flex;
@@ -155,4 +171,23 @@ const newSelection = () => {
 #readerComponent {
         scale: 1.2;
     }
+.todayItem{
+    border-radius: 10px;
+    width: 12vh;
+    background-image: linear-gradient(to right bottom, #f4f6ff 60%, #c2cfff 100%);
+        background-size: 140% 140%;
+			animation: gradient 2s ease infinite;
+    color: #0078f3;
+    padding: 5px;
+    text-align: center;
+    margin: auto;
+    margin: 0.1rem;
+}
+.visualisation{
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+}
 </style>
