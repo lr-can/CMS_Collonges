@@ -27,9 +27,17 @@
     <div class="subsubtitle">
         Ajoutés aujourd'hui
     </div>
+    <div id="filter" v-if="cancelClicked"></div>
     <div class="visualisation">
         <div v-if="visualisationAjout.length == 0">Aucun {{ props.info.nomMateriel }} a encore été ajouté.</div>
-        <div class="todayItem" v-else v-for="row in visualisationAjout" :key="row.idStock">{{ row.idStock }}</div>
+        <div class="todayItem" v-else v-for="row in visualisationAjout" :key="row.idStock" @click="cancelClick(row.idStock)">{{ row.idStock }}</div>
+        <div v-if="cancelClicked" class="suppressionDiv">
+            <div class="return">
+                <div class="returnBtn" @click="cancelClicked = false">Annuler</div>
+            </div>
+            <p>Vous vous apprêtez à supprimer <span id="productSuppression">ID-{{ produitId }} ({{ props.info.nomMateriel }})</span>.</p>
+            <div id="supprimer">Confirmer la suppression</div>
+        </div>   
     </div>
 </template>
 
@@ -46,6 +54,8 @@ const result = ref('null');
 const sqlStore = useSqlStore();
 const dbResponse = ref("Chargement en cours...");
 const visualisationAjout = ref([]);
+const cancelClicked = ref(false);
+const produitId = ref(0);
 
 const auth0 = useAuth0();
 let utilisateur = auth0.user.value;
@@ -128,6 +138,11 @@ const newSelection = () => {
     console.log(selected.value);
 }
 getTodayItems();
+
+const cancelClick = (idStock) => {
+    cancelClicked.value = true;
+    produitId.value = idStock;
+};
 </script>
 
 <style scoped>  
@@ -173,7 +188,7 @@ getTodayItems();
     }
 .todayItem{
     border-radius: 10px;
-    width: 12vh;
+    flex: 0 1 30%;
     background-image: linear-gradient(to right bottom, #f4f6ff 60%, #c2cfff 100%);
         background-size: 140% 140%;
 			animation: gradient 2s ease infinite;
@@ -183,11 +198,69 @@ getTodayItems();
     margin: auto;
     margin: 0.1rem;
 }
+.todayItem:hover{
+    cursor: pointer;
+    background-image: linear-gradient(to right bottom, #d6deff 60%, #d6deff 100%);
+    transition: background-image 0.3s ease;
+}
 .visualisation{
     margin-top: 1rem;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     width: 100%;
+    margin-bottom: 2rem;
+}
+#supprimer{
+    margin-top: 3rem;
+  color: #f60700;
+  font-size: 16px;
+  text-align: center;
+}
+#supprimer:hover{
+    cursor: pointer;
+    background-color: #fff4f4;
+    color: #f60700;
+    transition: background-color 0.3s ease;
+    border-radius: 35px;
+}
+
+.suppressionDiv{
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    width: 90%;
+    max-width: 400px;
+    height: 40vh;
+    max-height: 300px;
+    border-radius: 35px;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    padding: 2.5rem;
+    z-index: 1;
+
+}
+.suppressionDiv > p{
+    margin-top: 4rem;
+}
+#filter{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100vh;
+    -webkit-filter: blur(5px);
+    -moz-filter: blur(5px);
+    -o-filter: blur(5px);
+    -ms-filter: blur(5px);
+    filter: blur(5px);
+    backdrop-filter: blur(5px);
+    z-index: 0;
+}
+
+#productSuppression{
+    font-weight: bold;
 }
 </style>

@@ -111,6 +111,10 @@ a,
 }
 .validationBtn:hover{
   cursor: pointer;
+  background-image: linear-gradient(to right bottom, #0078f3 5%, #18753c 70%); 
+  background-size: 140% 140%;
+			animation: gradient 1.5s ease infinite;;
+
 }
 .Alerte{
     text-align: justify;
