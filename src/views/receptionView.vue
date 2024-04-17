@@ -3,6 +3,10 @@
             <div class="subtitle">
                 Réception d'un commande
             </div>
+            <div id="reinitialised" v-if="reset">La saisie a été réinitialisée.</div>
+            <div  id="reinitializing">
+                <div class="returnBtn" @click="reinitialiser">Réinitialiser la saisie</div>
+            </div>
             <form autocomplete="off">
                     <label for="materiel">Matériel<span class="mandatory">*</span>
                         <Dropdown id='materiel' v-model="selectedMateriel" editable :options="materiels" optionLabel="nomMateriel" placeholder="Sélectionnez un matériel" required class="form-item"/>
@@ -48,6 +52,7 @@ const materiels = ref([]);
 const selectedMateriel = ref();
 const peremptionDate = ref();
 const numLot = ref();
+const reset = ref(false);
 
 async function getMateriels() {
     await sqlStore.getMateriels();
@@ -71,6 +76,22 @@ async function submitForm() {
 }
 const switching = () => {
     scan.value = !scan.value;
+}
+
+const timeout = function(ms) {
+	return new Promise((resolve) => {
+		window.setTimeout(resolve, ms)
+	})
+}
+
+const reinitialiser = () => {
+    selectedMateriel.value = null;
+    peremptionDate.value = null;
+    numLot.value = null;
+    reset.value = true;
+    timeout(2000).then(() => {
+        reset.value = false;
+    })
 }
 </script>
 <style>
@@ -107,5 +128,24 @@ label{
 .returnBtn{
     cursor: pointer;
 }
-
+#reinitializing{
+    margin-bottom: 1rem;
+    background-color: #e5e5e5;
+    color: #666666;
+    width: 20vh;
+    min-width: 20vh;
+    max-width: 25vh;
+    padding: 5px;
+    border-radius: 30px;
+    text-align: center;
+    margin-left: 50%;
+}
+#reinitialised{
+    background-color: #fff4f3;
+    color: #d64d00;
+    border-radius: 5px;
+    text-align: center;
+    max-width: 100%;
+    margin-bottom: 1rem;
+}
 </style>
