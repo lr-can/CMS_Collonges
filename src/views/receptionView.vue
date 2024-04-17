@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import qrCode from '../components/qrCode.vue';
+import qrCode from '../components/qrCodeAjout.vue';
 import Dropdown from 'primevue/dropdown';
 import Calendar from 'primevue/calendar';
 import InputText from 'primevue/inputtext';

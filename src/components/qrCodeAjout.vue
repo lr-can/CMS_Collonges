@@ -28,16 +28,21 @@
         Ajoutés aujourd'hui
     </div>
     <div id="filter" v-if="cancelClicked"></div>
-    <div class="visualisation">
+    <div>
+        <div class="validation-error" id="suppression">
+            {{ deleted }}
+        </div>
         <div v-if="visualisationAjout.length == 0">Aucun {{ props.info.nomMateriel }} a encore été ajouté.</div>
-        <div class="todayItem" v-else v-for="row in visualisationAjout" :key="row.idStock" @click="cancelClick(row.idStock)">{{ row.idStock }}</div>
+        <div v-if="visualisationAjout.length > 0" class="visualisation">
+            <div class="todayItem" v-for="row in visualisationAjout" :key="row.idStock" @click="cancelClick(row.idStock)">{{ row.idStock }}</div>
+        </div>
         <div v-if="cancelClicked" class="suppressionDiv">
-            <div class="return">
-                <div class="returnBtn" @click="cancelClicked = false">Annuler</div>
-            </div>
-            <p>Vous vous apprêtez à supprimer <span id="productSuppression">ID-{{ produitId }} ({{ props.info.nomMateriel }})</span>.</p>
-            <div id="supprimer">Confirmer la suppression</div>
-        </div>   
+                <div class="return">
+                    <div class="returnBtn" @click="cancelClicked = false">Annuler</div>
+                </div>
+                <p>Vous vous apprêtez à supprimer <span id="productSuppression">ID-{{ produitId }} ({{ props.info.nomMateriel }})</span>.</p>
+                <div id="supprimer" @click="removeSelectedItem()"><span v-if="!deleting">Confirmer la suppression</span><span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="deleting"></span></div>
+            </div>   
     </div>
 </template>
 
@@ -56,6 +61,8 @@ const dbResponse = ref("Chargement en cours...");
 const visualisationAjout = ref([]);
 const cancelClicked = ref(false);
 const produitId = ref(0);
+const deleted = ref("");
+const deleting = ref(false);
 
 const auth0 = useAuth0();
 let utilisateur = auth0.user.value;
@@ -143,6 +150,23 @@ const cancelClick = (idStock) => {
     cancelClicked.value = true;
     produitId.value = idStock;
 };
+
+async function removeSelectedItem() {
+    deleting.value = true;
+    await sqlStore.cancelTodayCreation(produitId.value);
+    let fistLenght = visualisationAjout.value.length;
+    await getTodayItems();
+    let secondLenght = visualisationAjout.value.length;
+    cancelClicked.value = false;
+    deleting.value = false;
+    if (fistLenght > secondLenght){
+        deleted.value = "ID-" + produitId.value + " supprimé";
+    } else {
+        deleted.value = "Erreur lors de la suppression";
+    }
+    await timeout(2000);
+    deleted.value = null;
+}
 </script>
 
 <style scoped>  
@@ -166,6 +190,10 @@ const cancelClick = (idStock) => {
     border-radius: 5px;
     text-align: center;
     max-width: 100%;
+}
+#suppression{
+    background-color: #fff4f3;
+    color: #d64d00;
 }
 
 .validation-pending {

@@ -7,6 +7,7 @@ export const useSqlStore = defineStore('database', () => {
   const materielsList = ref({});
   const responseCreation = ref("");
   const todayCreationList = ref([]);
+  const deleteResponse = ref("");
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -97,6 +98,22 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function cancelTodayCreation(idMateriel){
+    const requestOptions = {
+      method: "DELETE",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/remove/${idMateriel}`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      deleteResponse.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
 
 
   return {
@@ -109,6 +126,8 @@ export const useSqlStore = defineStore('database', () => {
     responseCreation,
     createMateriel,
     todayCreationList,
-    getTodayCreation
+    getTodayCreation,
+    deleteResponse,
+    cancelTodayCreation
   };
 });
