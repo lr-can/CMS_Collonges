@@ -115,6 +115,7 @@ const resetValidationState = function() {
 }
 
 const onDetect = async function([firstDetectedCode]) {
+    vibrate();
 	result.value = firstDetectedCode.rawValue
 	paused.value = true
     loadingSound.play();
@@ -184,6 +185,12 @@ async function removeSelectedItem() {
     }
     await timeout(2000);
     deleted.value = null;
+}
+
+function vibrate(){
+    if (navigator.vibrate) {
+        navigator.vibrate(200);
+    }
 }
 </script>
 
