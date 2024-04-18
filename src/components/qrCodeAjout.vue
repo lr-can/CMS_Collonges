@@ -52,6 +52,10 @@ import { ref, computed } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import { useSqlStore } from "@/stores/database.js";
 import { useAuth0 } from '@auth0/auth0-vue';
+import Validation from '../assets/sounds/Validation.mp3';
+import Error from '../assets/sounds/Error.mp3';
+import Loading from '../assets/sounds/Loading.mp3';
+import Deleted from '../assets/sounds/Deleted.mp3';
 
 const isValid = ref(false);
 const paused = ref(false);
@@ -63,6 +67,10 @@ const cancelClicked = ref(false);
 const produitId = ref(0);
 const deleted = ref("");
 const deleting = ref(false);
+const validationSound = new Audio(Validation);
+const errorSound = new Audio(Error);
+const loadingSound = new Audio(Loading);
+const deletedSound = new Audio(Deleted);
 
 const auth0 = useAuth0();
 let utilisateur = auth0.user.value;
@@ -109,13 +117,18 @@ const resetValidationState = function() {
 const onDetect = async function([firstDetectedCode]) {
 	result.value = firstDetectedCode.rawValue
 	paused.value = true
+    loadingSound.play();
 
 	await sendRequest()
     console.log(await dbResponse.value);
     if (dbResponse.value.message == "Le matériel a bien été créé."){
 	isValid.value = true;
+    loadingSound.pause();
+    validationSound.play();     
     } else {
-        isValid.value = false
+        isValid.value = false;
+        loadingSound.pause();
+        errorSound.play();
     }
     getTodayItems();
 	await timeout(2000)
@@ -153,6 +166,7 @@ const cancelClick = (idStock) => {
 
 async function removeSelectedItem() {
     deleting.value = true;
+    loadingSound.play();
     await sqlStore.cancelTodayCreation(produitId.value);
     let fistLenght = visualisationAjout.value.length;
     await getTodayItems();
@@ -160,8 +174,12 @@ async function removeSelectedItem() {
     cancelClicked.value = false;
     deleting.value = false;
     if (fistLenght > secondLenght){
+        loadingSound.pause();
+        deletedSound.play();
         deleted.value = "ID-" + produitId.value + " supprimé";
     } else {
+        loadingSound.pause();
+        errorSound.play();
         deleted.value = "Erreur lors de la suppression";
     }
     await timeout(2000);

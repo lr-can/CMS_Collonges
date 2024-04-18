@@ -1,7 +1,7 @@
 <template>
         <div v-if="!scan">
             <div class="subtitle">
-                Réception d'un commande
+                Réception d'une commande
             </div>
             <div id="reinitialised" v-if="reset">La saisie a été réinitialisée.</div>
             <div  id="reinitializing">
@@ -39,6 +39,7 @@ import qrCode from '../components/qrCodeAjout.vue';
 import Dropdown from 'primevue/dropdown';
 import Calendar from 'primevue/calendar';
 import InputText from 'primevue/inputtext';
+import Warning from '../assets/sounds/Deleted.mp3';
 
 
 import { ref } from 'vue';
@@ -53,6 +54,7 @@ const selectedMateriel = ref();
 const peremptionDate = ref();
 const numLot = ref();
 const reset = ref(false);
+const warningSound = new Audio(Warning);
 
 async function getMateriels() {
     await sqlStore.getMateriels();
@@ -89,6 +91,7 @@ const reinitialiser = () => {
     peremptionDate.value = null;
     numLot.value = null;
     reset.value = true;
+    warningSound.play();
     timeout(2000).then(() => {
         reset.value = false;
     })
