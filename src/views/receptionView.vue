@@ -40,6 +40,7 @@ import Dropdown from 'primevue/dropdown';
 import Calendar from 'primevue/calendar';
 import InputText from 'primevue/inputtext';
 import Warning from '../assets/sounds/Deleted.mp3';
+import InputError from '../assets/sounds/InputError.mp3';
 
 
 import { ref } from 'vue';
@@ -55,6 +56,7 @@ const peremptionDate = ref();
 const numLot = ref();
 const reset = ref(false);
 const warningSound = new Audio(Warning);
+const errorSound = new Audio(InputError);
 
 async function getMateriels() {
     await sqlStore.getMateriels();
@@ -65,6 +67,7 @@ getMateriels();
 
 async function submitForm() {
     if (!selectedMateriel.value || !numLot.value) {
+        errorSound.play();
         alert('Au moins un champ obligatoire n\'a pas été rempli.');
         return;
     }
