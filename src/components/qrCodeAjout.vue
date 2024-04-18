@@ -27,7 +27,7 @@
     <div class="subsubtitle">
         Ajoutés aujourd'hui
     </div>
-    <div id="filter" v-if="cancelClicked"></div>
+    <div id="filter" v-if="cancelClicked" @click="cancelClicked = false"></div>
     <div>
         <div class="validation-error" id="suppression">
             {{ deleted }}

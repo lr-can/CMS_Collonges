@@ -42,6 +42,45 @@
 import { useAuth0 } from '@auth0/auth0-vue';
 import { ref } from 'vue';
 
+
+import Sap2CL from '../assets/grades/Sap 2CL.png';
+import Sap1CL from '../assets/grades/Sap 1CL.png';
+import Caporal from '../assets/grades/Caporal.png';
+import CaporalChef from '../assets/grades/Caporal-Chef.png';
+import Sergent from '../assets/grades/Sergent.png';
+import SergentChef from '../assets/grades/Sergent-Chef.png';
+import Adjudant from '../assets/grades/Adjudant.png';
+import AdjudantChef from '../assets/grades/Adjudant-Chef.png';
+import Lieutenant from '../assets/grades/Lieutenant.png';
+import Capitaine from '../assets/grades/Capitaine.png';
+import Commandant from '../assets/grades/Commandant.png';
+
+const dict_grades = {
+  'Sap 2CL': Sap2CL,
+  'Sap 1CL': Sap1CL,
+  'Caporal': Caporal,
+  'Caporal-Chef': CaporalChef,
+  'Sergent': Sergent,
+  'Sergent-Chef': SergentChef,
+  'Adjudant': Adjudant,
+  'Adjudant-Chef': AdjudantChef,
+  'Lieutenant': Lieutenant,
+  'Capitaine': Capitaine,
+  'Commandant': Commandant
+};
+
+import Developpeur from '../assets/roles/Developpeur.png';
+import Responsable from '../assets/roles/Responsable Pharmacie.png';
+import Chef from '../assets/roles/Chef de Caserne.png';
+import Agent from '../assets/roles/Agent.png';
+
+const dict_roles = {
+  'Developpeur': Developpeur,
+  'Responsable Pharmacie': Responsable,
+  'Chef de Caserne': Chef,
+  'Agent': Agent,
+};
+
 const auth0 = useAuth0();
 
 let utilisateur = auth0.user.value;
@@ -52,11 +91,11 @@ const nom = ref(utilisateur.name);
 const role = ref(utilisateur.profile[2]);
 
 const image_grade = (current_grade) => {
-  return `https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${current_grade}.png?raw=true`
+  return dict_grades[current_grade];
 };
 
 const image_role = (current_role) => {
-  return `https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/roles/${current_role}.png?raw=true`
+  return dict_roles[current_role];
 };
 
 const logout = () => {
