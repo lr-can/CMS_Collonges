@@ -1,7 +1,33 @@
 <template>
+<div id="filter" v-if="additionnalInfo" @click="additionnalInfo = false"></div>
+<div v-if="additionnalInfo" class="additionnalInfoDiv">
+    <div class="return">
+        <div class="returnBtn" @click="additionnalInfo = false">Retour</div>
+    </div>
+    <div class="titre4">Informations supplémentaires</div>
+    <div>
+        <div>Code matériel : {{ props.materiel.idMateriel }}</div>
+        <div>Nom matériel : {{ props.materiel.nomMateriel }}</div>
+   
+        <div class="table">
+            <div class="table-row" id="headerRow">
+                <div class="table-cell">Nom de l'agent</div>
+                <div class="table-cell">Réserve</div>
+                <div class="table-cell">VSAV</div>
+                <div class="table-cell">Total</div>
+            </div>
+            <div class="table-row" v-for="row in materielsInfo.compteParAgent" :key="row.idAgent">
+                <div class="table-cell"><span class="nomAgent">{{ row.gradeAbbrAgent }} {{ row.nomAgent }}</span></div>
+                <div class="table-cell">{{ row.reserveCount }}</div>
+                <div class="table-cell">{{ row.vsavCount }}</div>
+                <div class="table-cell">{{ row.totalCount }}</div>
+            </div>
+        </div>
+    </div>
+</div>   
 <div class="container">
     <div class="subsubtitle" id="materielTitle">{{ props.materiel.nomMateriel }}</div>
-    <div class="subContainer">
+    <div class="subContainer" id="countDiv" @click="additionnalInfo = true">
         <div class="titre4">Nombre</div>
         <div>Disponible VSAV :
             <span v-if="!notLoading">{{ vsavCount }}</span>
@@ -53,6 +79,7 @@ const totalDelta = ref();
 const vsavDeltaText = ref();
 const reserveDeltaText = ref();
 const totalDeltaText = ref();
+const additionnalInfo = ref(false);
 
 async function getDbData(){
     notLoading.value = true;
@@ -161,4 +188,56 @@ getDbData();
         color: #666666;
         margin-left: 10%
     }
+    .additionnalInfoDiv{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    width: 90%;
+    padding-bottom: 2rem;
+    max-width: 400px;
+    border-radius: 35px;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    padding: 2.5rem;
+    z-index: 1;
+
+}
+#headerRow > div{
+    font-weight: bold;
+}
+#filter{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100vh;
+    -webkit-filter: blur(5px);
+    -moz-filter: blur(5px);
+    -o-filter: blur(5px);
+    -ms-filter: blur(5px);
+    filter: blur(5px);
+    backdrop-filter: blur(5px);
+    z-index: 0;
+}
+#countDiv:hover{
+    cursor: pointer;
+}
+.table{
+    display: table;
+    table-layout: fixed;
+    margin-top: 1rem;
+    
+}
+.table-row{
+    display: table-row;
+}
+
+.table-cell{
+    display: table-cell;
+    padding: 5px;
+    border-bottom: 1px solid #eeeeee;
+}
+
 </style>
