@@ -37,11 +37,6 @@ const router = createRouter({
       component: receptionView
     },
     {
-      path: '/search',
-      name: 'search',
-      component: searchView
-    },
-    {
       path: '/profile',
       name: 'profile',
       component: profileView

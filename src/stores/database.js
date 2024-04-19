@@ -8,6 +8,7 @@ export const useSqlStore = defineStore('database', () => {
   const responseCreation = ref("");
   const todayCreationList = ref([]);
   const deleteResponse = ref("");
+  const dbVisionData = ref({});
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -98,17 +99,33 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
-  async function cancelTodayCreation(idMateriel){
+  async function cancelTodayCreation(idStock){
     const requestOptions = {
       method: "DELETE",
       redirect: "follow"
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/remove/${idMateriel}`, requestOptions);
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/remove/${idStock}`, requestOptions);
       const result = await response.json();
       const data = result.data;
       deleteResponse.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function dbVision(idMateriel){
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/dataVision/${idMateriel}`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      dbVisionData.value = data;
     } catch (error) {
       console.error(error);
     }
@@ -128,6 +145,8 @@ export const useSqlStore = defineStore('database', () => {
     todayCreationList,
     getTodayCreation,
     deleteResponse,
-    cancelTodayCreation
+    cancelTodayCreation,
+    dbVisionData,
+    dbVision
   };
 });
