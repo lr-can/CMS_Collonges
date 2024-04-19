@@ -6,9 +6,14 @@
     </div>
     <div class="titre4">Informations supplémentaires</div>
     <div>
-        <div>Code matériel : {{ props.materiel.idMateriel }}</div>
-        <div>Nom matériel : {{ props.materiel.nomMateriel }}</div>
-   
+        <div class="moreInfo">
+            <div>Code matériel : {{ props.materiel.idMateriel }}</div>
+            <div>Nom matériel : {{ props.materiel.nomMateriel }}</div>
+            <div>Nombre VSAV théorique : {{ props.materiel.nbVSAV }}</div>
+            <div>Nombre en réserve théorique : {{ props.materiel.nbReserve }}</div>
+            <div>Nombre total théorique : {{ props.materiel.nbVSAV + props.materiel.nbReserve }}</div>
+        </div>
+        <div class="titre4" id="beforeTable">Compte par agent</div>
         <div class="table">
             <div class="table-row" id="headerRow">
                 <div class="table-cell">Nom de l'agent</div>
@@ -18,9 +23,15 @@
             </div>
             <div class="table-row" v-for="row in materielsInfo.compteParAgent" :key="row.idAgent">
                 <div class="table-cell"><span class="nomAgent">{{ row.gradeAbbrAgent }} {{ row.nomAgent }}</span></div>
-                <div class="table-cell">{{ row.reserveCount }}</div>
-                <div class="table-cell">{{ row.vsavCount }}</div>
-                <div class="table-cell">{{ row.totalCount }}</div>
+                <div class="table-cell figure">{{ row.reserveCount }}</div>
+                <div class="table-cell figure">{{ row.vsavCount }}</div>
+                <div class="table-cell figure">{{ row.totalCount }}</div>
+            </div>
+            <div class="table-row" id="headerRow">
+                <div class="table-cell">Total :</div>
+                <div class="table-cell figure">{{ reserveCount }}</div>
+                <div class="table-cell figure">{{ vsavCount }}</div>
+                <div class="table-cell figure">{{ totalCount }}</div>
             </div>
         </div>
     </div>
@@ -203,8 +214,12 @@ getDbData();
     z-index: 1;
 
 }
+#beforeTable{
+    margin-top: 2rem;
+}
 #headerRow > div{
     font-weight: bold;
+    color: #666666;
 }
 #filter{
     position: absolute;
@@ -227,7 +242,6 @@ getDbData();
 .table{
     display: table;
     table-layout: fixed;
-    margin-top: 1rem;
     
 }
 .table-row{
@@ -239,5 +253,11 @@ getDbData();
     padding: 5px;
     border-bottom: 1px solid #eeeeee;
 }
-
+.moreInfo{
+    font-size: 12px;
+    color: #666666;
+}
+.nomAgent{
+    font-size: 13px;
+}
 </style>
