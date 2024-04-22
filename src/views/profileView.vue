@@ -54,6 +54,7 @@ import AdjudantChef from '../assets/grades/Adjudant-Chef.png';
 import Lieutenant from '../assets/grades/Lieutenant.png';
 import Capitaine from '../assets/grades/Capitaine.png';
 import Commandant from '../assets/grades/Commandant.png';
+import Professeur from '../assets/grades/Professeur.png';
 
 const dict_grades = {
   'Sap 2CL': Sap2CL,
@@ -66,19 +67,22 @@ const dict_grades = {
   'Adjudant-Chef': AdjudantChef,
   'Lieutenant': Lieutenant,
   'Capitaine': Capitaine,
-  'Commandant': Commandant
+  'Commandant': Commandant,
+  'Professeur': Professeur
 };
 
 import Developpeur from '../assets/roles/Developpeur.png';
 import Responsable from '../assets/roles/Responsable Pharmacie.png';
 import Chef from '../assets/roles/Chef de Caserne.png';
 import Agent from '../assets/roles/Agent.png';
+import Prof from '../assets/roles/Professeur.png';
 
 const dict_roles = {
   'Developpeur': Developpeur,
   'Responsable Pharmacie': Responsable,
   'Chef de Caserne': Chef,
   'Agent': Agent,
+  'Professeur': Prof
 };
 
 const auth0 = useAuth0();

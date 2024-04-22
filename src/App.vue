@@ -1,4 +1,6 @@
 <script setup>
+console.log(`%cFait avec amour 🫶, sueur 💪💦 et larmes 🥹 par le Caporal Lorcan BRENDERS pour un stage de projet universitaire.`, "background-color: #f4f6ff; color: #0078f3; text-align:justify; padding: 1rem; border-radius: 1rem;font-size:20px;font-weight:bold;");
+
 import { RouterLink, RouterView } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
 import {ref} from 'vue';
@@ -7,6 +9,7 @@ const isAuthenticated = ref(auth0.isAuthenticated.value);
 setTimeout(()=>{
   isAuthenticated.value = auth0.isAuthenticated.value
 }, 1000)
+
 
 </script>
 

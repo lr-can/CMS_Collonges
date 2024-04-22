@@ -9,6 +9,9 @@ export const useSqlStore = defineStore('database', () => {
   const todayCreationList = ref([]);
   const deleteResponse = ref("");
   const dbVisionData = ref({});
+  const archivagePeremptionResponse = ref({});
+  const oneMonthPeremption = ref("");
+  const realCountList = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -131,6 +134,55 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function archivePeremption(){
+    const requestOptions = {
+      method: "PUT",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/archivePeremption`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      console.log(data);
+      archivagePeremptionResponse.value = data;
+    } catch (error) {
+      console.error(error);
+      archivagePeremptionResponse.value = error;
+    }
+  }
+
+  async function getOneMonthPeremption(){
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/getOneMonthPeremption`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      oneMonthPeremption.value = data[0].perimant;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function getRealCount() {
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch("https://cms-collonges-api.adaptable.app/getRealCount", requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      realCountList.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
 
   return {
@@ -147,6 +199,12 @@ export const useSqlStore = defineStore('database', () => {
     deleteResponse,
     cancelTodayCreation,
     dbVisionData,
-    dbVision
+    dbVision,
+    archivagePeremptionResponse,
+    archivePeremption,
+    oneMonthPeremption,
+    getOneMonthPeremption,
+    realCountList,
+    getRealCount
   };
 });

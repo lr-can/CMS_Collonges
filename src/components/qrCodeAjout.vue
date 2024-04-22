@@ -40,7 +40,8 @@
                 <div class="return">
                     <div class="returnBtn" @click="cancelClicked = false">Annuler</div>
                 </div>
-                <p>Vous vous apprêtez à supprimer <span id="productSuppression">ID-{{ produitId }} ({{ props.info.nomMateriel }})</span>.</p>
+                <p>
+                    Vous vous apprêtez à supprimer <span id="productSuppression">ID-{{ produitId }} ({{ props.info.nomMateriel }})</span>. Cette action est irréversible.</p>
                 <div id="supprimer" @click="removeSelectedItem()"><span v-if="!deleting">Confirmer la suppression</span><span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="deleting"></span></div>
             </div>   
     </div>
@@ -295,22 +296,7 @@ function vibrate(){
 
 }
 .suppressionDiv > p{
-    margin-top: 4rem;
-}
-#filter{
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100vh;
-    -webkit-filter: blur(5px);
-    -moz-filter: blur(5px);
-    -o-filter: blur(5px);
-    -ms-filter: blur(5px);
-    filter: blur(5px);
-    backdrop-filter: blur(5px);
-    z-index: 0;
+    margin-top: 3.5rem;
 }
 
 #productSuppression{

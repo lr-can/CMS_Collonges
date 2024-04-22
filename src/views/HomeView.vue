@@ -39,6 +39,7 @@ import AdjudantChef from '../assets/grades/Adjudant-Chef.png';
 import Lieutenant from '../assets/grades/Lieutenant.png';
 import Capitaine from '../assets/grades/Capitaine.png';
 import Commandant from '../assets/grades/Commandant.png';
+import Professeur from '../assets/grades/Professeur.png';
 
 const dict_grades = {
   'Sap 2CL': Sap2CL,
@@ -51,7 +52,8 @@ const dict_grades = {
   'Adjudant-Chef': AdjudantChef,
   'Lieutenant': Lieutenant,
   'Capitaine': Capitaine,
-  'Commandant': Commandant
+  'Commandant': Commandant,
+  'Professeur': Professeur
 };
 
 
@@ -69,8 +71,8 @@ async function changeGreeting(grade) {
   const mesRespectsGrades = ['Lieutenant', 'Capitaine', 'Commandant', 'Colonel', 'Contrôleur Général'];
   const BonjourGradesAdj = ['Adjudant', 'Adjudant-Chef'];
 
-  for (let j = 0; j < mesRespectsGrades.length; j++)
-  if (grade ==BonjourGradesAdj[j]) {
+  for (let j = 0; j < BonjourGradesAdj.length; j++)
+  if (grade == BonjourGradesAdj[j]) {
     greeting.value = `Bonjour, mon`;
   }
 
@@ -79,8 +81,12 @@ async function changeGreeting(grade) {
       greeting.value = `Mes respects, mon`;
     }
   }
+  if (grade == 'Professeur') {
+    greeting.value = `Mes Respects,`;
+  }
   
 }
+
 const image_grade = (current_grade) => {
   return dict_grades[current_grade];
 };
@@ -104,8 +110,7 @@ async function getAuthentification() {
 }
 
 if (auth0.isAuthenticated.value == false) {
-  setTimeout(getAuthentification, 1000)
-  console.log("ici")
+  setTimeout(getAuthentification, 1000);
 }
 
 </script>

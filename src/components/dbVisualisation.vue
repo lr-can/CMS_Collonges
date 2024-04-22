@@ -221,21 +221,6 @@ getDbData();
     font-weight: bold;
     color: #666666;
 }
-#filter{
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100vh;
-    -webkit-filter: blur(5px);
-    -moz-filter: blur(5px);
-    -o-filter: blur(5px);
-    -ms-filter: blur(5px);
-    filter: blur(5px);
-    backdrop-filter: blur(5px);
-    z-index: 0;
-}
 #countDiv:hover{
     cursor: pointer;
 }
