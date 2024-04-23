@@ -23,7 +23,7 @@
                 <div class="questionText" id="notCounted">Sélectionnez le matériel à inclure : </div>
                 <SelectButton class="selector" v-model="notCountedList" :options="optionsMatNotCounted" optionLabel="shortname" multiple aria-labelledby="multiple" />
             </div>
-            <div class="validationBtn" @click="submitForm">Créer la commande</div>
+            <div class="validationBtn" @click="submitForm"><span v-if="gettingInfo">Chargement...</span><span v-if="!gettingInfo">Créer la commande</span></div>
         </form>
 
 
@@ -80,6 +80,7 @@
             Commande actuelle
         </div>
         <div class="commandeContainer">
+            <div v-if="isGenerating" id="animation"><img src="@/assets/loading.gif" alt="" width="50px" height="auto">Création de la commande en cours...</div>
             <div class="commande">
                 <commandeComponent :commande="commande"/>
             </div>
@@ -97,12 +98,23 @@ import InputNumber from 'primevue/inputnumber';
 import ToggleButton from 'primevue/togglebutton';
 import Dropdown from 'primevue/dropdown';
 import commandeComponent from '@/components/commandeComponent.vue';
+import loadingSound from '../assets/sounds/Loading.mp3';
+import deleted from '../assets/sounds/Deleted.mp3';
+import generating from '../assets/sounds/Generating.mp3';
+import validation from '../assets/sounds/Validation.mp3';
 
 
 const sqlStore = useSqlStore();
 
+const loading = new Audio(loadingSound);
+const deletedSound = new Audio(deleted);
+const generatingSound = new Audio(generating);
+const validationSound = new Audio(validation);
+
+const isGenerating = ref(false);
 const additionnalInfo = ref(false);
 const theoryMaterielList = ref([]);
+const gettingInfo = ref(false);
 const realMaterielList = ref([]);
 const formStyle = ref('ajout');
 const operationNumber = ref(1);
@@ -143,6 +155,8 @@ getMateriels();
 
 
 async function submitForm() {
+    gettingInfo.value = true;
+    loading.play();
     await sqlStore.getOneMonthPeremption();
     nombreMaterielPeremption.value = sqlStore.oneMonthPeremption;
 
@@ -152,7 +166,11 @@ async function submitForm() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
+    gettingInfo.value = false;
     showCommande.value = true;
+    isGenerating.value = true;
+    generatingSound.play();
+    await timeout(2000);
 
     if (notCountedItems.value){
         getUnCountedItems();
@@ -160,6 +178,7 @@ async function submitForm() {
     await getTheoryCount();
     await getRealCount();
     getDelta();
+    generatingSound.pause();
     console.log(commande.value);
 }
 
@@ -169,8 +188,10 @@ async function timeout(ms) {
 
 async function archiverMateriel() {
     archiving.value = true;
+    loading.play();
     await sqlStore.archivePeremption();
     archived.value = await sqlStore.archivagePeremptionResponse;
+    deletedSound.play();
     await timeout(2000);
     additionnalInfo.value = false;
     archivePromise.value = true;
@@ -218,8 +239,10 @@ const getDelta = () => {
                 commande.value.push({quantity: delta, nomCommande: theoryMaterielList.value[i].nomCommandePluriel, idMateriel: theoryMaterielList.value[i].idMateriel});
             }
     }
+    isGenerating.value = false;
 }
 const modifyCommande = () => {
+    loading.play();
     let index = commande.value.findIndex(item => item.idMateriel === selectedMaterielOperation.value.idMateriel);
     if (index === -1){
         commande.value.push({quantity: operationNumber.value, nomCommande: selectedMaterielOperation.value.nomCommandePluriel, idMateriel: selectedMaterielOperation.value.idMateriel});
@@ -243,23 +266,24 @@ const copyContent = async (text) => {
     }
   }
 const ValidateOrder = async () => {
+    validationSound.play();
     let rows = [];
-    for (let i = 0; i < commande.value.length; i++) {
-        rows.push(commande.value[i].quantity + " x " + commande.value[i].nomCommande);
-    } 
-    let rowsString = rows.join("\n");
-    await copyContent(rowsString);
-    let object = 'Nouvelle commande'
-    let intro = `Bonjour, \n Merci de prendre en compte la commande suivante : \n`;
-    let outro = `\n Cordialement, \n `;
-    let mail = intro + rowsString + outro;
-    let mailASCII = encodeURIComponent(mail);
-    window.location.href = `mailto:guichet.unique@sdmis.fr?Subject=${object}&amp;body=${mailASCII}`;
+for (let i = 0; i < commande.value.length; i++) {
+    rows.push(commande.value[i].quantity + " x " + commande.value[i].nomCommande);
+} 
+let rowsString = rows.join("\n");
+await copyContent(rowsString);
+let object = 'Nouvelle commande'
+let intro = `Bonjour, \n Merci de prendre en compte la commande suivante : \n`;
+let outro = `\n Cordialement, \n `;
+let mail = intro + `\n\n<<<Inclure le contenu du presse papier ici>>>\n\n`+ outro;
+let mailURL = encodeURIComponent(mail);
+window.location.href = `mailto:guichet.unique@sdmis.fr?subject=${encodeURIComponent(object)}&body=${mailURL}`;
     
 }
 
 </script>
-<style>
+<style scoped>
 #formOrder{
     margin-top: 2rem;
     background-color: #f6f6f6;
@@ -281,21 +305,6 @@ const ValidateOrder = async () => {
     color: #666666;
     font-size: 14px;
 
-}
-.p-inputswitch-slider::before{
-    top: 20%;
-}
-.p-selectbutton .p-button.p-highlight{
-    background-color: #f4f6ff;
-    color: #0078f3;
-}
-.p-selectbutton{
-    width: 100%;
-    display: grid;
-}
-.p-inputnumber-input{
-    max-width: 50px;
-    text-align: center;
 }
 .selector > div{
     background-color: #f4f6ff;
@@ -415,5 +424,10 @@ margin-top: 2rem;
 #validation{
     margin-bottom: 2rem;
 }
-
+#animation{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1rem;
+}
 </style>

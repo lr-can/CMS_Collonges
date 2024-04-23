@@ -137,3 +137,21 @@ a,
   backdrop-filter: blur(5px);
   z-index: 0;
 }
+.p-inputswitch-slider::before{
+  top: 20%;
+}
+.p-selectbutton .p-button.p-highlight{
+  background-color: #f4f6ff;
+  color: #0078f3;
+}
+.p-selectbutton{
+  width: 100%;
+  display: grid;
+}
+.p-inputnumber-input{
+  max-width: 50px;
+  text-align: center;
+}
+.filter-white{
+  filter: invert(97%) sepia(53%) saturate(74%) hue-rotate(78deg) brightness(114%) contrast(101%);
+}
