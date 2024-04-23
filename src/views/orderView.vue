@@ -250,7 +250,11 @@ const ValidateOrder = async () => {
     let rowsString = rows.join("\n");
     await copyContent(rowsString);
     let object = 'Nouvelle commande'
-    window.location.href = `mailto:guichet.unique@sdmis.fr?object=${object}body=${rowsString}`;
+    let intro = `Bonjour, \n Merci de prendre en compte la commande suivante : \n`;
+    let outro = `\n Cordialement, \n `;
+    let mail = intro + rowsString + outro;
+    let mailASCII = encodeURIComponent(mail);
+    window.location.href = `mailto:guichet.unique@sdmis.fr?Subject=${object}&amp;body=${mailASCII}`;
     
 }
 
