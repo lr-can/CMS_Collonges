@@ -1,8 +1,8 @@
 <template>
-    <div class="subtitle">
+    <div class="subtitle" v-if="!showCommande">
        Création d'une commande
     </div>
-    <div>
+    <div v-if="!showCommande">
         <div id="IntroText">
                 Sélectionnez les options à inclure dans la commande.
             </div>
@@ -49,6 +49,43 @@
             <div id="archiver" @click="archiverMateriel()"><span v-if="!archiving">Confirmer l'archivage</span><span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="archiving"></span></div>
         </div>  
     </div>
+    <div v-if="showCommande">
+        <div class="subtitle">
+            Commande à passer
+        </div>
+        <div class="subsubtitle">
+            Modifier la commande
+        </div>
+        <form id="commandeOperations" :class="formStyle">
+            <div>
+                <ToggleButton v-model="ADDorSUB" onLabel="Ajouter" offLabel="Supprimer"
+                     class="w-9rem" aria-label="Do you confirm" />
+            </div>
+            <div>
+                <InputNumber v-model="operationNumber" showButtons buttonLayout="horizontal" :min="0" :max="99">
+                    <template #incrementbuttonicon>
+                    +
+                    </template>
+                    <template #decrementbuttonicon>
+                     -
+                    </template>
+                </InputNumber>
+            </div>
+            <div id="materielsList">
+                <Dropdown id='materiel' v-model="selectedMaterielOperation" editable :options="materiels" optionLabel="nomMateriel" placeholder="Sélectionnez un matériel" required />
+            </div>
+        </form>
+        <div class="validationBtn" @click="modifyCommande" id="modifierBtn">Modifier la commande</div>
+        <div class="subsubtitle">
+            Commande actuelle
+        </div>
+        <div class="commandeContainer">
+            <div class="commande">
+                <commandeComponent :commande="commande"/>
+            </div>
+        </div>
+        <div class="validationBtn" @click="ValidateOrder" id="validation">Valider la commande</div>
+    </div>
 </template>
 
 <script setup>
@@ -56,6 +93,10 @@ import { ref } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 import SelectButton from 'primevue/selectbutton';
 import InputSwitch from 'primevue/inputswitch';
+import InputNumber from 'primevue/inputnumber';
+import ToggleButton from 'primevue/togglebutton';
+import Dropdown from 'primevue/dropdown';
+import commandeComponent from '@/components/commandeComponent.vue';
 
 
 const sqlStore = useSqlStore();
@@ -63,30 +104,56 @@ const sqlStore = useSqlStore();
 const additionnalInfo = ref(false);
 const theoryMaterielList = ref([]);
 const realMaterielList = ref([]);
+const formStyle = ref('ajout');
+const operationNumber = ref(1);
+const ADDorSUB = ref(true);
 const commanding = ref(true);
 const nombreMaterielPeremption = ref();
 const archiving = ref(false);
 const prochainesPeremptions = ref(true);
 const missingMateriel = ref(true);
 const notCountedItems = ref(false);
+const selectedMaterielOperation = ref();
+const archivePromise = ref(false);
+const materiels = ref([]);
+const showCommande = ref(false);
 const notCountedList = ref();
 const archived = ref();
 const commande = ref([]);
 const optionsMatNotCounted = ref([
-    {shortname: 'Aiguilles', fullname: '1 × Aiguilles autopiques (boîte)'},
-    {shortname: 'Protections thermomètres', fullname: '50 × protection pour thermomètre'},
-    {shortname: 'Chiffons', fullname: '1 × chiffons d\'essuyage à usage unique (carton)'},
-    {shortname: 'Draps', fullname: '1 × draps à usage unique (carton)'},
-    {shortname: 'Piles AAA', fullname: '1 × boîte de piles AAA'},
-    {shortname: 'Piles plates', fullname: '1 × boîte de piles plates'},
+    {shortname: 'Aiguilles',
+        fullname: {quantity: 1, nomCommande: 'Boîte d\'aiguilles autopiquantes pour mesure de glycémie', idMateriel: 'aiguAPique'}
+    },
+    {shortname: 'Protections thermomètres', fullname: {quantity: 50, nomCommande : 'protections pour thermomètre', idMateriel: 'protThermo'},
+},
+    {shortname: 'Chiffons', fullname: {quantity: 1, nomCommande : 'Carton de chiffons d\'essuyage à usage unique', idMateriel: 'chiffon'}
+},
+    {shortname: 'Draps', fullname: {quantity: 1, nomCommande : 'Carton de draps à usage unique', idMateriel: 'drap'}
+},
+    {shortname: 'Piles AAA', fullname: {quantity: 1, nomCommande: 'Boîte de piles AAA', idMateriel: 'pileAAA'}
+},
+    {shortname: 'Piles plates', fullname: {quantity: 1, nomCommdande: 'Boîte de piles plates', idMateriel: 'pilePlate'}
+},
 ])
+async function getMateriels() {
+    await sqlStore.getMateriels();
+    materiels.value = await sqlStore.materielsList;
+}
+getMateriels();
+
 
 async function submitForm() {
-    if(prochainesPeremptions.value){
+    await sqlStore.getOneMonthPeremption();
+    nombreMaterielPeremption.value = sqlStore.oneMonthPeremption;
+
+    if(prochainesPeremptions.value && nombreMaterielPeremption.value > 0){
         additionnalInfo.value = true;
-        await sqlStore.getOneMonthPeremption();
-        nombreMaterielPeremption.value = sqlStore.oneMonthPeremption;
+        while(!archivePromise.value) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        }
     }
+    showCommande.value = true;
+
     if (notCountedItems.value){
         getUnCountedItems();
     }
@@ -106,6 +173,7 @@ async function archiverMateriel() {
     archived.value = await sqlStore.archivagePeremptionResponse;
     await timeout(2000);
     additionnalInfo.value = false;
+    archivePromise.value = true;
 }
 
 const getUnCountedItems = () => {
@@ -130,8 +198,13 @@ const getDelta = () => {
         let nbReserve = parseInt(theoryMaterielList.value[index].nbReserve);
 
         let delta = (nbVsav + nbReserve) - parseInt(realMaterielList.value[i].realCount);
+
         if (delta > 0){
-            commande.value.push(delta + ' × ' + theoryMaterielList.value[index].nomMateriel.replace('(lot de 10)', ''));
+            if (delta < 2) {
+                commande.value.push({quantity: 1, nomCommande: theoryMaterielList.value[index].nomCommandeSingulier, idMateriel: theoryMaterielList.value[index].idMateriel});
+            } else {
+                commande.value.push({quantity: delta, nomCommande: theoryMaterielList.value[index].nomCommandePluriel, idMateriel: theoryMaterielList.value[index].idMateriel});
+            }
         }
         theoryMaterielList.value.splice(index, 1);
     }
@@ -139,9 +212,48 @@ const getDelta = () => {
         let nbVsav = parseInt(theoryMaterielList.value[i].nbVSAV);
         let nbReserve = parseInt(theoryMaterielList.value[i].nbReserve);
         let delta = nbVsav + nbReserve;
-        commande.value.push(delta + ' × ' + theoryMaterielList.value[i].nomMateriel.replace('(lot de 10)', ''));
+        if (delta < 2) {
+                commande.value.push({quantity: 1, nomCommande: theoryMaterielList.value[i].nomCommandeSingulier, idMateriel: theoryMaterielList.value[i].idMateriel});
+            } else {
+                commande.value.push({quantity: delta, nomCommande: theoryMaterielList.value[i].nomCommandePluriel, idMateriel: theoryMaterielList.value[i].idMateriel});
+            }
     }
 }
+const modifyCommande = () => {
+    let index = commande.value.findIndex(item => item.idMateriel === selectedMaterielOperation.value.idMateriel);
+    if (index === -1){
+        commande.value.push({quantity: operationNumber.value, nomCommande: selectedMaterielOperation.value.nomCommandePluriel, idMateriel: selectedMaterielOperation.value.idMateriel});
+    } else {
+        if (ADDorSUB.value){
+            commande.value[index].quantity += operationNumber.value;
+        } else {
+            commande.value[index].quantity -= operationNumber.value;
+            if (commande.value[index].quantity < 1){
+                commande.value.splice(index, 1);
+            }
+        }
+    }
+}
+const copyContent = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      console.log('Content copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  }
+const ValidateOrder = async () => {
+    let rows = [];
+    for (let i = 0; i < commande.value.length; i++) {
+        rows.push(commande.value[i].quantity + " x " + commande.value[i].nomCommande);
+    } 
+    let rowsString = rows.join("\n");
+    await copyContent(rowsString);
+    let object = 'Nouvelle commande'
+    window.location.href = `mailto:guichet.unique@sdmis.fr?object=${object}body=${rowsString}`;
+    
+}
+
 </script>
 <style>
 #formOrder{
@@ -176,6 +288,10 @@ const getDelta = () => {
 .p-selectbutton{
     width: 100%;
     display: grid;
+}
+.p-inputnumber-input{
+    max-width: 50px;
+    text-align: center;
 }
 .selector > div{
     background-color: #f4f6ff;
@@ -242,4 +358,58 @@ margin-top: 2rem;
   backdrop-filter: blur(5px);
   z-index: 0;
 }
+.commande{
+    width: 100%;
+    min-height: 30dvh;
+    max-height: 40dvh;
+    overflow-y: auto;
+}
+
+.commande::-webkit-scrollbar {
+  display: none;
+}
+
+
+.commande::-webkit-scrollbar {
+  -ms-overflow-style: none;  
+  scrollbar-width: none; 
+}
+.commandeContainer{
+    padding: 2rem;
+    background-color: #eeeeee;
+    border-radius: 30px;
+    color: #666666;
+}
+
+#commandeOperations{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 1rem;
+
+
+}
+#materielsList{
+    width: 100%;
+    margin-top: 1rem;
+}
+#materiel{
+    width: 100%;
+    margin: auto;
+    margin-top: 1rem;
+}
+#commandeOperations{
+    background-color: #f6f6f6;
+    border-radius: 25px;
+}
+
+#modifierBtn{
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+#validation{
+    margin-bottom: 2rem;
+}
+
 </style>

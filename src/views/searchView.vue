@@ -45,7 +45,7 @@ const resetState = () => {
 
 <style>
 #recherche{
-    margin-top: 0;
+    margin-top: 1rem;
 }
 
 </style>
