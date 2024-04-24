@@ -80,6 +80,7 @@
             Commande actuelle
         </div>
         <div class="commandeContainer">
+            <div v-if="commande.length === 0 && !isGenerating">La commande ne comporte aucun materiel.</div>
             <div v-if="isGenerating" id="animation"><img src="@/assets/loading.gif" alt="" width="50px" height="auto">Création de la commande en cours...</div>
             <div class="commande">
                 <commandeComponent :commande="commande"/>
@@ -144,7 +145,7 @@ const optionsMatNotCounted = ref([
 },
     {shortname: 'Piles AAA', fullname: {quantity: 1, nomCommande: 'Boîte de piles AAA', idMateriel: 'pileAAA'}
 },
-    {shortname: 'Piles plates', fullname: {quantity: 1, nomCommdande: 'Boîte de piles plates', idMateriel: 'pilePlate'}
+    {shortname: 'Piles plates', fullname: {quantity: 1, nomCommande: 'Boîte de piles plates', idMateriel: 'pilePlate'}
 },
 ])
 async function getMateriels() {
@@ -170,14 +171,17 @@ async function submitForm() {
     showCommande.value = true;
     isGenerating.value = true;
     generatingSound.play();
-    await timeout(2000);
 
     if (notCountedItems.value){
+        await timeout(2000);
         getUnCountedItems();
     }
+    if (missingMateriel.value){
     await getTheoryCount();
     await getRealCount();
     getDelta();
+    }
+    isGenerating.value = false;
     generatingSound.pause();
     console.log(commande.value);
 }
@@ -220,6 +224,15 @@ const getDelta = () => {
 
         let delta = (nbVsav + nbReserve) - parseInt(realMaterielList.value[i].realCount);
 
+        if (currentIdMateriel === 'comp10' || currentIdMateriel === 'dosiseptine10'){
+            if (currentIdMateriel === 'comp10'){
+            delta = Math.floor((delta * 11)/50);
+            } else {
+                delta = Math.floor((delta * 10));
+            }
+        }
+
+
         if (delta > 0){
             if (delta < 2) {
                 commande.value.push({quantity: 1, nomCommande: theoryMaterielList.value[index].nomCommandeSingulier, idMateriel: theoryMaterielList.value[index].idMateriel});
@@ -232,14 +245,24 @@ const getDelta = () => {
     for (let i = 0; i < theoryMaterielList.value.length; i++) {
         let nbVsav = parseInt(theoryMaterielList.value[i].nbVSAV);
         let nbReserve = parseInt(theoryMaterielList.value[i].nbReserve);
+        let currentIdMateriel = theoryMaterielList.value[i].idMateriel;
         let delta = nbVsav + nbReserve;
-        if (delta < 2) {
-                commande.value.push({quantity: 1, nomCommande: theoryMaterielList.value[i].nomCommandeSingulier, idMateriel: theoryMaterielList.value[i].idMateriel});
+        
+        if (currentIdMateriel === 'comp10' || currentIdMateriel === 'dosiseptine10'){
+            if (currentIdMateriel === 'comp10'){
+            delta = Math.floor((delta * 11)/50);
             } else {
-                commande.value.push({quantity: delta, nomCommande: theoryMaterielList.value[i].nomCommandePluriel, idMateriel: theoryMaterielList.value[i].idMateriel});
+                delta = Math.floor((delta * 10));
             }
+        }
+        if (delta > 0){
+            if (delta < 2) {
+                    commande.value.push({quantity: 1, nomCommande: theoryMaterielList.value[i].nomCommandeSingulier, idMateriel: theoryMaterielList.value[i].idMateriel});
+                } else {
+                    commande.value.push({quantity: delta, nomCommande: theoryMaterielList.value[i].nomCommandePluriel, idMateriel: theoryMaterielList.value[i].idMateriel});
+                }
+        }
     }
-    isGenerating.value = false;
 }
 const modifyCommande = () => {
     loading.play();
@@ -368,7 +391,7 @@ margin-top: 2rem;
   -o-filter: blur(5px);
   -ms-filter: blur(5px);
   filter: blur(5px);
-  backdrop-filter: blur(5px);
+  backdrop-filter: brightness(0.90) blur(5px);
   z-index: 0;
 }
 .commande{

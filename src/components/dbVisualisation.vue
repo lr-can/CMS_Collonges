@@ -111,18 +111,18 @@ const insertData = () =>{
     vsavCountDelta.value = giveState(vsavDelta.value);
     reserveCountDelta.value = giveState(reserveDelta.value);
     totalCountDelta.value = giveState(totalDelta.value);
-    vsavDeltaText.value = vsavCountDelta.value + " " + Math.abs(vsavDelta.value);
-    reserveDeltaText.value = reserveCountDelta.value + " " + Math.abs(reserveDelta.value);
-    totalDeltaText.value = totalCountDelta.value + " " + Math.abs(totalDelta.value);
+    vsavDeltaText.value = vsavCountDelta.value + " " + Math.abs(vsavDelta.value).toString().replace('0', '');
+    reserveDeltaText.value = reserveCountDelta.value + " " + Math.abs(reserveDelta.value).toString().replace('0', '');
+    totalDeltaText.value = totalCountDelta.value + " " + Math.abs(totalDelta.value).toString().replace('0', ' ');
     
 }
 const giveState = (delta) =>{
     if(delta > 0){
-        return "surplus";
+        return "Surplus";
     } else if (delta < 0){
-        return "manque";
+        return "Manque";
     } else {
-        return "compteOK";
+        return "OK";
     }
 }
 const formatedDate = (date) =>{
@@ -174,21 +174,21 @@ getDbData();
         font-size: 18px;
 
     }
-    .manque{
+    .Manque{
         color: #f60700;
         background-color: #fff4f4;
         border-radius: 5px;
         padding: 5px;
         margin-left: 2%;
     }
-    .surplus{
+    .Surplus{
         color: #0078f3;
         background-color: #f4f6ff;
         border-radius: 5px;
         padding: 5px;
         margin-left: 2%;
     }
-    .compteOK{
+    .OK{
         color: #1f8d49;
         background-color: #dffee6;
         border-radius: 5px;
@@ -244,5 +244,12 @@ getDbData();
 }
 .nomAgent{
     font-size: 13px;
+}
+#countDiv:hover{
+    background-image: linear-gradient(to right bottom,  #ffff 5%, #eeeeee 80%);
+        background-size: 140% 140%;
+			animation: gradient 2s ease infinite;
+    color: #666666;
+    transition: 0.3s ease;
 }
 </style>
