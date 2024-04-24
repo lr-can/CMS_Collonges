@@ -131,11 +131,12 @@ const archivePromise = ref(false);
 const materiels = ref([]);
 const showCommande = ref(false);
 const notCountedList = ref();
+const emailsAdresses = ref([]);
 const archived = ref();
 const commande = ref([]);
 const optionsMatNotCounted = ref([
     {shortname: 'Aiguilles',
-        fullname: {quantity: 1, nomCommande: 'Boîte d\'aiguilles autopiquantes pour mesure de glycémie', idMateriel: 'aiguAPique'}
+        fullname: {quantity: 1, nomCommande: 'Boîte d\'aiguilles autopiquantes', idMateriel: 'aiguAPique'}
     },
     {shortname: 'Protections thermomètres', fullname: {quantity: 50, nomCommande : 'protections pour thermomètre', idMateriel: 'protThermo'},
 },
@@ -152,7 +153,12 @@ async function getMateriels() {
     await sqlStore.getMateriels();
     materiels.value = await sqlStore.materielsList;
 }
+async function getEmailsAdresses(){
+    await sqlStore.getEmailsAdresses();
+    emailsAdresses.value = await sqlStore.adressesMails;
+}
 getMateriels();
+getEmailsAdresses();
 
 
 async function submitForm() {
@@ -228,7 +234,7 @@ const getDelta = () => {
             if (currentIdMateriel === 'comp10'){
             delta = Math.floor((delta * 11)/50);
             } else {
-                delta = Math.floor((delta * 10));
+                delta = Math.floor((delta * 11)/20);
             }
         }
 
@@ -252,7 +258,7 @@ const getDelta = () => {
             if (currentIdMateriel === 'comp10'){
             delta = Math.floor((delta * 11)/50);
             } else {
-                delta = Math.floor((delta * 10));
+                delta = Math.floor((delta * 11)/20);
             }
         }
         if (delta > 0){
@@ -295,13 +301,18 @@ for (let i = 0; i < commande.value.length; i++) {
     rows.push(commande.value[i].quantity + " x " + commande.value[i].nomCommande);
 } 
 let rowsString = rows.join("\n");
+let emailsList = [];
+for (let i = 0; i < emailsAdresses.value.length; i++) {
+    emailsList.push(emailsAdresses.value[i].adresseMail);
+}
+let emailsString = emailsList.join(",");
 await copyContent(rowsString);
 let object = 'Nouvelle commande'
 let intro = `Bonjour, \n Merci de prendre en compte la commande suivante : \n`;
 let outro = `\n Cordialement, \n `;
 let mail = intro + `\n\n<<<Inclure le contenu du presse papier ici>>>\n\n`+ outro;
 let mailURL = encodeURIComponent(mail);
-window.location.href = `mailto:guichet.unique@sdmis.fr?subject=${encodeURIComponent(object)}&body=${mailURL}`;
+window.location.href = `mailto:guichet.unique@sdmis.fr?subject=${encodeURIComponent(object)}&cc=${emailsString}&body=${mailURL}`;
     
 }
 

@@ -20,7 +20,7 @@
     </div>
     <div v-else>
         <div class="expirant">
-            <div class="materiel OK">Aucune péremption à signaler dans les 6 prochains mois</div>
+            <div cl ass="materiel OK">Aucune péremption à signaler dans les 6 prochains mois</div>
         </div>
     </div>
         </div>
