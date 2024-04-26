@@ -258,7 +258,7 @@ const getDelta = () => {
             if (currentIdMateriel === 'comp10'){
             delta = Math.floor((delta * 11)/50);
             } else {
-                delta = Math.floor((delta * 11)/20);
+                delta = Math.floor((delta * 5.5)/20);
             }
         }
         if (delta > 0){
