@@ -152,7 +152,7 @@ const getDevices = async () => {
         ({ kind }) => kind === 'videoinput'
     );
     
-    selected.value = devices.value[0]
+    selected.value = devices.value[devices.value.length - 1]
 };
 
 getDevices();
