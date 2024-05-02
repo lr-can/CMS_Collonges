@@ -14,6 +14,8 @@ export const useSqlStore = defineStore('database', () => {
   const realCountList = ref([]);
   const adressesMails = ref([]);
   const materielsToCheck = ref([]);
+  const visualisationPharma = ref([]);
+  const responseArchivePharma = ref("");
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -217,6 +219,46 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function getVisualisationPharma(idMateriel) {
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/getPharmaItems/${idMateriel}`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      visualisationPharma.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function archivePharma(data) {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    const raw = JSON.stringify(data);
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow"
+    };
+
+    try {
+      console.log(requestOptions.body)
+      const response = await fetch("https://cms-collonges-api.adaptable.app/archivePharma", requestOptions);
+      const result = await response.json();
+      responseArchivePharma.value = result.message;
+      console.log(result);
+    } catch (error) {
+      console.error(error);
+      console.log(responseCreation.value);
+      responseCreation.value = error;
+    }
+  }
+
 
   return {
     NextPeremptions,
@@ -242,6 +284,10 @@ export const useSqlStore = defineStore('database', () => {
     adressesMails,
     getEmailsAdresses,
     materielsToCheck,
-    getMaterielsToCheck
+    getMaterielsToCheck,
+    visualisationPharma,
+    getVisualisationPharma,
+    responseArchivePharma,
+    archivePharma
   };
 });

@@ -20,7 +20,7 @@
                     <ToggleButton v-model="PartialOrComplete" onLabel="Inventaire Complet" offLabel="Inventaire Partiel"
                      class="w-9rem" aria-label="Do you confirm" />
                 </div>
-                <div class="validationBtn" @click="submitForm">Valider le choix</div>
+                <div class="validationBtn" @click="submitForm"><span v-if="!isLoading">Valider le choix</span><span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="isLoading"></span></div>
             </form>
     </div>
     <div v-if="listLoaded">
@@ -28,10 +28,19 @@
             <div class="progression" :style="{width: currentProgression * 100 + '%'}"></div>
         </div>
         <div class="subtitle">
-            {{ currentMateriel }}
+            <span :class="zone()">{{ currentZoneText }}</span><span id="currentMateriel" class="subtitle">{{ currentMateriel }}</span>
         </div>
-        <div class="subsubtitle">
+        <div class="subsubtitle" v-if="notArchived">
                 Suppression du materiel utilisé
+        </div>
+        <div class="subsubtitle" v-if="notDisposition">
+                Mise à disposition du matériel
+        </div>
+        <div v-if="notArchived">
+            <qrCodePharma :info="information" @archive="archived()" />
+        </div>
+        <div v-if="notDisposition">
+            <qrCodeReserve :info="information"/>
         </div>
     </div>
 </template>
@@ -40,6 +49,7 @@
 import { ref } from 'vue';
 import ToggleButton from 'primevue/togglebutton';
 import { useSqlStore } from "@/stores/database.js";
+import  qrCodePharma  from "../components/qrCodePharma.vue";
 
 const introduction = ref(true);
 const PartialOrComplete = ref(true);
@@ -51,9 +61,19 @@ const currentObjectif = ref('');
 const currentZone = ref('');
 const materielLenght = ref(0);
 const currentProgression = ref(0);
+const notArchived = ref(true);
 const listLoaded = ref(false);
+const notDisposition = ref(false);
+const isLoading = ref(false);
+const currentZoneText = ref('');
+const information = ref({
+    idMateriel: '',
+    datePeremption: '',
+    numLot: ''
+});
 
 const submitForm = async () => {
+    isLoading.value = true;
     if(PartialOrComplete.value){
         await sqlStore.getMaterielsToCheck("Complete");
         materielsToCheck.value = await sqlStore.materielsToCheck;
@@ -68,6 +88,7 @@ const submitForm = async () => {
     listLoaded.value = true;
     introduction.value = false;
     progress();
+    isLoading.value = false;
 }
 const progress = async () => {
     if(materielsToCheck.value.length > 0){
@@ -76,12 +97,41 @@ const progress = async () => {
         currentObjectif.value = materielsToCheck.value[0].nbVsav;
         currentZone.value = materielsToCheck.value[0].zone;
         currentIdMateriel.value = materielsToCheck.value[0].idMateriel;
+        information.value = {
+            idMateriel: currentIdMateriel.value,
+            objectif: currentObjectif.value,
+            zone: currentZone.value,
+            nomMateriel: currentMateriel.value
+        }
         materielsToCheck.value.shift();
         currentProgression.value = (materielLenght.value - materielsToCheck.value.length) / materielLenght.value;
     }else{
         listLoaded.value = false;
     }
 
+}
+const archived = () => {
+    console.log('archivé !');
+    notArchived.value = false;
+    notDisposition.value = true;
+}
+
+const zone = () => {
+    currentZoneText.value = "Zone " + currentZone.value;
+    if (currentZone.value.startsWith('B')) {
+        return 'zoneBoite';
+    } else if (currentZone.value.startsWith('O')) {
+        return 'zoneOxy';
+    } else if (currentZone.value.startsWith('R')) {
+        return 'zoneRea';
+    } else if (currentZone.value.startsWith('K')) {
+        return 'zoneKits';
+    } else if (currentZone.value.startsWith('D')) {
+        return 'zoneDiv';
+    } else {
+        currentZoneText.value = 'Autre';
+        return 'Autre';
+    }
 }
 </script>
 <style>
@@ -125,6 +175,60 @@ const progress = async () => {
     height: 100%;
     background-color: #0078f3;
     border-radius: 30px;
+}
+
+
+.Autre{
+    background-color: #eeeeee;
+    color: #666666;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.zoneBoite{
+    background-color: #dffee6;
+    color: #1f8d49;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.zoneOxy{
+    background-color: #f4f6ff;
+    color: #0078f3;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.zoneRea{
+    background-color: #fff4f4;
+    color: #f60700;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.zoneKits{
+    background-color: #fff4f3;
+    color: #d64d00;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.zoneDiv{
+    background-color: #fef3fd;
+    color: #A558A0;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#currentMateriel{
+    margin-left: 1rem;
 }
 
 </style>
