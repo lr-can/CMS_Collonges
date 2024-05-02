@@ -13,6 +13,7 @@ export const useSqlStore = defineStore('database', () => {
   const oneMonthPeremption = ref("");
   const realCountList = ref([]);
   const adressesMails = ref([]);
+  const materielsToCheck = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -201,6 +202,21 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function getMaterielsToCheck(typeRequest) {
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/getMaterielsToCheck/${typeRequest}`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      materielsToCheck.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
 
   return {
     NextPeremptions,
@@ -224,6 +240,8 @@ export const useSqlStore = defineStore('database', () => {
     realCountList,
     getRealCount,
     adressesMails,
-    getEmailsAdresses
+    getEmailsAdresses,
+    materielsToCheck,
+    getMaterielsToCheck
   };
 });

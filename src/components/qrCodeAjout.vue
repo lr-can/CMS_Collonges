@@ -133,9 +133,8 @@ const onDetect = async function([firstDetectedCode]) {
         errorSound.play();
     }
     getTodayItems();
+    paused.value = false
 	await timeout(2000)
-	paused.value = false
-
     resetValidationState()
 }
 
