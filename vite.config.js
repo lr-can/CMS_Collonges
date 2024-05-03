@@ -13,6 +13,7 @@ export default defineConfig({
       devOptions: {
         enabled: true,
       },
+      injectRegister: 'auto',
       manifest: {
         name: 'CMS Collonges',
         short_name: 'CMS Collonges',

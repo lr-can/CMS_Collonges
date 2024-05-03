@@ -6,6 +6,7 @@ import { createAuth0 } from '@auth0/auth0-vue';
 import PrimeVue from 'primevue/config';
 import 'primevue/resources/themes/aura-light-blue/theme.css'
 
+
 import App from './App.vue'
 import router from './router'
 
