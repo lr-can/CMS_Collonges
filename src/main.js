@@ -8,6 +8,7 @@ import 'primevue/resources/themes/aura-light-blue/theme.css'
 
 import App from './App.vue'
 import router from './router'
+import './registerServiceWorker'
 
 const app = createApp(App)
 
