@@ -36,7 +36,6 @@ import { ref, computed } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import { useSqlStore } from "@/stores/database.js";
 import { useAuth0 } from '@auth0/auth0-vue';
-import Validation from '../assets/sounds/Validation.mp3';
 import Loading from '../assets/sounds/Loading.mp3';
 import Deleted from '../assets/sounds/Deleted.mp3';
 
@@ -46,7 +45,6 @@ const isValid = ref(false);
 const paused = ref(false);
 const result = ref('null');
 const sqlStore = useSqlStore();
-const validationSound = new Audio(Validation);
 const loadingSound = new Audio(Loading);
 const deletedSound = new Audio(Deleted);
 const auth0 = useAuth0();
@@ -88,10 +86,10 @@ const RemoveInList = (idStock) => {
     loadingSound.pause();
     if (listToProcess.value.includes(idStock)) {
         listToProcess.value = listToProcess.value.filter((item) => item !== idStock);
-        deletedSound.play();
+        loadingSound.play();
     } else {
         listToProcess.value.push(idStock);
-        validationSound.play();
+        loadingSound.play();
     }
     console.log(listToProcess.value);
 }

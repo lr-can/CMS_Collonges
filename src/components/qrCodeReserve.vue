@@ -47,7 +47,6 @@ import { useSqlStore } from "@/stores/database.js";
 import { useAuth0 } from '@auth0/auth0-vue';
 import Validation from '../assets/sounds/Validation.mp3';
 import Loading from '../assets/sounds/Loading.mp3';
-import Deleted from '../assets/sounds/Deleted.mp3';
 
 const props = defineProps(['info']);
 const isValid = ref(false);
@@ -56,7 +55,6 @@ const result = ref('null');
 const sqlStore = useSqlStore();
 const validationSound = new Audio(Validation);
 const loadingSound = new Audio(Loading);
-const deletedSound = new Audio(Deleted);
 const auth0 = useAuth0();
 let utilisateur = auth0.user.value;
 let matricule = utilisateur.profile[0];
@@ -99,10 +97,10 @@ const addInList = (idStock) => {
     loadingSound.pause();
     if (listToProcess.value.includes(idStock)) {
         listToProcess.value = listToProcess.value.filter((item) => item !== idStock);
-        deletedSound.play();
+        loadingSound.play();
     } else {
         listToProcess.value.push(idStock);
-        validationSound.play();
+        loadingSound.play();
     }
     console.log(listToProcess.value);
 }
@@ -167,7 +165,7 @@ const disposition = async () => {
     await sqlStore.dispoReserve(data);
     listToProcess.value = [];
     deleting.value = false;
-    deletedSound.play();
+    validationSound.play();
     emit('disposition');
 }
 
