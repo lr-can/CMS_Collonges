@@ -17,6 +17,7 @@ export default defineConfig({
         name: 'CMS Collonges',
         short_name: 'CMS Collonges',
         theme_color: '#ffffff',
+        background_color: '#ffffff',
         icons: [
           {
             src: 'https://github.com/lr-can/CMS_Collonges/blob/main/public/img/icons/android-chrome-512x512.png?raw=true',
