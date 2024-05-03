@@ -250,6 +250,7 @@ const pluriel = () => {
     margin-top: 3rem;
   color: #f60700;
   font-size: 16px;
+  margin-bottom: 2rem;
   text-align: center;
 }
 #supprimer:hover{

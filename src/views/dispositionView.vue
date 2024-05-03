@@ -40,7 +40,18 @@
             <qrCodePharma :info="information" @archive="archived()" />
         </div>
         <div v-if="notDisposition">
-            <qrCodeReserve :info="information"/>
+            <qrCodeReserve :info="information" @disposition="next()"/>
+        </div>
+    </div>
+    <div v-if="finished">
+        <div class="subtitle">
+                Mise à disposition du matériel
+        </div>
+        <div>
+            <img src="@/assets/finished.gif" alt="" width="300px" height="auto">
+        </div>
+        <div class="subsubtitle">
+            La mise à disposition est terminée.
         </div>
     </div>
 </template>
@@ -50,6 +61,7 @@ import { ref } from 'vue';
 import ToggleButton from 'primevue/togglebutton';
 import { useSqlStore } from "@/stores/database.js";
 import  qrCodePharma  from "../components/qrCodePharma.vue";
+import qrCodeReserve from '../components/qrCodeReserve.vue';
 
 const introduction = ref(true);
 const PartialOrComplete = ref(true);
@@ -66,6 +78,7 @@ const listLoaded = ref(false);
 const notDisposition = ref(false);
 const isLoading = ref(false);
 const currentZoneText = ref('');
+const finished = ref(false);
 const information = ref({
     idMateriel: '',
     datePeremption: '',
@@ -94,7 +107,7 @@ const progress = async () => {
     if(materielsToCheck.value.length > 0){
         currentMateriel.value = materielsToCheck.value[0].nomMateriel;
         currentIdMateriel.value = materielsToCheck.value[0].idMateriel;
-        currentObjectif.value = materielsToCheck.value[0].nbVsav;
+        currentObjectif.value = materielsToCheck.value[0].nbVSAV;
         currentZone.value = materielsToCheck.value[0].zone;
         currentIdMateriel.value = materielsToCheck.value[0].idMateriel;
         information.value = {
@@ -107,6 +120,8 @@ const progress = async () => {
         currentProgression.value = (materielLenght.value - materielsToCheck.value.length) / materielLenght.value;
     }else{
         listLoaded.value = false;
+        await sqlStore.reinitialiserRetourIntervention();
+        finished.value = true;
     }
 
 }
@@ -132,6 +147,11 @@ const zone = () => {
         currentZoneText.value = 'Autre';
         return 'Autre';
     }
+}
+const next = () => {
+    notDisposition.value = false;
+    notArchived.value = true;
+    progress();
 }
 </script>
 <style>
@@ -169,6 +189,7 @@ const zone = () => {
     border-radius: 30px;
     margin: auto;
     margin-bottom: 1.5rem;
+    overflow: hidden;
     
 }
 .progression{

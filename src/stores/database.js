@@ -16,6 +16,7 @@ export const useSqlStore = defineStore('database', () => {
   const materielsToCheck = ref([]);
   const visualisationPharma = ref([]);
   const responseArchivePharma = ref("");
+  const visualisationReserve = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -259,6 +260,64 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function getVisualisationReserve(idMateriel) {
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/getReserveItems/${idMateriel}`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      visualisationReserve.value = data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function dispoReserve(data) {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    const raw = JSON.stringify(data);
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow"
+    };
+
+    try {
+      console.log(requestOptions.body)
+      const response = await fetch("https://cms-collonges-api.adaptable.app/dispoReserve", requestOptions);
+      const result = await response.json();
+      responseArchivePharma.value = result.message;
+      console.log(result);
+    } catch (error) {
+      console.error(error);
+      console.log(responseCreation.value);
+      responseCreation.value = error;
+    }
+  }
+
+  async function reinitialiserRetourIntervention(){
+    const requestOptions = {
+      method: "PUT",
+      redirect: "follow"
+    };
+    
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/reinitialiserRetourInter`, requestOptions);
+      const result = await response.json();
+      const data = result.data;
+      console.log(data);
+      archivagePeremptionResponse.value = data;
+    } catch (error) {
+      console.error(error);
+      archivagePeremptionResponse.value = error;
+    }
+  }
+
 
   return {
     NextPeremptions,
@@ -288,6 +347,10 @@ export const useSqlStore = defineStore('database', () => {
     visualisationPharma,
     getVisualisationPharma,
     responseArchivePharma,
-    archivePharma
+    archivePharma,
+    visualisationReserve,
+    getVisualisationReserve,
+    dispoReserve,
+    reinitialiserRetourIntervention
   };
 });
