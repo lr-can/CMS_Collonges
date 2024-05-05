@@ -223,12 +223,13 @@ const pluriel = () => {
 			animation: gradient 2s ease infinite;
     color: #666666;
 }
-
+@media (min-width: 1024px){
 .pharmaItem:hover{
     cursor: pointer;
     background-image: linear-gradient(to right bottom, #ffdddd 60%, #f60700 100%);
     transition: background-image 0.3s ease;
     color: #f60700;
+}
 }
 .selected{
     background-image: linear-gradient(to right bottom, #ffdddd 60%, #ff9c9c 100%);

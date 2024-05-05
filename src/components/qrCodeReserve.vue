@@ -252,12 +252,13 @@ const getText = (value) => {
 			animation: gradient 2s ease infinite;
     color: #ffbeb4;
 }
-
+@media (min-width: 1024px){
 .ReserveItem:hover{
     cursor: pointer;
     background-image: linear-gradient(to right bottom, #ffded9 60%, #d64d00 100%);
     transition: background-image 0.3s ease;
     color: #d64d00;
+}
 }
 .selected{
     background-image: linear-gradient(to right bottom, #ffded9 60%, #ff9f8b 100%);

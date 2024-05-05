@@ -230,7 +230,7 @@ const getDelta = () => {
 
         let delta = (nbVsav + nbReserve) - parseInt(realMaterielList.value[i].realCount);
 
-        if (currentIdMateriel === 'comp10' || currentIdMateriel === 'dosiseptine10'){
+        if (currentIdMateriel === 'comp10' || currentIdMateriel === 'dosiseptine10' || currentIdMateriel === "vomix"){
             if (currentIdMateriel === 'comp10'){
             delta = Math.floor((delta * 11)/50);
             } else {
