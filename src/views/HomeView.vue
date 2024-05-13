@@ -65,8 +65,6 @@ const grade_url = ref("https://github.com/lr-can/CMS_Collonges/blob/main/src/ass
 
 const auth0 = useAuth0();
 
-getAuthentification()
-
 async function changeGreeting(grade) {
   const mesRespectsGrades = ['Lieutenant', 'Capitaine', 'Commandant', 'Colonel', 'Contrôleur Général'];
   const BonjourGradesAdj = ['Adjudant', 'Adjudant-Chef'];
@@ -92,12 +90,14 @@ const image_grade = (current_grade) => {
 };
 
 async function getAuthentification() {
+  await new Promise(r => setTimeout(r, 1000));
   isAuthenticated.value = false;
   await auth0.isAuthenticated.value;
   let authentification_status = auth0.isAuthenticated.value;
-  isAuthenticated.value = authentification_status;
-  let utilisateur = auth0.user.value;
-  grade.value = utilisateur.profile[1];
+  if (authentification_status === true){
+    isAuthenticated.value = authentification_status;
+  let utilisateur = await auth0.user.value;
+  grade.value = await utilisateur.profile[1];
   grade_url.value = image_grade(grade.value);
 
 
@@ -105,12 +105,21 @@ async function getAuthentification() {
   if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
     grade.value = `Sapeur`;
   }
-
+  console.log(grade.value);
   changeGreeting(grade.value);
+  }
 }
 
-if (auth0.isAuthenticated.value == false) {
-  setTimeout(getAuthentification, 1000);
+
+for (let i = 0; i < 20; i++) {
+  console.log('checking authentification');
+  if (auth0.user.value === null) {
+    getAuthentification();
+  } else {
+    getAuthentification();
+    break;
+
+  }
 }
 
 </script>
