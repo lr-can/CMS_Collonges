@@ -148,6 +148,10 @@ const optionsMatNotCounted = ref([
 },
     {shortname: 'Piles plates', fullname: {quantity: 1, nomCommande: 'Boîte de piles plates', idMateriel: 'pilePlate'}
 },
+    {shortname: 'Cartons DASRI', fullname: {quantity: 5, nomCommande: 'Cartons DASRI', idMateriel: 'DASRIc'}
+},
+    {shortname: 'Collecteurs d\'aiguilles', fullname: {quantity: 5, nomCommande: 'Collecteurs d\'aiguilles DASRI', idMateriel: 'DASRIa'}
+},
 ])
 async function getMateriels() {
     await sqlStore.getMateriels();
