@@ -73,11 +73,11 @@ const giveClass = (date) => {
     const timeDelta = expirationDate.getTime() - today.getTime();
     const daysDelta = Math.floor(timeDelta / (1000 * 60 * 60 * 24));
 
-    if (daysDelta <= 0) {
+    if (daysDelta <= 30) {
         return 'over';
-    } else if (daysDelta < 7) {
+    } else if (daysDelta < 60) {
         return 'days';
-    } else if (daysDelta < 30) {
+    } else if (daysDelta < 90) {
         return 'weeks';
     } else {
         return 'months';
@@ -89,12 +89,12 @@ const giveClassBis = (date) => {
     const timeDelta = expirationDate.getTime() - today.getTime();
     const daysDelta = Math.floor(timeDelta / (1000 * 60 * 60 * 24));
 
-    if (daysDelta <= 0) {
+    if (daysDelta <= 30) {
         return 'over_date';
     }
-    if (daysDelta < 7) {
+    if (daysDelta < 60) {
         return 'days_date';
-    } else if (daysDelta < 30) {
+    } else if (daysDelta < 90) {
         return 'weeks_date';
     } else {
         return 'months_date';
