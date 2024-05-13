@@ -131,6 +131,12 @@ const onDetect = async function([firstDetectedCode]) {
         isValid.value = false;
         loadingSound.pause();
         errorSound.play();
+        if (dbResponse.value.message.includes('foreign')){
+            dbResponse.value = {message: "L'utilisateur ne dispose pas des droits nécessaires pour effectuer cette action."};
+        } else if (dbResponse.value.message.includes('Duplicate')){
+            dbResponse.value = {message: `ID-${result.value} déjà présent dans la base de données.`};
+        }
+        await timeout(2000)
     }
     getTodayItems();
     paused.value = false
