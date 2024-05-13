@@ -79,9 +79,6 @@ async function changeGreeting(grade) {
       greeting.value = `Mes respects, mon`;
     }
   }
-  if (grade == 'Professeur') {
-    greeting.value = `Mes Respects,`;
-  }
   
 }
 
