@@ -40,6 +40,7 @@ import Lieutenant from '../assets/grades/Lieutenant.png';
 import Capitaine from '../assets/grades/Capitaine.png';
 import Commandant from '../assets/grades/Commandant.png';
 import Professeur from '../assets/grades/Professeur.png';
+import Infirmiere from '../assets/grades/Infirmière.png';
 
 const dict_grades = {
   'Sap 2CL': Sap2CL,
@@ -53,7 +54,8 @@ const dict_grades = {
   'Lieutenant': Lieutenant,
   'Capitaine': Capitaine,
   'Commandant': Commandant,
-  'Professeur': Professeur
+  'Professeur': Professeur,
+  'Infirmière': Infirmiere
 };
 
 
