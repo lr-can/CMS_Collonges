@@ -1,5 +1,8 @@
 <template>
     <div class="subtitle">Base de données</div>
+    <div class="button">
+        <a href="https://cms-collonges-api.adaptable.app/getRecap">📄 Récapitulatif PDF</a>
+    </div>
     <form autocomplete="off">
         <label for="materiel">Matériel<span class="mandatory">*</span>
         <Dropdown id='materiel' v-model="selectedMateriel" editable :options="materiels" optionLabel="nomMateriel" placeholder="Sélectionnez un matériel" required class="form-item" @change="resetState" />
@@ -47,5 +50,8 @@ const resetState = () => {
 #recherche{
     margin-top: 1rem;
 }
-
+.button{
+    margin-bottom: 1rem;
+    text-align: right;
+}
 </style>

@@ -3,9 +3,11 @@
         <span id="toggle">
           <img src="@/assets/illustrations/arrow.svg" alt="" width="14px" height="auto" :class="isClicked()"></span>
         Prochaines péremptions
-        <span id="notification">
-          <img :src="notificationSource" alt="" width="25px" height="auto" >
-        </span>
+        <Transition>
+            <span id="notification" v-show="blinking">
+            <img :src="notificationSource" alt="" width="25px" height="auto" >
+            </span>
+        </Transition>
       </div>
       <Transition>
         <div class="Expiration" v-show="showExpiration">
@@ -34,6 +36,7 @@ const sqlStore = useSqlStore();
 const NextPeremptions = ref([]);
 const showExpiration = ref(false);
 const notificationSource = ref("");
+const blinking = ref(true);
 
 async function getNextExpiration(){
     await sqlStore.getNextPeremptions();
@@ -137,6 +140,9 @@ const getImgSource = () => {
         }
 }
 }
+setInterval(() => {
+    blinking.value = !blinking.value;
+}, 1000);
 
 </script>
 <style>
@@ -241,5 +247,10 @@ const getImgSource = () => {
 }
 #prochainePeremption{
     margin-top: 20px;
+}
+#notification{
+    position: absolute;
+    margin-left: 5px;
+    
 }
 </style>

@@ -8,6 +8,7 @@ import errorWriting from './components/errorWriting.vue';
 const auth0 = useAuth0();
 const isAuthenticated = ref(auth0.isAuthenticated);
 const prof = ref(false);
+const appLoading = ref(true);
 async function getAuthentification(){
   await new Promise(r => setTimeout(r, 1000));
 }
@@ -29,9 +30,17 @@ for (let i = 0; i < 20; i++) {
     isProf();
   }
 }
+setTimeout(() => {
+  appLoading.value = false;
+}, 2000);
 </script>
 
 <template>
+    <transition>
+      <div v-if="appLoading" class="blank">
+    <img src="@/assets/loadingApp.gif" alt="Loading" width="150px" height="auto">
+    </div>
+  </transition>
   <header>
     <div class="top-menu" id="logoCell">
       <a href="/">

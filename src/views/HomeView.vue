@@ -7,7 +7,6 @@
     <notConnected/>
   
   </div>
-
   <div v-if="isAuthenticated">
     <div class="subtitle">
       {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
@@ -121,6 +120,7 @@ for (let i = 0; i < 20; i++) {
   }
 }
 
+
 </script>
 
 <style>
@@ -141,6 +141,21 @@ for (let i = 0; i < 20; i++) {
   border-radius: 7px;
   overflow: hidden;
   height: 25px;
+}
+.blank{
+  background-color: white;
+  height: 100dvh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100dvw;
+  z-index: 1000;
+}
+.blank > img{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 </style>
