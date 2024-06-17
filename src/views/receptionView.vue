@@ -71,12 +71,13 @@ async function submitForm() {
         alert('Au moins un champ obligatoire n\'a pas été rempli.');
         return;
     }
+    let peremptionDateStr;
     if (!peremptionDate.value){
-        peremptionDate.value = '2999-12-31';
+        peremptionDateStr = new Date('2999-12-31');
     } else {
-        let peremptionDateStr = new Date(peremptionDate.value);
-        peremptionDate.value = peremptionDateStr.toISOString().split('T')[0];
+        peremptionDateStr = new Date(peremptionDate.value);
     }
+    peremptionDate.value = peremptionDateStr.toISOString().split('T')[0];
     switching();
 }
 const switching = () => {
