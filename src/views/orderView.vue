@@ -311,7 +311,7 @@ let intro = `Bonjour, \n Merci de prendre en compte la commande suivante : \n`;
 let outro = `\n Cordialement, \n `;
 let mail = intro + `\n\n<<<Inclure le contenu du presse papier ici>>>\n\n`+ outro;
 let mailURL = encodeURIComponent(mail);
-window.location.href = `mailto:lena.palermo@sdmis.fr?subject=${encodeURIComponent(object)}&cc=${emailsList[1]}&body=${mailURL}`;
+window.location.href = `mailto:lena.palermo@sdmis.fr?subject=${encodeURIComponent(object)}&body=${mailURL}`;
     
 }
 
