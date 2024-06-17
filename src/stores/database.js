@@ -189,22 +189,6 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
-  async function getEmailsAdresses() {
-    const requestOptions = {
-      method: "GET",
-      redirect: "follow"
-    };
-    
-    try {
-      const response = await fetch("https://cms-collonges-api.adaptable.app/emailsAdresses", requestOptions);
-      const result = await response.json();
-      const data = result.data;
-      adressesMails.value = data;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   async function getMaterielsToCheck(typeRequest) {
     const requestOptions = {
       method: "GET",
@@ -341,7 +325,6 @@ export const useSqlStore = defineStore('database', () => {
     realCountList,
     getRealCount,
     adressesMails,
-    getEmailsAdresses,
     materielsToCheck,
     getMaterielsToCheck,
     visualisationPharma,

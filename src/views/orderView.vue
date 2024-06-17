@@ -305,17 +305,13 @@ for (let i = 0; i < commande.value.length; i++) {
     rows.push(commande.value[i].quantity + " x " + commande.value[i].nomCommande);
 } 
 let rowsString = rows.join("\n");
-let emailsList = [];
-for (let i = 0; i < emailsAdresses.value.length; i++) {
-    emailsList.push(emailsAdresses.value[i].adresseMail);
-}
 await copyContent(rowsString);
 let object = 'Nouvelle commande'
 let intro = `Bonjour, \n Merci de prendre en compte la commande suivante : \n`;
 let outro = `\n Cordialement, \n `;
 let mail = intro + `\n\n<<<Inclure le contenu du presse papier ici>>>\n\n`+ outro;
 let mailURL = encodeURIComponent(mail);
-window.location.href = `mailto:${emailsList[0]}?subject=${encodeURIComponent(object)}&cc=${emailsList[1]}&body=${mailURL}`;
+window.location.href = `mailto:lena.palermo@sdmis.fr?subject=${encodeURIComponent(object)}&cc=${emailsList[1]}&body=${mailURL}`;
     
 }
 
