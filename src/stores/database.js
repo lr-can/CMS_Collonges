@@ -17,6 +17,7 @@ export const useSqlStore = defineStore('database', () => {
   const visualisationPharma = ref([]);
   const responseArchivePharma = ref("");
   const visualisationReserve = ref([]);
+  const infoAsupAgent = ref({});
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -302,6 +303,22 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function getAsupAgentInfo(idAgent){
+      const requestOptions = {
+        method: "GET",
+        redirect: "follow"
+      };
+
+      try {
+        const response = await fetch(`https://cms-collonges-api.adaptable.app/getAsupAgents/${idAgent}`, requestOptions);
+        const result = await response.json();
+        infoAsupAgent.value = result;
+        console.log(result);
+      } catch (error) {
+        console.error(error);
+    }
+  }
+
 
   return {
     NextPeremptions,
@@ -334,6 +351,8 @@ export const useSqlStore = defineStore('database', () => {
     visualisationReserve,
     getVisualisationReserve,
     dispoReserve,
-    reinitialiserRetourIntervention
+    reinitialiserRetourIntervention,
+    getAsupAgentInfo,
+    infoAsupAgent
   };
 });

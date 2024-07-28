@@ -4,21 +4,11 @@ console.log(`%cFait avec amour 🫶, sueur 💪💦 et larmes 🥹 par le Capora
 import { RouterLink, RouterView } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
 import {ref} from 'vue';
-import errorWriting from './components/errorWriting.vue';
 const auth0 = useAuth0();
 const isAuthenticated = ref(auth0.isAuthenticated);
-const prof = ref(false);
 const appLoading = ref(true);
 async function getAuthentification(){
   await new Promise(r => setTimeout(r, 1000));
-}
-async function isProf(){
-  await new Promise(r => setTimeout(r, 1000));
-  let utilisateur = await auth0.user.value;
-  let role = await utilisateur.profile[2];
-  if (role === 'Professeur'){
-    prof.value = true;
-  }
 }
 for (let i = 0; i < 20; i++) {
   console.log('checking authentification');
@@ -27,7 +17,6 @@ for (let i = 0; i < 20; i++) {
   } else {
     getAuthentification();
     isAuthenticated.value = auth0.isAuthenticated;
-    isProf();
   }
 }
 setTimeout(() => {
@@ -53,9 +42,6 @@ setTimeout(() => {
       </nav>
     </div>
   </header>
-  <div v-if="prof">
-    <errorWriting />
-  </div>
   <div id="RouterView">
     <RouterView />
   </div>
@@ -66,6 +52,7 @@ setTimeout(() => {
         <RouterLink to="/disposition" v-if="isAuthenticated"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
         <RouterLink to="/search" v-if="isAuthenticated"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
         <RouterLink to="/order" v-if="isAuthenticated"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/asupGrandPublic" v-if="!isAuthenticated"><img alt="ASUP" src="@/assets/icons/asup.svg" width="30" height="auto" /></RouterLink>
       </nav>
     </div>
 </template>

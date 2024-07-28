@@ -20,6 +20,10 @@
     <div id="access">
         <a href="mailto:lorcan@brenders.fr">Demander un accès</a>
     </div>
+    <div class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
+        <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
+        <div>Accès agents ASUP</div>
+        </div>
 </div>
 </template>
 <script setup>
@@ -32,15 +36,34 @@ const redirect = () => {
 
 }
 
-
 </script>
 
 <style>
 #access{
     margin: auto;
-    margin-top: 1rem;
+    margin-top: 2rem;
     text-align: center;
     font-size: 12px;
 }
+.asupButton{
+    margin: auto;
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 12px;
+    background-color: #f0f0f0;
+    padding: 0.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+}
+.asupButton div{
+    font-weight: bold;
+    font-size: 1rem;
+    margin: auto;
+}
+.asupButton div img{
+    opacity: 0.7;
+}
+
 
 </style>

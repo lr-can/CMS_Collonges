@@ -67,7 +67,7 @@
                     +
                     </template>
                     <template #decrementbuttonicon>
-                     -
+                    -
                     </template>
                 </InputNumber>
             </div>
@@ -142,7 +142,7 @@ const optionsMatNotCounted = ref([
 },
     {shortname: 'Chiffons', fullname: {quantity: 1, nomCommande : 'Carton de chiffons d\'essuyage à usage unique', idMateriel: 'chiffon'}
 },
-    {shortname: 'Draps', fullname: {quantity: 1, nomCommande : 'Carton de draps à usage unique', idMateriel: 'drap'}
+    {shortname: 'Draps', fullname: {quantity: 2, nomCommande : 'Cartons de draps à usage unique', idMateriel: 'drap'}
 },
     {shortname: 'Piles AAA', fullname: {quantity: 1, nomCommande: 'Boîte de piles AAA', idMateriel: 'pileAAA'}
 },
