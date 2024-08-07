@@ -315,6 +315,7 @@ export const useSqlStore = defineStore('database', () => {
         infoAsupAgent.value = result;
         console.log(result);
       } catch (error) {
+        infoAsupAgent.value = error.message;
         console.error(error);
     }
   }

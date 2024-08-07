@@ -8,20 +8,23 @@
     <div class="subsubtitle">
       Agent ASUP
     </div>
+    <div v-if="errorMessage" class="errorMessage">
+        <span>{{ errorMessage }}</span>
+      </div>
     <div class="input">
       <div id="inputText">
-        <InputText v-model="matricule" inputId="matricule" placeholder="V99999" :length="6" :invalid="!matricule.startsWith('V') || matricule.length !== 6" :disabled="!showButton" />
+        <InputText v-model="matricule" inputId="matricule" placeholder="V99999" :length="6" :invalid="!matricule.startsWith('V') || matricule.length !== 6 || responseError" :disabled="!showButton" />
       </div>
-      <div v-if="showButton">
-        <button @click="getAgentInfo" class="arrow-button">
-          →
+      <div>
+        <button @click="getAgentInfo" class="arrow-button" :disabled="!showButton">
+          {{ buttonLabel }}
         </button>
       </div>
-      <div v-if="!showButton" id="agentInfo">
+    </div>
+    <div v-if="!showButton" id="agentInfo">
         <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
-      {{ nomAgent }} {{ prenomAgent }}
-    </div>
-    </div>
+        {{ nomAgent }} {{ prenomAgent }}
+      </div>
   </div>
 </div>
 </template>
@@ -70,8 +73,25 @@ const showButton = ref(true);
 const agentGrade = ref(null);
 const prenomAgent = ref('');
 const nomAgent = ref('');
+const buttonLabel = ref();
+const responseError = ref(false);
+const errorMessage = ref('');
+
+buttonLabel.value = 'Rechercher';
+
+const updateButtonLabel = () => {
+  const dots = ['.', '..', '...'];
+  let index = 0;
+  return () => {
+    buttonLabel.value = 'Recherche' + dots[index];
+    index = (index + 1) % dots.length;
+  };
+};
 
 const getAgentInfo = async () => {
+  let intervalId = setInterval(updateButtonLabel(), 500);
+  errorMessage.value = '';
+  responseError.value = false;
   try {
       await sqlStore.getAsupAgentInfo(matricule.value);
       const result = sqlStore.infoAsupAgent;
@@ -79,12 +99,20 @@ const getAgentInfo = async () => {
     
       agentInfo.value = result;
       console.log('Valeur de agentInfo après mise à jour:', agentInfo.value);
+
+      showButton.value = false;
       
       if (agentInfo.value === undefined) {
           console.error('Erreur: agentInfo.value est undefined');
+      } else if (result.message){
+          responseError.value = true;
+          buttonLabel.value = 'Rechercher';
+          showButton.value = true;
+          errorMessage.value = sqlStore.infoAsupAgent.message;
       }
-      showButton.value = false;
       updateDataAgent(result);
+      clearInterval(intervalId);
+      buttonLabel.value = 'Rechercher';
   } catch (error) {
       console.error('Erreur lors de la récupération des informations de l\'agent:', error);
   }
@@ -130,13 +158,15 @@ const updateDataAgent = (result) => {
 .input{
   width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+  flex-wrap: nowrap; 
   margin-top: 0;
   padding-top: 0;
 }
 .arrow-button{
   background-color: #4CAF50;
+  flex: 0.2;
   border: none;
   color: white;
   text-align: center;
@@ -144,28 +174,37 @@ const updateDataAgent = (result) => {
   display: inline-block;
   font-size: 16px;
   margin: 4px 2px;
+  margin-left: 1rem;
   cursor: pointer;
-  border-radius: 25%;
-  width: 30px;
-  height: 30px;
+  border-radius: 5px;
+  height: 2rem;
+  min-width: 30px;
 }
 .arrow-button:hover{
   background-color: #45a049;
 }	
-#agentInfo {
+#agentInfo, .errorMessage {
   display: flex;
   align-items: center;
   font-size: 1rem;
   flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
+  text-align: left;
+  margin-top: 1rem;
+}
+.errorMessage {
+  color: red;
+  font-size: 0.5rem;
+  margin-top: 0;
+  margin-bottom: 0; 
 }
 
 #inputText{
-  flex: 0.3;
-  width: 33%;
+  flex: 0.2;
+  width: 20%;
 }
 .p-inputtext{
-  width: 15vh;
+  width: 10vh;
 }
   #gradeSpan {
     overflow: hidden;
