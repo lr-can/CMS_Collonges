@@ -68,6 +68,8 @@ import Commandant from '../assets/grades/Commandant.png';
 import Professeur from '../assets/grades/Professeur.png';
 import Infirmiere from '../assets/grades/Infirmière.png';
 import loader from '../assets/loading.gif';
+import validationSound from '../assets/sounds/Validation.mp3';
+import errorSound from '../assets/sounds/Warning.mp3';
 
 const dict_grades = {
 'Sap 2CL': Sap2CL,
@@ -93,6 +95,7 @@ const matricule = ref('V99999');
 const sqlStore = useSqlStore();
 const agentInfo = ref(null);
 const step1 = ref(false);
+const step2 = ref(false);
 
 const showButton = ref(true);
 const showButton2 = ref(true);
@@ -108,6 +111,9 @@ const rppsNumber = ref('10xxxxxxxxxx');
 const doctorInfo = ref(null);
 const nomMedecin = ref('');
 const prenomMedecin = ref('');
+
+let validation = new Audio(validationSound);
+let error = new Audio(errorSound);
 
 
 buttonLabel.value = 'Rechercher';
@@ -142,8 +148,10 @@ const getAgentInfo = async () => {
           buttonLabel.value = 'Rechercher';
           showButton.value = true;
           errorMessage.value = sqlStore.infoAsupAgent.message;
+          error.play();
       } else {
           step1.value = true;
+          validation.play();
       }
       updateDataAgent(result);
       clearInterval(intervalId);
@@ -194,8 +202,10 @@ const getDoctorInfo = async () => {
           buttonLabel.value = 'Rechercher';
           showButton2.value = true;
           errorMessage.value = sqlStore.doctorInfo.message.replace("Error: Unable to parse range: RPPS!A#N/A:C#N/A", "Impossible de trouver le médecin correspondant au RPPS : " + rppsNumber.value);
+          error.play();
       } else {
-          step1.value = true;
+          step2.value = true;
+          validation.play();
       }
       updateDoctorData(result);
       clearInterval(intervalId2);
