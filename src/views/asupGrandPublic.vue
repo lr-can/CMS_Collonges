@@ -5,26 +5,50 @@
   </div>
   <div id="asupForm">
   <div>
-    <div class="subsubtitle">
-      Agent ASUP
-    </div>
     <div v-if="errorMessage" class="errorMessage">
         <span>{{ errorMessage }}</span>
       </div>
-    <div class="input">
-      <div id="inputText">
-        <InputText v-model="matricule" inputId="matricule" placeholder="V99999" :length="6" :invalid="!matricule.startsWith('V') || matricule.length !== 6 || responseError" :disabled="!showButton" />
-      </div>
-      <div>
-        <button @click="getAgentInfo" class="arrow-button" :disabled="!showButton">
-          {{ buttonLabel }}
-        </button>
-      </div>
+    <div id="step1" class="step">
+      <div class="subsubtitle">
+      Agent ASUP
     </div>
-    <div v-if="!showButton" id="agentInfo">
-        <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
-        {{ nomAgent }} {{ prenomAgent }}
+      <div class="input">
+        <div id="inputText">
+          <InputText v-model="matricule" inputId="matricule" placeholder="V99999" :length="6" :invalid="!matricule.startsWith('V') || matricule.length !== 6 || responseError" :disabled="!showButton" />
+        </div>
+        <div v-if="showButton">
+          <button @click="getAgentInfo" class="arrow-button" :disabled="!showButton">
+            {{ buttonLabel }}
+          </button>
+        </div>
       </div>
+      <div v-if="!showButton" id="agentInfo">
+          <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
+          {{ nomAgent }} {{ prenomAgent }}
+        </div>
+    </div>
+
+    <div id="step2" v-if="step1" class="step">
+      <div class="subsubtitle">
+        Médecin prescripteur
+      </div>
+      <div class="input">
+        <div id="inputTextDoc">
+          <InputText v-model="rppsNumber" inputId="rppsNumber" placeholder="10xxxxxxxxxx" :length="11" :invalid="rppsNumber.length !== 11 || responseError" :disabled="!showButton2" />
+        </div>
+        <div v-if="showButton2">
+          <button @click="getDoctorInfo" class="arrow-button" :disabled="!showButton2">
+            {{ buttonLabel }}
+          </button>
+        </div>
+      </div>
+      <div v-if="!showButton2" id="doctorInfo">
+          Dr {{ nomMedecin }} {{ prenomMedecin }}
+        </div>
+
+
+    </div>
+
   </div>
 </div>
 </template>
@@ -68,14 +92,23 @@ import { useSqlStore } from "@/stores/database.js";
 const matricule = ref('V99999');
 const sqlStore = useSqlStore();
 const agentInfo = ref(null);
+const step1 = ref(false);
 
 const showButton = ref(true);
+const showButton2 = ref(true);
+
 const agentGrade = ref(null);
 const prenomAgent = ref('');
 const nomAgent = ref('');
 const buttonLabel = ref();
 const responseError = ref(false);
 const errorMessage = ref('');
+
+const rppsNumber = ref('10xxxxxxxxxx');
+const doctorInfo = ref(null);
+const nomMedecin = ref('');
+const prenomMedecin = ref('');
+
 
 buttonLabel.value = 'Rechercher';
 
@@ -109,6 +142,8 @@ const getAgentInfo = async () => {
           buttonLabel.value = 'Rechercher';
           showButton.value = true;
           errorMessage.value = sqlStore.infoAsupAgent.message;
+      } else {
+          step1.value = true;
       }
       updateDataAgent(result);
       clearInterval(intervalId);
@@ -132,6 +167,43 @@ const updateDataAgent = (result) => {
   prenomAgent.value = result.prenomAgent;
   nomAgent.value = result.nomAgent;
 }
+
+const updateDoctorData = (result) => {
+  nomMedecin.value = result.nomExercice.toUpperCase();
+  prenomMedecin.value = result.prenomExercice.toUpperCase();
+}
+
+const getDoctorInfo = async () => {
+  let intervalId2 = setInterval(updateButtonLabel(), 500);
+  errorMessage.value = '';
+  responseError.value = false;
+  try {
+      await sqlStore.getDoctorInfo(rppsNumber.value);
+      const result = sqlStore.doctorInfo;
+      console.log('Résultat de getAsupDoctorInfo:', result);
+    
+      doctorInfo.value = result;
+      console.log('Valeur de agentInfo après mise à jour:', doctorInfo.value);
+
+      showButton2.value = false;
+      
+      if (doctorInfo.value === undefined) {
+          console.error('Erreur: docteurInfo.value est undefined');
+      } else if (result.message){
+          responseError.value = true;
+          buttonLabel.value = 'Rechercher';
+          showButton2.value = true;
+          errorMessage.value = sqlStore.doctorInfo.message.replace("Error: Unable to parse range: RPPS!A#N/A:C#N/A", "Impossible de trouver le médecin correspondant au RPPS : " + rppsNumber.value);
+      } else {
+          step1.value = true;
+      }
+      updateDoctorData(result);
+      clearInterval(intervalId2);
+      buttonLabel.value = 'Rechercher';
+  } catch (error) {
+      console.error('Erreur lors de la récupération des informations de l\'agent:', error);
+  }
+}
 </script>
 
 <style scoped>
@@ -151,7 +223,7 @@ const updateDataAgent = (result) => {
   width: 100%;
 }
 .subsubtitle{
-  font-size: 2rem;
+  font-size: 3rem;
   text-align: left;
   margin-bottom: 0;
 }
@@ -165,7 +237,7 @@ const updateDataAgent = (result) => {
   padding-top: 0;
 }
 .arrow-button{
-  background-color: #4CAF50;
+  background-color: #0078f3;
   flex: 0.2;
   border: none;
   color: white;
@@ -181,7 +253,7 @@ const updateDataAgent = (result) => {
   min-width: 30px;
 }
 .arrow-button:hover{
-  background-color: #45a049;
+  background-color: #6196ff;
 }	
 #agentInfo, .errorMessage {
   display: flex;
@@ -203,8 +275,15 @@ const updateDataAgent = (result) => {
   flex: 0.2;
   width: 20%;
 }
+#inputTextDoc{
+  flex: 0.5;
+  width: 50%;
+}
 .p-inputtext{
-  width: 10vh;
+  width: 15vh;
+}
+#inputTextDoc .p-inputtext{
+  width: 20vh;
 }
   #gradeSpan {
     overflow: hidden;
@@ -215,5 +294,9 @@ const updateDataAgent = (result) => {
   }
 #gradeSpan img{
   border-radius: 5px;
+}
+.step{
+  border-top: 1px solid #e5e5e5;
+  padding-bottom: 1rem;
 }
 </style>

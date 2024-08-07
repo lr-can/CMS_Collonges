@@ -18,6 +18,7 @@ export const useSqlStore = defineStore('database', () => {
   const responseArchivePharma = ref("");
   const visualisationReserve = ref([]);
   const infoAsupAgent = ref({});
+  const doctorInfo = ref({});
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -320,6 +321,24 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function getDoctorInfo(rppsNumber){
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+
+    try {
+      const response = await fetch(`https://cms-collonges-api.adaptable.app/getDoctor/${rppsNumber}`, requestOptions);
+      const result = await response.json();
+      doctorInfo.value = result;
+      console.log(result);
+    } catch (error) {
+      doctorInfo.value = error.message;
+      console.error(error);
+  }
+}
+
+
 
   return {
     NextPeremptions,
@@ -354,6 +373,8 @@ export const useSqlStore = defineStore('database', () => {
     dispoReserve,
     reinitialiserRetourIntervention,
     getAsupAgentInfo,
-    infoAsupAgent
+    infoAsupAgent,
+    getDoctorInfo,
+    doctorInfo
   };
 });
