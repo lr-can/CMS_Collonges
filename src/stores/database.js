@@ -20,6 +20,7 @@ export const useSqlStore = defineStore('database', () => {
   const infoAsupAgent = ref({});
   const doctorInfo = ref({});
   const lastNotifs = ref([]);
+  const asupAvailableMedicaments = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -356,6 +357,49 @@ async function getLastNotifs(){
   }
 }
 
+async function getAsupAvailableMedicaments(acte) {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+
+  try {
+    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicamentsForCare/${acte}`, requestOptions);
+    const result = await response.json();
+    const data = result.data;
+
+    // Transformation des données
+    const groupedData = data.reduce((acc, item) => {
+      const { nomMedicament, idMedicament, numLot, datePeremption, idStockAsup } = item;
+      const formattedDate = new Date(datePeremption).toLocaleDateString('fr-FR');
+
+      const group = acc.find(g => g.label === nomMedicament && g.code === idMedicament);
+      const newItem = {
+        label: `${numLot} - ${formattedDate}`,
+        code: idStockAsup
+      };
+
+      if (group) {
+        group.items.push(newItem);
+      } else {
+        acc.push({
+          label: nomMedicament,
+          code: idMedicament,
+          items: [newItem]
+        });
+      }
+
+      return acc;
+    }, []);
+
+    asupAvailableMedicaments.value = groupedData;
+    console.log(groupedData);
+  } catch (error) {
+    asupAvailableMedicaments.value = error.message;
+    console.error(error);
+  }
+}
+
 
 
   return {
@@ -395,6 +439,8 @@ async function getLastNotifs(){
     getDoctorInfo,
     doctorInfo,
     getLastNotifs,
-    lastNotifs
+    lastNotifs,
+    getAsupAvailableMedicaments,
+    asupAvailableMedicaments
   };
 });

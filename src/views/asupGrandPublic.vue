@@ -87,6 +87,26 @@
       <div v-if="noDeclaration">
         <p>Vous n'avez pas besoin de déclarer de médicaments pour cet acte.</p>
       </div>
+      <div v-else>
+        <p>Sélection des médicaments utilisés.</p>
+        <div class="input">
+          <MultiSelect v-model="selectedMedicaments" :options="medicamentsGroupes" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" display="chip" placeholder="Sélection des médicaments" class="w-full md:w-80">
+        </MultiSelect>
+        </div>
+        <p v-if="selectedMedicaments.length === 0">Vous n'avez pas encore sélectionné de médicaments.</p>
+        <p v-if="selectedMedicaments.length > 0">Vous avez sélectionné {{ selectedMedicaments.length }} médicament{{ selectedMedicaments.length > 1 ? 's' : '' }}.</p>
+        <div v-if="selectedMedicaments.length > 0 && !step5">
+          <button @click="submitDeclaration" class="arrow-button">
+            Valider
+          </button>
+        </div>
+      </div> 
+    </div>
+
+    <div id="step6" v-if="step5" class="step">
+      <div class="subsubtitle">
+        Renseignements complémentaires
+      </div>
     </div>
 
   </div>
@@ -131,6 +151,7 @@ const dict_grades = {
 
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
+import MultiSelect from 'primevue/multiselect';
 import { ref } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
@@ -166,6 +187,9 @@ const numIntervention = ref('');
 
 const niveauASUP = ref('❌');
 const selectedSoin = ref(null);
+const selectedMedicaments = ref([]);
+const medicamentsGroupes = ref([]);
+const medicamentsList = ref([]);
 
 const groupedSoins = ref([
   {
@@ -204,6 +228,12 @@ const updateButtonLabel = () => {
     buttonLabel.value = 'Recherche' + dots[index];
     index = (index + 1) % dots.length;
   };
+};
+
+const autoScrolltoBottom = async () => {
+  await new Promise(r => setTimeout(r, 500));
+  const element = document.getElementById('blankSpaceBottom');
+  element.scrollIntoView({ behavior: 'smooth', block: 'end' });
 };
 
 const getAgentInfo = async () => {
@@ -313,6 +343,7 @@ const getDoctorInfo = async () => {
       updateDoctorData(result);
       clearInterval(intervalId2);
       buttonLabel.value = 'Rechercher';
+      autoScrolltoBottom();
   } catch (error) {
       console.error('Erreur lors de la récupération des informations de l\'agent:', error);
   }
@@ -330,6 +361,7 @@ const numInterValidation = () => {
     numInter = selectedInter.value.code;
   }
   numIntervention.value = numInter;
+  autoScrolltoBottom();
 }
 const processAuthorization = () => {
   let data = agentInfo.value;
@@ -372,15 +404,27 @@ const processAuthorization = () => {
     return true; 
   };
 };
-const soinValidation = () => {
+const soinValidation = async () => {
   loading.play();
   showButton4.value = false;
   console.log('Soin sélectionné:', selectedSoin.value);
-  step4.value = true;
   if (selectedSoin.value.code == 'ecg'||selectedSoin.value.code == 'hemocue'){
     noDeclaration.value = true;
     step5.value = true;
+  } else {
+      await sqlStore.getAsupAvailableMedicaments(selectedSoin.value.code);
+      medicamentsGroupes.value = sqlStore.asupAvailableMedicaments;
   }
+  step4.value = true;
+  autoScrolltoBottom();
+}
+
+const submitDeclaration = () => {
+  loading.play();
+  medicamentsList.value = selectedMedicaments.value.map(medicament => medicament.code);
+  console.log('Médicaments sélectionnés:', selectedMedicaments.value);
+  step5.value = true;
+  autoScrolltoBottom();
 }
 </script>
 
