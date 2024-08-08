@@ -80,6 +80,15 @@
       </div>  
     </div>
 
+    <div id="step5" v-if="step4" class="step">
+      <div class="subsubtitle">
+        Médicaments utilisés
+      </div>
+      <div v-if="noDeclaration">
+        <p>Vous n'avez pas besoin de déclarer de médicaments pour cet acte.</p>
+      </div>
+    </div>
+
   </div>
   <div id="blankSpaceBottom"></div>
 </div>
@@ -126,12 +135,14 @@ import { ref } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 const matricule = ref('Vxxxxx');
+const noDeclaration = ref(false);
 const sqlStore = useSqlStore();
 const agentInfo = ref(null);
 const step1 = ref(false);
 const step2 = ref(false);
 const step3 = ref(false);
 const step4 = ref(false);
+const step5 = ref(false);
 
 const showButton = ref(true);
 const showButton2 = ref(true);
@@ -366,6 +377,10 @@ const soinValidation = () => {
   showButton4.value = false;
   console.log('Soin sélectionné:', selectedSoin.value);
   step4.value = true;
+  if (selectedSoin.value.code == 'ecg'||selectedSoin.value.code == 'hemocue'){
+    noDeclaration.value = true;
+    step5.value = true;
+  }
 }
 </script>
 
