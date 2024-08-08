@@ -19,6 +19,7 @@ export const useSqlStore = defineStore('database', () => {
   const visualisationReserve = ref([]);
   const infoAsupAgent = ref({});
   const doctorInfo = ref({});
+  const lastNotifs = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -338,6 +339,23 @@ export const useSqlStore = defineStore('database', () => {
   }
 }
 
+async function getLastNotifs(){
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+
+  try {
+    const response = await fetch(`https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201`, requestOptions);
+    const result = await response.json();
+    const reversedData = result.reverse();
+    lastNotifs.value = reversedData;
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
 
   return {
@@ -375,6 +393,8 @@ export const useSqlStore = defineStore('database', () => {
     getAsupAgentInfo,
     infoAsupAgent,
     getDoctorInfo,
-    doctorInfo
+    doctorInfo,
+    getLastNotifs,
+    lastNotifs
   };
 });

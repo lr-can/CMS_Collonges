@@ -12,6 +12,7 @@
       <div class="subsubtitle">
       Agent ASUP
     </div>
+    <p>Recherche par matricule</p>
       <div class="input">
         <div id="inputText">
           <InputText v-model="matricule" inputId="matricule" placeholder="V99999" :length="6" :invalid="!matricule.startsWith('V') || matricule.length !== 6 || responseError" :disabled="!showButton" />
@@ -22,9 +23,10 @@
           </button>
         </div>
       </div>
+
       <div v-if="!showButton" id="agentInfo">
           <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
-          {{ nomAgent }} {{ prenomAgent }}
+          {{ nomAgent }} {{ prenomAgent }} <span id="nivASUP"> {{ niveauASUP }}</span>
         </div>
     </div>
 
@@ -32,6 +34,7 @@
       <div class="subsubtitle">
         Médecin prescripteur
       </div>
+      <p>Recherche par numéro RPPS</p>
       <div class="input">
         <div id="inputTextDoc">
           <InputText v-model="rppsNumber" inputId="rppsNumber" placeholder="10xxxxxxxxxx" :length="11" :invalid="rppsNumber.length !== 11 || responseError" :disabled="!showButton2" />
@@ -45,11 +48,19 @@
       <div v-if="!showButton2" id="doctorInfo">
           Dr {{ nomMedecin }} {{ prenomMedecin }}
         </div>
+    </div>
 
-
+    <div id="step3" v-if="step2" class="step">
+      <div class="subsubtitle">
+        Intervention
+      </div>
+      <div class="input">
+        <Dropdown v-model="selectedInter" editable :options="lastNotifsArray" optionLabel="label" placeholder="Sélectionnez une intervention" class="w-full md:w-14rem" />
+      </div>
     </div>
 
   </div>
+  <div id="blankSpaceBottom"></div>
 </div>
 </template>
 
@@ -88,10 +99,11 @@ const dict_grades = {
 };
 
 import InputText from 'primevue/inputtext';
+import Dropdown from 'primevue/dropdown';
 import { ref } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
-const matricule = ref('V99999');
+const matricule = ref('Vxxxxx');
 const sqlStore = useSqlStore();
 const agentInfo = ref(null);
 const step1 = ref(false);
@@ -106,11 +118,15 @@ const nomAgent = ref('');
 const buttonLabel = ref();
 const responseError = ref(false);
 const errorMessage = ref('');
+const lastNotifsArray = ref([]);
+const selectedInter = ref(null);
 
 const rppsNumber = ref('10xxxxxxxxxx');
 const doctorInfo = ref(null);
 const nomMedecin = ref('');
 const prenomMedecin = ref('');
+
+const niveauASUP = ref('❌');
 
 let validation = new Audio(validationSound);
 let error = new Audio(errorSound);
@@ -174,11 +190,31 @@ const updateDataAgent = (result) => {
   agentGrade.value = result.grade;
   prenomAgent.value = result.prenomAgent;
   nomAgent.value = result.nomAgent;
+  if (result.asup2 == '1'){
+    niveauASUP.value = 'ASUP Niv. 2️'
+  } else if (result.asup1 == '1'){
+    niveauASUP.value = 'ASUP Niv. 1️'
+  } else {
+    niveauASUP.value = '❌ Non formé(e)'
+  }
 }
 
 const updateDoctorData = (result) => {
   nomMedecin.value = result.nomExercice.toUpperCase();
-  prenomMedecin.value = result.prenomExercice.toUpperCase();
+  prenomMedecin.value = result.prenomExercice;
+}
+
+const loadLastInters = async () => {
+  try {
+    await sqlStore.getLastNotifs();
+    let lastInters = sqlStore.lastNotifs;
+    lastNotifsArray.value = lastInters.map(inter => ({
+        label: `${inter.numeroInter} - ${inter.notificationTitre.slice(0,25)}${inter.notificationTitre.length > 25 ? '...' : ''}`,
+        code: inter.numeroInter
+    }));
+  } catch (error) {
+    console.error('Erreur lors de la récupération des dernières interventions:', error);
+  }
 }
 
 const getDoctorInfo = async () => {
@@ -209,6 +245,7 @@ const getDoctorInfo = async () => {
       }
       updateDoctorData(result);
       clearInterval(intervalId2);
+      loadLastInters();
       buttonLabel.value = 'Rechercher';
   } catch (error) {
       console.error('Erreur lors de la récupération des informations de l\'agent:', error);
@@ -265,6 +302,15 @@ const getDoctorInfo = async () => {
 .arrow-button:hover{
   background-color: #6196ff;
 }	
+#blankSpaceBottom{
+  margin-bottom: 5rem;
+  display: block;
+  height: 2rem;
+}
+#nivASUP{
+  font-weight: normal;
+  margin-left: 1rem;
+}
 #agentInfo, .errorMessage {
   display: flex;
   align-items: center;
