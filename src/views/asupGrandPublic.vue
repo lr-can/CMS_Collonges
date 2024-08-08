@@ -1,6 +1,6 @@
 <template>
   <div class="subtitle">Déclaration ASUP</div>
-  <div>
+  <div v-if="!step1">
       Bienvenue sur l'espace de déclaration des actes de soins d'urgence sur préscription.
   </div>
   <div id="asupForm">
@@ -54,9 +54,30 @@
       <div class="subsubtitle">
         Intervention
       </div>
+      <p>Sélectionnez ou écrivez le numéro de l'intervention</p>
       <div class="input">
-        <Dropdown v-model="selectedInter" editable :options="lastNotifsArray" optionLabel="label" placeholder="Sélectionnez une intervention" class="w-full md:w-14rem" />
+        <Dropdown v-model="selectedInter" editable :options="lastNotifsArray" optionLabel="label" placeholder="Sélection ou entrée" class="w-full md:w-14rem" :disabled="!showButton3" />
+        <div v-if="showButton3">
+          <button @click="numInterValidation" class="arrow-button" :disabled="!showButton3">
+            Valider
+          </button>
+        </div>
       </div>
+    </div>
+
+    <div id="step4" v-if="step3" class="step">
+      <div class="subsubtitle">
+        Acte de soin prescrit
+      </div>
+      <p>Sélectionnez le soin réalisé</p>
+      <div class="input">
+        <Dropdown v-model="selectedSoin" :options="groupedSoins" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" placeholder="Sélection de l'acte" class="w-full md:w-14rem" :option-disabled="processAuthorization()" :disabled="!showButton4" />
+        <div v-if="showButton4">
+          <button @click="soinValidation" class="arrow-button" :disabled="!showButton4">
+            Valider
+          </button>
+        </div>
+      </div>  
     </div>
 
   </div>
@@ -81,6 +102,7 @@ import Infirmiere from '../assets/grades/Infirmière.png';
 import loader from '../assets/loading.gif';
 import validationSound from '../assets/sounds/Validation.mp3';
 import errorSound from '../assets/sounds/Warning.mp3';
+import loadingSound from '../assets/sounds/Loading.mp3';
 
 const dict_grades = {
 'Sap 2CL': Sap2CL,
@@ -108,9 +130,13 @@ const sqlStore = useSqlStore();
 const agentInfo = ref(null);
 const step1 = ref(false);
 const step2 = ref(false);
+const step3 = ref(false);
+const step4 = ref(false);
 
 const showButton = ref(true);
 const showButton2 = ref(true);
+const showButton3 = ref(true);
+const showButton4 = ref(true);
 
 const agentGrade = ref(null);
 const prenomAgent = ref('');
@@ -125,11 +151,37 @@ const rppsNumber = ref('10xxxxxxxxxx');
 const doctorInfo = ref(null);
 const nomMedecin = ref('');
 const prenomMedecin = ref('');
+const numIntervention = ref('');
 
 const niveauASUP = ref('❌');
+const selectedSoin = ref(null);
+
+const groupedSoins = ref([
+  {
+    label: 'ASUP Niv. 1',
+    code: 'asup1',
+    items: [
+      { label: 'ECG 12 dérivations', code: 'ecg'},
+      { label: 'Crise d\'asthme', code : 'asthme'},
+      { label: 'Overdose d\'opiacés', code : 'naloxone'},
+      {label: 'Choc anaphylactique', code : 'allergie'}
+    ]
+  },
+  {
+    label: 'ASUP Niv. 2',
+    code: 'asup2',
+    items: [
+      {label: 'Prise de l\'hémoglobinémie', code: 'hemocue'},
+      {label: 'Prise en charge de la douleur', code: 'methoxyflurane'},
+      {label: 'Douleurs aigües par voie orale', code: 'paracetamol'},
+      {label: 'Hypoglycémie', code: 'glucagon'}
+    ]
+  }
+])
 
 let validation = new Audio(validationSound);
 let error = new Audio(errorSound);
+let loading = new Audio(loadingSound);
 
 
 buttonLabel.value = 'Rechercher';
@@ -148,6 +200,7 @@ const getAgentInfo = async () => {
   errorMessage.value = '';
   responseError.value = false;
   try {
+      loading.play();
       await sqlStore.getAsupAgentInfo(matricule.value);
       const result = sqlStore.infoAsupAgent;
       console.log('Résultat de getAsupAgentInfo:', result);
@@ -156,7 +209,7 @@ const getAgentInfo = async () => {
       console.log('Valeur de agentInfo après mise à jour:', agentInfo.value);
 
       showButton.value = false;
-      
+      loading.pause();
       if (agentInfo.value === undefined) {
           console.error('Erreur: agentInfo.value est undefined');
       } else if (result.message){
@@ -171,6 +224,7 @@ const getAgentInfo = async () => {
       }
       updateDataAgent(result);
       clearInterval(intervalId);
+      loadLastInters();
       buttonLabel.value = 'Rechercher';
   } catch (error) {
       console.error('Erreur lors de la récupération des informations de l\'agent:', error);
@@ -209,7 +263,7 @@ const loadLastInters = async () => {
     await sqlStore.getLastNotifs();
     let lastInters = sqlStore.lastNotifs;
     lastNotifsArray.value = lastInters.map(inter => ({
-        label: `${inter.numeroInter} - ${inter.notificationTitre.slice(0,25)}${inter.notificationTitre.length > 25 ? '...' : ''}`,
+        label: `N°${inter.numeroInter} - ${inter.notificationTitre.slice(0,25)}${inter.notificationTitre.length > 25 ? '...' : ''}`,
         code: inter.numeroInter
     }));
   } catch (error) {
@@ -222,6 +276,7 @@ const getDoctorInfo = async () => {
   errorMessage.value = '';
   responseError.value = false;
   try {
+      loading.play();
       await sqlStore.getDoctorInfo(rppsNumber.value);
       const result = sqlStore.doctorInfo;
       console.log('Résultat de getAsupDoctorInfo:', result);
@@ -231,6 +286,7 @@ const getDoctorInfo = async () => {
 
       showButton2.value = false;
       
+      loading.pause();
       if (doctorInfo.value === undefined) {
           console.error('Erreur: docteurInfo.value est undefined');
       } else if (result.message){
@@ -245,11 +301,71 @@ const getDoctorInfo = async () => {
       }
       updateDoctorData(result);
       clearInterval(intervalId2);
-      loadLastInters();
       buttonLabel.value = 'Rechercher';
   } catch (error) {
       console.error('Erreur lors de la récupération des informations de l\'agent:', error);
   }
+}
+const numInterValidation = () => {
+  loading.play();
+  showButton3.value = false;
+  console.log('Intervention sélectionnée:', selectedInter.value);
+  step3.value = true;
+  let numInter = '';
+  if (!selectedInter.value.code){
+    numInter = selectedInter.value;
+    selectedInter.value = 'N°' + numInter + ' - ' + 'Entrée manuelle';
+  } else {
+    numInter = selectedInter.value.code;
+  }
+  numIntervention.value = numInter;
+}
+const processAuthorization = () => {
+  let data = agentInfo.value;
+  return (option) => {
+    // Vérifier si l'option est un groupe
+    if (option.items) {
+      if (option.code === 'asup1' && data.asup1 == '1') {
+        return false; // Le groupe n'est pas désactivé
+      }
+      if (option.code === 'asup2' && data.asup2 == '1') {
+        return false; // Le groupe n'est pas désactivé
+      }
+    } else {
+      // Vérifier les éléments individuels
+      if (option.code === 'ecg' && data.asup1 == '1') {
+        return false;
+      }
+      if (option.code === 'asthme' && data.asup1 == '1') {
+        return false;
+      }
+      if (option.code === 'naloxone' && data.asup1 == '1') {
+        return false;
+      }
+      if (option.code === 'allergie' && data.asup1 == '1') {
+        return false;
+      }
+      if (option.code === 'hemocue' && data.asup2 == '1') {
+        return false;
+      }
+      if (option.code === 'methoxyflurane' && data.asup2 == '1') {
+        return false;
+      }
+      if (option.code === 'paracetamol' && data.asup2 == '1') {
+        return false;
+      }
+      if (option.code === 'glucagon' && data.asup2 == '1') {
+        return false;
+      }
+    }
+    return true; 
+  };
+};
+const soinValidation = () => {
+  loading.play();
+  showButton4.value = false;
+  console.log('Soin sélectionné:', selectedSoin.value);
+  step4.value = true;
 }
 </script>
 
