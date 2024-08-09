@@ -94,8 +94,17 @@
       <div v-else>
         <p>Sélection des médicaments utilisés.</p>
         <div class="input">
-          <MultiSelect v-model="selectedMedicaments" :options="medicamentsGroupes" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" display="chip" placeholder="Sélection des médicaments" class="w-full md:w-80" :disabled="step5">
-        </MultiSelect>
+          <MultiSelect v-model="selectedMedicaments" :options="medicamentsGroupes" optionLabel="code" optionGroupLabel="label" optionGroupChildren="items" display="chip" placeholder="Sélection des médicaments" class="w-full md:w-80" :disabled="step5">
+            <template #option="slotProps">
+                <div class="flex items-center">
+                    <img alt="Lot" src="@/assets/icons/LOT.jpg" style="width: auto; height: 22px" />
+                    <div>{{ slotProps.option.label.lot }}</div>
+                    <div> - </div>
+                    <img alt="Peremption" src="@/assets/icons/Expiry.jpg" style="width: auto; height: 20px" />
+                    <div>{{ slotProps.option.label.peremption }}</div>
+                </div>
+            </template>
+          </MultiSelect>
         </div>
         <p v-if="selectedMedicaments.length === 0">Vous n'avez pas encore sélectionné de médicaments.</p>
         <p v-if="selectedMedicaments.length > 0">Vous avez sélectionné {{ selectedMedicaments.length }} médicament{{ selectedMedicaments.length > 1 ? 's' : '' }}.</p>
@@ -567,5 +576,13 @@ p{
   margin-top: 1rem;
   text-align: left;
   margin-bottom: 0;
+}
+.flex{
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+.flex img{
+  margin-right: 5px;
 }
 </style>

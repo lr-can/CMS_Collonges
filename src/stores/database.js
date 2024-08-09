@@ -375,11 +375,11 @@ async function getAsupAvailableMedicaments(acte, vsav) {
     // Transformation des données
     const groupedData = data.reduce((acc, item) => {
       const { nomMedicament, idMedicament, numLot, datePeremption, idStockAsup } = item;
-      const formattedDate = new Date(datePeremption).toLocaleDateString('fr-FR');
+      const formattedDate = new Date(datePeremption).toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' });
 
       const group = acc.find(g => g.label === nomMedicament && g.code === idMedicament);
       const newItem = {
-        label: `${numLot} - ${formattedDate}`,
+        label: {lot: `${numLot}`, peremption: `${formattedDate}`},
         code: idStockAsup
       };
 
