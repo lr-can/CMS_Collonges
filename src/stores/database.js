@@ -379,7 +379,7 @@ async function getAsupAvailableMedicaments(acte, vsav) {
 
       const group = acc.find(g => g.label === nomMedicament && g.code === idMedicament);
       const newItem = {
-        label: {lot: `${numLot}`, peremption: `${formattedDate}`},
+        label: {lot: `${numLot}`, peremption: `${formattedDate}`, name: `${nomMedicament}`},
         code: idStockAsup
       };
 

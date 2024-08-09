@@ -8,7 +8,7 @@
     <div v-if="errorMessage" class="errorMessage">
         <span>{{ errorMessage }}</span>
       </div>
-    <div id="step1" class="step">
+    <div id="step1" class="step" v-if="!step6">
       <div class="subsubtitle">
       Agent ASUP
     </div>
@@ -120,6 +120,44 @@
       <div class="subsubtitle">
         Renseignements complémentaires
       </div>
+      <div class="input">
+        <InputSwitch v-model="hasSecondEffect" onLabel="Oui" offLabel="Non" class="w-9rem" aria-label="Effet secondaire" />
+        <span>Effets secondaires </span>
+      </div>
+      <div v-if="hasSecondEffect" id="orangeAlert" @load="scrollToBottom()">
+        ✉ Déclaration auprès de la <a href="mailto:pharmacieASUP@sdmis.fr">Pharmacie ASUP</a> du SDMIS à faire. <br> Intervention N°{{ numIntervention }} à préciser.
+      </div>
+      <p v-if="hasSecondEffect">Sélectionnez les effets secondaires</p>
+      <div class="input" v-if="hasSecondEffect">
+        <MultiSelect v-model="effetsSecondaires" display="chip" filter :options="effetsSecondairesList" placeholder="Selectionnez les effets secondaires" />
+      </div>
+      <p>Commentaire</p>
+      <div class="input">
+        <Textarea v-model="commentaire" autoResize rows="5" cols="30" fluid />
+      </div>
+      <div>
+        <button @click="getRecap" class="arrow-button">
+          Valider
+        </button>
+      </div>
+    </div>
+
+    <div class="step" id="step6" v-if="step6">
+      <div class="subsubtitle">
+        Récapitulatif
+      </div>
+      <div>
+        <p>Agent : {{ nomAgent }} {{ prenomAgent }}</p>
+        <p>Médecin : Dr {{ nomMedecin }} {{ prenomMedecin }}</p>
+        <p>Intervention : {{ numIntervention }}</p>
+        <p>Acte de soin : {{ selectedSoin.label }}</p>
+        <p>Médicaments : {{ exctractNameandCount() }}</p>
+        <p>Effets secondaires : {{ effetsSecondaires.join(', ') }}</p>
+        <p>Commentaire : {{ commentaire }}</p>
+      </div>
+      <div class="validationBtn" @click="console.log('Déclaration envoyée')">
+        Envoyer la déclaration
+      </div>
     </div>
 
   </div>
@@ -166,6 +204,8 @@ import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import MultiSelect from 'primevue/multiselect';
 import Listbox from 'primevue/listbox';
+import InputSwitch from 'primevue/inputswitch';
+import Textarea from 'primevue/textarea';
 
 
 import { ref } from 'vue';
@@ -180,6 +220,7 @@ const step2 = ref(false);
 const step3 = ref(false);
 const step4 = ref(false);
 const step5 = ref(false);
+const step6 = ref(false);
 
 const showButton = ref(true);
 const showButton2 = ref(true);
@@ -208,6 +249,44 @@ const selectedMedicaments = ref([]);
 const medicamentsGroupes = ref([]);
 const medicamentsList = ref([]);
 const vsavAsup = ref(null);
+const hasSecondEffect = ref(false);
+const effetsSecondaires = ref([]);
+const commentaire = ref('');
+
+const effetsSecondairesList = ref([
+  'Maux de tête',
+  'Nausées',
+  'Vomissements',
+  'Douleurs abdominales',
+  'Éruptions cutanées',
+  'Effets sur le système nerveux central',
+  'Toux',
+  'Étourdissements',
+  'Palpitations',
+  'Tremblements sévères',
+  'Transpiration excessive',
+  'Nausées graves',
+  'Vomissements sévères',
+  'Agitation sévère',
+  'Augmentation significative de la pression artérielle',
+  'Douleurs musculaires sévères',
+  'Dysfonctionnement hépatique',
+  'Toxicité hépatique',
+  'Insuffisance hépatique',
+  'Hypotension sévère',
+  'Somnolence excessive',
+  'Étourdissements graves',
+  'Réactions allergiques graves',
+  'Hyperglycémie passagère',
+  'Tachycardie',
+  'Crampes musculaires sévères',
+  'Nervosité extrême',
+  'Bronchospasme',
+  'Pharyngite sévère',
+  'Sécheresse buccale extrême',
+  'Autre'
+]);
+
 
 const groupedSoins = ref([
   {
@@ -442,7 +521,23 @@ const soinValidation = async () => {
   step4.value = true;
   autoScrolltoBottom();
 }
-
+const exctractNameandCount = () => {
+  let medicaments = selectedMedicaments.value;
+  let medicamentsCount = {};
+  let medicamentsList = [];
+  medicaments.forEach(medicament => {
+    let name = medicament.label.name;
+    if (medicamentsCount[name]) {
+      medicamentsCount[name]++;
+    } else {
+      medicamentsCount[name] = 1;
+    }
+  });
+  for (let name in medicamentsCount) {
+    medicamentsList.push(name + ' x' + medicamentsCount[name]);
+  }
+  return medicamentsList.join(', ');
+}
 const submitDeclaration = () => {
   loading.play();
   medicamentsList.value = selectedMedicaments.value.map(medicament => medicament.code);
@@ -450,6 +545,18 @@ const submitDeclaration = () => {
   step5.value = true;
   autoScrolltoBottom();
 }
+const getRecap = () => {
+  loading.play();
+  step6.value = true;
+  autoScrolltoBottom();
+  step5.value = false;
+  step4.value = false;
+  step3.value = false;
+  step2.value = false;
+  step1.value = false;
+}
+
+
 </script>
 
 <style scoped>
@@ -504,25 +611,38 @@ const submitDeclaration = () => {
 }	
 @keyframes buttonAnimation {
   0% {
-    background-image: radial-gradient(ellipse at left, #0078f3, #1f8d49);
-    background-size: 150% 150%;
-    background-position: 0 0;
+    background-color: #f4f6ff ;
+  }
+  25% {
+    background-color: #1f8d49;
   }
   50% {
-    background-image: radial-gradient(ellipse at right, #0078f3, #d64d00);
-    background-size: 180% 180%;
+    background-color: #d64d00;
+  }
+  75% {
+    background-color: #f60700;
   }
   100% {
-    background-image: radial-gradient(ellipse at center, #0078f3, #f60700);
-    background-position: 100% 100%;
-    background-size: 200% 200%;
-  }
+    background-color: #0078f3;
+}
 }
 
 #blankSpaceBottom{
   margin-bottom: 5rem;
   display: block;
   height: 2rem;
+}
+#orangeAlert{
+  padding: 1rem;
+  border-radius: 5px;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  font-weight: lighter;
+}
+#orangeAlert a{
+  color: #d64d00;
+  text-decoration: underline;
+  font-weight: bold;
 }
 #nivASUP{
   font-weight: normal;
@@ -543,6 +663,11 @@ const submitDeclaration = () => {
   margin-top: 0;
   margin-bottom: 0; 
 }
+.input span{
+  padding-top: 1rem;
+  flex: 0.8;
+  text-align: left;
+}
 
 #inputText{
   flex: 0.2;
@@ -551,6 +676,11 @@ const submitDeclaration = () => {
 #inputTextDoc{
   flex: 0.5;
   width: 50%;
+}
+.w-9rem{
+  width: 2.5rem;
+  max-width: 2.5rem;
+  vertical-align: middle;
 }
 .p-inputtext{
   width: 15vh;
@@ -584,5 +714,8 @@ p{
 }
 .flex img{
   margin-right: 5px;
+}
+.p-inputtextarea{
+  width: 100%;
 }
 </style>
