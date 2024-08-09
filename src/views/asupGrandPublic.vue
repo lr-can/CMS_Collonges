@@ -57,11 +57,15 @@
       <p>Sélectionnez ou écrivez le numéro de l'intervention</p>
       <div class="input">
         <Dropdown v-model="selectedInter" editable :options="lastNotifsArray" optionLabel="label" placeholder="Sélection ou entrée" class="w-full md:w-14rem" :disabled="!showButton3" />
-        <div v-if="showButton3">
+      </div>
+      <p>Indiquez le VSAV concerné</p>
+      <div class="input">
+        <Listbox v-model="selectedVSAV" :options="vsavList" optionLabel="label" placeholder="Sélection du VSAV" class="w-full md:w-14rem" :disabled="!showButton3" />
+      </div>
+      <div v-if="showButton3">
           <button @click="numInterValidation" class="arrow-button" :disabled="!showButton3">
             Valider
           </button>
-        </div>
       </div>
     </div>
 
@@ -90,7 +94,7 @@
       <div v-else>
         <p>Sélection des médicaments utilisés.</p>
         <div class="input">
-          <MultiSelect v-model="selectedMedicaments" :options="medicamentsGroupes" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" display="chip" placeholder="Sélection des médicaments" class="w-full md:w-80">
+          <MultiSelect v-model="selectedMedicaments" :options="medicamentsGroupes" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" display="chip" placeholder="Sélection des médicaments" class="w-full md:w-80" :disabled="step5">
         </MultiSelect>
         </div>
         <p v-if="selectedMedicaments.length === 0">Vous n'avez pas encore sélectionné de médicaments.</p>
@@ -152,6 +156,9 @@ const dict_grades = {
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import MultiSelect from 'primevue/multiselect';
+import Listbox from 'primevue/listbox';
+
+
 import { ref } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
@@ -178,6 +185,7 @@ const responseError = ref(false);
 const errorMessage = ref('');
 const lastNotifsArray = ref([]);
 const selectedInter = ref(null);
+const selectedVSAV = ref(null);
 
 const rppsNumber = ref('10xxxxxxxxxx');
 const doctorInfo = ref(null);
@@ -190,6 +198,7 @@ const selectedSoin = ref(null);
 const selectedMedicaments = ref([]);
 const medicamentsGroupes = ref([]);
 const medicamentsList = ref([]);
+const vsavAsup = ref(null);
 
 const groupedSoins = ref([
   {
@@ -212,6 +221,11 @@ const groupedSoins = ref([
       {label: 'Hypoglycémie', code: 'glucagon'}
     ]
   }
+]);
+
+const vsavList = ref([
+  {label: 'VSAV 1', code: '1'},
+  {label: 'VSAV 2', code: '2'},
 ])
 
 let validation = new Audio(validationSound);
@@ -361,6 +375,7 @@ const numInterValidation = () => {
     numInter = selectedInter.value.code;
   }
   numIntervention.value = numInter;
+  vsavAsup.value = selectedVSAV.value.code;
   autoScrolltoBottom();
 }
 const processAuthorization = () => {
@@ -412,7 +427,7 @@ const soinValidation = async () => {
     noDeclaration.value = true;
     step5.value = true;
   } else {
-      await sqlStore.getAsupAvailableMedicaments(selectedSoin.value.code);
+      await sqlStore.getAsupAvailableMedicaments(selectedSoin.value.code, vsavAsup.value);
       medicamentsGroupes.value = sqlStore.asupAvailableMedicaments;
   }
   step4.value = true;
@@ -476,7 +491,25 @@ const submitDeclaration = () => {
 }
 .arrow-button:hover{
   background-color: #6196ff;
+  animation: buttonAnimation 5s ease infinite;
 }	
+@keyframes buttonAnimation {
+  0% {
+    background-image: radial-gradient(ellipse at left, #0078f3, #1f8d49);
+    background-size: 150% 150%;
+    background-position: 0 0;
+  }
+  50% {
+    background-image: radial-gradient(ellipse at right, #0078f3, #d64d00);
+    background-size: 180% 180%;
+  }
+  100% {
+    background-image: radial-gradient(ellipse at center, #0078f3, #f60700);
+    background-position: 100% 100%;
+    background-size: 200% 200%;
+  }
+}
+
 #blankSpaceBottom{
   margin-bottom: 5rem;
   display: block;
@@ -529,5 +562,10 @@ const submitDeclaration = () => {
 .step{
   border-top: 1px solid #e5e5e5;
   padding-bottom: 1rem;
+}
+p{
+  margin-top: 1rem;
+  text-align: left;
+  margin-bottom: 0;
 }
 </style>

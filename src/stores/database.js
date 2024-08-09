@@ -350,21 +350,25 @@ async function getLastNotifs(){
     const response = await fetch(`https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201`, requestOptions);
     const result = await response.json();
     const reversedData = result.reverse();
-    lastNotifs.value = reversedData;
+    const filteredNotifs = reversedData.filter(item => item.numeroInter);
+    const uniqueNotifs = filteredNotifs.filter((item, index, self) =>
+      index === self.findIndex((t) => t.numeroInter === item.numeroInter)
+    );
+    lastNotifs.value = uniqueNotifs;
     console.log(result);
   } catch (error) {
     console.error(error);
   }
 }
 
-async function getAsupAvailableMedicaments(acte) {
+async function getAsupAvailableMedicaments(acte, vsav) {
   const requestOptions = {
     method: "GET",
     redirect: "follow"
   };
 
   try {
-    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicamentsForCare/${acte}`, requestOptions);
+    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicamentsForCare/${acte}/${vsav}`, requestOptions);
     const result = await response.json();
     const data = result.data;
 
