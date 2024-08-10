@@ -21,6 +21,7 @@ export const useSqlStore = defineStore('database', () => {
   const doctorInfo = ref({});
   const lastNotifs = ref([]);
   const asupAvailableMedicaments = ref([]);
+  const responseAsupDeclaration = ref(null);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -404,6 +405,28 @@ async function getAsupAvailableMedicaments(acte, vsav) {
   }
 }
 
+async function sendAsupDeclaration(data) {
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const raw = JSON.stringify(data);
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/newUtilisationAsup", requestOptions);
+    const result = await response.json();
+    responseAsupDeclaration.value = result.meta;
+    console.log(result);
+  } catch (error) {
+    responseAsupDeclaration.value = error;
+    console.error(error);
+  }
+}
+
 
 
   return {
@@ -445,6 +468,8 @@ async function getAsupAvailableMedicaments(acte, vsav) {
     getLastNotifs,
     lastNotifs,
     getAsupAvailableMedicaments,
-    asupAvailableMedicaments
+    asupAvailableMedicaments,
+    sendAsupDeclaration,
+    responseAsupDeclaration
   };
 });

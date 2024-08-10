@@ -133,8 +133,9 @@
       </div>
       <p>Commentaire</p>
       <div class="input">
-        <Textarea v-model="commentaire" autoResize rows="5" cols="30" fluid />
+        <Textarea v-model="commentaire" autoResize rows="3" cols="30" fluid :invalid="commentaire.length > 250" />
       </div>
+      <p v-if="commentaire.length > 250" class="errorMessage">Le commentaire ne doit pas dépasser 250 caractères.</p>
       <div>
         <button @click="getRecap" class="arrow-button">
           Valider
@@ -146,6 +147,9 @@
       <div class="subsubtitle">
         Récapitulatif
       </div>
+      <div v-if="declarationResponse" :class="declarationResponse.message === 'Insertion réussie' ? 'validationMsg' : 'errorMessage'">
+        {{ declarationResponse.message }}
+      </div>
       <div>
         <p>Agent : {{ nomAgent }} {{ prenomAgent }}</p>
         <p>Médecin : Dr {{ nomMedecin }} {{ prenomMedecin }}</p>
@@ -154,12 +158,18 @@
         <p>Médicaments : {{ exctractNameandCount() }}</p>
         <p>Effets secondaires : {{ effetsSecondaires.join(', ') }}</p>
         <p>Commentaire : {{ commentaire }}</p>
-      </div>
-      <div class="validationBtn" @click="console.log('Déclaration envoyée')">
-        Envoyer la déclaration
+            </div>
+            <div class="validationBtn" @click="sendDeclaration" :class="isLoading ? 'loadingBtn' : ''">
+        <span v-if="isLoading"><img src="@/assets/loading.gif" alt="Chargement en cours..." width="30px" height="auto"></span><span v-else> Soumettre la déclaration</span>
       </div>
     </div>
 
+    <div v-if="validationStep">
+      <div>
+        <img src="@/assets/finished.gif" alt="" width="300px" height="auto">
+      </div>
+      <div class="lastMessage">La déclaration est terminée. <br> Vous pouvez à présent fermer la page.</div>
+    </div>
   </div>
   <div id="blankSpaceBottom"></div>
 </div>
@@ -183,6 +193,7 @@ import loader from '../assets/loading.gif';
 import validationSound from '../assets/sounds/Validation.mp3';
 import errorSound from '../assets/sounds/Warning.mp3';
 import loadingSound from '../assets/sounds/Loading.mp3';
+import generatingSound from '../assets/sounds/Generating.mp3';
 
 const dict_grades = {
 'Sap 2CL': Sap2CL,
@@ -221,11 +232,13 @@ const step3 = ref(false);
 const step4 = ref(false);
 const step5 = ref(false);
 const step6 = ref(false);
+const validationStep = ref(false);
 
 const showButton = ref(true);
 const showButton2 = ref(true);
 const showButton3 = ref(true);
 const showButton4 = ref(true);
+const isLoading = ref(false);
 
 const agentGrade = ref(null);
 const prenomAgent = ref('');
@@ -236,6 +249,7 @@ const errorMessage = ref('');
 const lastNotifsArray = ref([]);
 const selectedInter = ref(null);
 const selectedVSAV = ref(null);
+const declarationResponse = ref(null);
 
 const rppsNumber = ref('10xxxxxxxxxx');
 const doctorInfo = ref(null);
@@ -317,7 +331,7 @@ const vsavList = ref([
 ])
 
 let validation = new Audio(validationSound);
-let error = new Audio(errorSound);
+let errorAudio = new Audio(errorSound);
 let loading = new Audio(loadingSound);
 
 
@@ -360,7 +374,7 @@ const getAgentInfo = async () => {
           buttonLabel.value = 'Rechercher';
           showButton.value = true;
           errorMessage.value = sqlStore.infoAsupAgent.message;
-          error.play();
+          errorAudio.play();
       } else {
           step1.value = true;
           validation.play();
@@ -437,7 +451,7 @@ const getDoctorInfo = async () => {
           buttonLabel.value = 'Rechercher';
           showButton2.value = true;
           errorMessage.value = sqlStore.doctorInfo.message.replace("Error: Unable to parse range: RPPS!A#N/A:C#N/A", "Impossible de trouver le médecin correspondant au RPPS : " + rppsNumber.value);
-          error.play();
+          errorAudio.play();
       } else {
           step2.value = true;
           validation.play();
@@ -555,7 +569,63 @@ const getRecap = () => {
   step2.value = false;
   step1.value = false;
 }
+const generating = new Audio(generatingSound);
 
+const sendDeclaration = async () => {
+  loading.play();
+  isLoading.value = true;
+  let data = {
+    matricule: matricule.value,
+    medecinPrescripteur: rppsNumber.value,
+    grade: agentGrade.value,
+    numIntervention: numIntervention.value,
+    acteSoin: selectedSoin.value.code,
+    idMedicamentsList: medicamentsList.value.join(','),
+    effetsSecondaires: effetsSecondaires.value.join(','),
+    commentaire: commentaire.value
+  };
+  console.log('Données de la déclaration:', data);
+  try {
+    loading.pause();
+    generating.play();
+    await sqlStore.sendAsupDeclaration(data);
+    declarationResponse.value = sqlStore.responseAsupDeclaration;
+    generating.pause();
+    isLoading.value = false;
+    validation.play();
+    await new Promise(r => setTimeout(r, 2000));
+    step6.value = false;
+    step1.value = false;
+    step2.value = false;
+    step3.value = false;
+    step4.value = false;
+    step5.value = false;
+    if (sqlStore.responseAsupDeclaration.meta === 'Insertion réussie') {
+      validationStep.value = true;
+    } else {
+      throw new Error(sqlStore.responseAsupDeclaration.message);
+    }
+    autoScrolltoBottom();
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de la déclaration:', error);
+    declarationResponse.value = error;
+    errorAudio.play();
+    await new Promise(r => setTimeout(r, 4000));
+    step6.value = false;
+    step1.value = true;
+    step2.value = false;
+    step3.value = false;
+    step4.value = false;
+    step5.value = false;
+    isLoading.value = false;
+    autoScrolltoBottom();
+    showButton.value = true;
+    showButton2.value = true;
+    showButton3.value = true;
+    showButton4.value = true;
+    validationStep.value = false;
+  }
+}
 
 </script>
 
@@ -609,9 +679,14 @@ const getRecap = () => {
   background-color: #6196ff;
   animation: buttonAnimation 5s ease infinite;
 }	
+.lastMessage{
+  text-align: center;
+  font-size: 1.5rem;
+  margin-top: 1rem;
+}
 @keyframes buttonAnimation {
   0% {
-    background-color: #f4f6ff ;
+    background-color: #A558A0 ;
   }
   25% {
     background-color: #1f8d49;
@@ -644,6 +719,20 @@ const getRecap = () => {
   text-decoration: underline;
   font-weight: bold;
 }
+.validationMsg{
+  background-color: #dffee6;
+  color: #1f8d49;
+  font-size: 0.8rem;
+  padding: 1rem;
+  border-radius: 5px;
+}
+.errorMessage{
+  background-color: #fff4f4;
+  color: #f60700;
+  font-size: 0.8rem;
+  padding: 1rem;
+  border-radius: 5px;
+}
 #nivASUP{
   font-weight: normal;
   margin-left: 1rem;
@@ -659,7 +748,7 @@ const getRecap = () => {
 }
 .errorMessage {
   color: red;
-  font-size: 0.5rem;
+  font-size: 0.8rem;
   margin-top: 0;
   margin-bottom: 0; 
 }
@@ -717,5 +806,9 @@ p{
 }
 .p-inputtextarea{
   width: 100%;
+}
+.loadingBtn{
+  background-color: white;
+  border: 1px solid #0078f3;
 }
 </style>
