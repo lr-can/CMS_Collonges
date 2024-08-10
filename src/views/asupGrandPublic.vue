@@ -1,6 +1,6 @@
 <template>
   <div class="subtitle">Déclaration ASUP</div>
-  <div v-if="!step1">
+  <div v-if="!step1 && !validationStep">
       Bienvenue sur l'espace de déclaration des actes de soins d'urgence sur préscription.
   </div>
   <div id="asupForm">
@@ -8,7 +8,7 @@
     <div v-if="errorMessage" class="errorMessage">
         <span>{{ errorMessage }}</span>
       </div>
-    <div id="step1" class="step" v-if="!step6">
+    <div id="step1" class="step" v-if="!step6 && !validationStep">
       <div class="subsubtitle">
       Agent ASUP
     </div>
@@ -147,9 +147,6 @@
       <div class="subsubtitle">
         Récapitulatif
       </div>
-      <div v-if="declarationResponse" :class="declarationResponse.message === 'Insertion réussie' ? 'validationMsg' : 'errorMessage'">
-        {{ declarationResponse.message }}
-      </div>
       <div>
         <p>Agent : {{ nomAgent }} {{ prenomAgent }}</p>
         <p>Médecin : Dr {{ nomMedecin }} {{ prenomMedecin }}</p>
@@ -160,9 +157,13 @@
         <p>Commentaire : {{ commentaire }}</p>
             </div>
             <div class="validationBtn" @click="sendDeclaration" :class="isLoading ? 'loadingBtn' : ''">
-        <span v-if="isLoading"><img src="@/assets/loading.gif" alt="Chargement en cours..." width="30px" height="auto"></span><span v-else> Soumettre la déclaration</span>
+        <span v-if="isLoading"><img src="@/assets/loading.gif" alt="Chargement en cours..." width="50px" height="auto"></span><span v-else> Soumettre la déclaration</span>
       </div>
     </div>
+
+    <div v-if="declarationResponse" :class="declarationResponse.message === 'Insertion réussie' ? 'validationMsg' : 'errorMessage'">
+        {{ declarationResponse.message }}
+      </div>
 
     <div v-if="validationStep">
       <div>
@@ -594,25 +595,25 @@ const sendDeclaration = async () => {
     isLoading.value = false;
     validation.play();
     await new Promise(r => setTimeout(r, 2000));
+    if (sqlStore.responseAsupDeclaration.message == "Insertion réussie") {
+      validationStep.value = true;
+    } else {
+      throw new Error(sqlStore.responseAsupDeclaration.message);
+    }
+    autoScrolltoBottom();
     step6.value = false;
     step1.value = false;
     step2.value = false;
     step3.value = false;
     step4.value = false;
     step5.value = false;
-    if (sqlStore.responseAsupDeclaration.meta === 'Insertion réussie') {
-      validationStep.value = true;
-    } else {
-      throw new Error(sqlStore.responseAsupDeclaration.message);
-    }
-    autoScrolltoBottom();
   } catch (error) {
     console.error('Erreur lors de l\'envoi de la déclaration:', error);
     declarationResponse.value = error;
     errorAudio.play();
     await new Promise(r => setTimeout(r, 4000));
     step6.value = false;
-    step1.value = true;
+    step1.value = false;
     step2.value = false;
     step3.value = false;
     step4.value = false;
