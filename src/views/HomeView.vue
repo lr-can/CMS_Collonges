@@ -7,7 +7,25 @@
     <notConnected/>
   
   </div>
-  <div v-if="isAuthenticated">
+  <div v-if="isAuthenticated && currentProfile == ''">
+    <div class="subtitle">
+      {{ greeting }} {{ grade }} !
+    </div>
+    <div class="subsubtitle">
+      Choix du profil
+    </div>
+    <div class="card flex justify-center">
+        <Listbox v-model="selectedProfile" :options="profilesList" optionLabel="label" class="w-full md:w-56" :disabled="profilesList.length <= 1" />
+    </div>
+    <div class="validationBtn" @click="profileSelection" v-if="profilesList.length > 0">
+        Valider
+    </div>
+    <div v-else class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
+        <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
+        <div>Accès agents ASUP</div>
+    </div>
+  </div>
+  <div v-if="isAuthenticated && currentProfile !== ''">
     <div class="subtitle">
       {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
     </div>
@@ -21,11 +39,12 @@
   </div>
 </template>
 <script setup>
-import { ref } from "vue";
+import { ref} from "vue";
 import { useAuth0 } from '@auth0/auth0-vue';
 import notConnected from '../components/notConnected.vue';
 import nextExpiration from '../components/nextExpiration.vue';
 import introText from '../components/introText.vue';
+import Listbox from 'primevue/listbox';
 
 import Sap2CL from '../assets/grades/Sap 2CL.png';
 import Sap1CL from '../assets/grades/Sap 1CL.png';
@@ -63,6 +82,15 @@ const grade = ref();
 const greeting = ref("Bonjour,");
 const isloading = ref(false);
 const grade_url = ref("https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logo.png?raw=true");
+const selectedProfile = ref(null);
+const profilesList = ref([]);
+
+if (!localStorage.getItem('currentProfile')) {
+  localStorage.setItem('currentProfile', '');
+}
+
+const currentProfile = ref(localStorage.getItem('currentProfile'));
+
 
 const auth0 = useAuth0();
 
@@ -87,6 +115,29 @@ const image_grade = (current_grade) => {
   return dict_grades[current_grade];
 };
 
+const changeProfile = (profile) => {
+  if ( profile == 'Developpeur' || profile == 'Chef de Caserne') {
+    profilesList.value = [
+      { label: 'Gestion pharmacie', value: 'pharmacie' },
+      { label: 'Gestion ASUP', value: 'asup' },
+    ];
+  } else if ( profile == 'Responsable Pharmacie') {
+    profilesList.value = [
+      { label: 'Gestion pharmacie', value: 'pharmacie' },
+    ];
+    selectedProfile.value = profilesList.value[0];
+  } else if ( profile == 'Correspondant ASUP') {
+    profilesList.value = [
+      { label: 'Gestion ASUP', value: 'asup' },
+    ];
+    selectedProfile.value = profilesList.value[0];
+  }
+}
+
+const profileSelection = () => {
+  localStorage.setItem('currentProfile', selectedProfile.value.value);
+  currentProfile.value = selectedProfile.value;
+}
 async function getAuthentification() {
   await new Promise(r => setTimeout(r, 1000));
   isAuthenticated.value = false;
@@ -98,6 +149,12 @@ async function getAuthentification() {
   grade.value = await utilisateur.profile[1];
   grade_url.value = image_grade(grade.value);
 
+    let profile = await utilisateur.profile[2];
+    console.log(profile);
+
+    changeProfile(profile);
+    
+    console.log(profilesList.value);
 
   const sapeurs = ['Sap 1CL', 'Sap 2CL']
   if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
@@ -106,6 +163,7 @@ async function getAuthentification() {
   console.log(grade.value);
   changeGreeting(grade.value);
   }
+
 }
 
 
@@ -119,7 +177,6 @@ for (let i = 0; i < 20; i++) {
 
   }
 }
-
 
 </script>
 

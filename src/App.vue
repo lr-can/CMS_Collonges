@@ -3,13 +3,16 @@ console.log(`%cFait avec amour 🫶, sueur 💪💦 et larmes 🥹 par le Capora
 
 import { RouterLink, RouterView } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
-import {ref} from 'vue';
+import { ref, watch } from 'vue';
+
 const auth0 = useAuth0();
 const isAuthenticated = ref(auth0.isAuthenticated);
 const appLoading = ref(true);
-async function getAuthentification(){
+
+async function getAuthentification() {
   await new Promise(r => setTimeout(r, 1000));
 }
+
 for (let i = 0; i < 20; i++) {
   console.log('checking authentification');
   if (isAuthenticated.value === null) {
@@ -19,15 +22,32 @@ for (let i = 0; i < 20; i++) {
     isAuthenticated.value = auth0.isAuthenticated;
   }
 }
+
 setTimeout(() => {
   appLoading.value = false;
 }, 2000);
+
+localStorage.setItem('currentProfile', '');
+
+const currentProfile = ref(localStorage.getItem('currentProfile'));
+
+let profileCheck = setInterval(() => {
+  currentProfile.value = localStorage.getItem('currentProfile');
+}, 1000);
+
+watch(currentProfile, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    console.log('Profile changé:', newValue);
+    clearInterval(profileCheck);
+  }
+});
+
 </script>
 
 <template>
     <transition>
       <div v-if="appLoading" class="blank">
-    <img src="@/assets/loadingApp.gif" alt="Loading" width="150px" height="auto">
+    <img src="@/assets/loadingApp.gif" alt="Loading" width="200px" height="auto">
     </div>
   </transition>
   <header>
@@ -48,11 +68,11 @@ setTimeout(() => {
   <div class="wrapper">
       <nav>
         <RouterLink to="/"><img alt="Profile" src="@/assets/icons/home.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/reception" v-if="isAuthenticated"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/disposition" v-if="isAuthenticated"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/search" v-if="isAuthenticated"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/order" v-if="isAuthenticated"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/asupGrandPublic" v-if="!isAuthenticated"><img alt="ASUP" src="@/assets/icons/asup.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/reception" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/disposition" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/search" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/order" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/asupGrandPublic" v-if="!isAuthenticated || currentProfile == ''"><img alt="ASUP" src="@/assets/icons/asup.svg" width="30" height="auto" /></RouterLink>
       </nav>
     </div>
 </template>
