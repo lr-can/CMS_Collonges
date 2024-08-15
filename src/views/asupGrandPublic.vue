@@ -403,7 +403,7 @@ const updateDataAgent = (result) => {
   agentGrade.value = result.grade;
   prenomAgent.value = result.prenomAgent;
   nomAgent.value = result.nomAgent;
-  agentMail.value = result.mail;
+  agentMail.value = result.email;
   if (result.asup2 == '1'){
     niveauASUP.value = 'ASUP Niv. 2️'
   } else if (result.asup1 == '1'){
@@ -591,6 +591,7 @@ const sendDeclaration = async () => {
     agent: `${prenomAgent.value} ${nomAgent.value} (${matricule.value})`,
     agentMail: agentMail.value,
     medecin: `Dr ${prenomMedecin.value} ${nomMedecin.value} (${rppsNumber.value})`,
+    vsav: selectedVSAV.value.label,
     intervention: `${!selectedInter.value.code ? selectedInter.value : selectedInter.value.code}`,
     soin: selectedSoin.value.label,
     medicaments: exctractNameandCount(),
@@ -598,6 +599,7 @@ const sendDeclaration = async () => {
     commentaire: commentaire.value
   };
   console.log('Données de la déclaration:', data);
+  console.log('Données de l\'email:', emailData);
   try {
     loading.pause();
     generating.play();

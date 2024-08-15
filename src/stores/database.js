@@ -440,7 +440,11 @@ async function sendAsupEmail(emailData) {
   try {
     const response = await fetch("https://cms-collonges-api.adaptable.app/sendEmailAsup", requestOptions);
     const result = await response.json();
-    console.log(result);
+    if (response.ok) {
+      console.log(result);
+    } else {
+      throw new Error(result.message);
+    }
   } catch (error) {
     console.error(error);
   }
