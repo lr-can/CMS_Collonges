@@ -116,7 +116,7 @@ const image_grade = (current_grade) => {
 };
 
 const changeProfile = (profile) => {
-  if ( profile == 'Developpeur' || profile == 'Chef de Caserne') {
+  if ( profile == 'Developpeur' || profile == 'Chef de Caserne' || profile == 'Rôles multiples') {
     profilesList.value = [
       { label: 'Gestion pharmacie', value: 'pharmacie' },
       { label: 'Gestion ASUP', value: 'asup' },
