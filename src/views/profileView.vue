@@ -78,13 +78,17 @@ import Responsable from '../assets/roles/Responsable Pharmacie.png';
 import Chef from '../assets/roles/Chef de Caserne.png';
 import Agent from '../assets/roles/Agent.png';
 import Prof from '../assets/roles/Professeur.png';
+import Multiples from '../assets/roles/Rôles multiples.png';
+import ASUPCorrespondant from '../assets/roles/Correspondant ASUP.png';
 
 const dict_roles = {
   'Developpeur': Developpeur,
   'Responsable Pharmacie': Responsable,
   'Chef de Caserne': Chef,
   'Agent': Agent,
-  'Professeur': Prof
+  'Professeur': Prof,
+  'Rôles multiples': Multiples,
+  'Correspondant ASUP': ASUPCorrespondant
 };
 
 const auth0 = useAuth0();
