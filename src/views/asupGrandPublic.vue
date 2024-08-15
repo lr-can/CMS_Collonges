@@ -242,6 +242,7 @@ const showButton4 = ref(true);
 const isLoading = ref(false);
 
 const agentGrade = ref(null);
+const agentMail = ref('');
 const prenomAgent = ref('');
 const nomAgent = ref('');
 const buttonLabel = ref();
@@ -402,6 +403,7 @@ const updateDataAgent = (result) => {
   agentGrade.value = result.grade;
   prenomAgent.value = result.prenomAgent;
   nomAgent.value = result.nomAgent;
+  agentMail.value = result.mail;
   if (result.asup2 == '1'){
     niveauASUP.value = 'ASUP Niv. 2️'
   } else if (result.asup1 == '1'){
@@ -585,12 +587,23 @@ const sendDeclaration = async () => {
     effetsSecondaires: effetsSecondaires.value.join(','),
     commentaire: commentaire.value
   };
+  let emailData = {
+    agent: `${prenomAgent.value} ${nomAgent.value} (${matricule.value})`,
+    agentMail: agentMail.value,
+    medecin: `Dr ${prenomMedecin.value} ${nomMedecin.value} (${rppsNumber.value})`,
+    intervention: `${!selectedInter.value.code ? selectedInter.value : selectedInter.value.code}`,
+    soin: selectedSoin.value.label,
+    medicaments: exctractNameandCount(),
+    effetsSecondaires: effetsSecondaires.value.join(','),
+    commentaire: commentaire.value
+  };
   console.log('Données de la déclaration:', data);
   try {
     loading.pause();
     generating.play();
     await sqlStore.sendAsupDeclaration(data);
     declarationResponse.value = sqlStore.responseAsupDeclaration;
+    await sqlStore.sendAsupEmail(emailData);
     generating.pause();
     isLoading.value = false;
     validation.play();

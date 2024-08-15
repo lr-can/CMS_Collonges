@@ -427,6 +427,24 @@ async function sendAsupDeclaration(data) {
   }
 }
 
+async function sendAsupEmail(emailData) {
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const raw = JSON.stringify(emailData);
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/sendEmailAsup", requestOptions);
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 
   return {
@@ -470,6 +488,7 @@ async function sendAsupDeclaration(data) {
     getAsupAvailableMedicaments,
     asupAvailableMedicaments,
     sendAsupDeclaration,
-    responseAsupDeclaration
+    responseAsupDeclaration,
+    sendAsupEmail
   };
 });
