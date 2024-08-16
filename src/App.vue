@@ -73,6 +73,10 @@ watch(currentProfile, (newValue, oldValue) => {
         <RouterLink to="/search" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
         <RouterLink to="/order" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
         <RouterLink to="/asupGrandPublic" v-if="!isAuthenticated || currentProfile == ''"><img alt="ASUP" src="@/assets/icons/asup.svg" width="30" height="auto" /></RouterLink>
+        <RouterLink to="/replaceAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/replace.svg" width="25" height="auto" /></RouterLink>
+        <RouterLink to="/expiryAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/expiry.svg" width="25" height="auto" /></RouterLink>
+        <RouterLink to="/reportAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/report.svg" width="25" height="auto" /></RouterLink>
+
       </nav>
     </div>
 </template>

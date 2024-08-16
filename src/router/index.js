@@ -8,6 +8,9 @@ import searchView from '../views/searchView.vue'
 import dispositionView from '../views/dispositionView.vue'
 import profileView from '../views/profileView.vue'
 import asupGrandPublic from '@/views/asupGrandPublic.vue'
+import expiryAsup from '@/views/expiryAsup.vue'
+import reportAsup from '@/views/reportAsup.vue'
+import replaceAsup from '@/views/replaceAsup.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +49,21 @@ const router = createRouter({
       path: '/asupGrandPublic',
       name: 'asupGrandPublic',
       component: asupGrandPublic
+    },
+    {
+      path: '/expiryAsup',
+      name: 'expiryAsup',
+      component: expiryAsup
+    },
+    {
+      path: '/reportAsup',
+      name: 'reportAsup',
+      component: reportAsup
+    },
+    {
+      path: '/replaceAsup',
+      name: 'replaceAsup',
+      component: replaceAsup
     }
   ]
 })
