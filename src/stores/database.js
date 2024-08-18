@@ -22,6 +22,8 @@ export const useSqlStore = defineStore('database', () => {
   const lastNotifs = ref([]);
   const asupAvailableMedicaments = ref([]);
   const responseAsupDeclaration = ref(null);
+  const lastDemandePeremptionAsup = ref({});
+  const asupPeremptionData = ref({});
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -450,6 +452,55 @@ async function sendAsupEmail(emailData) {
   }
 }
 
+async function getDemandePeremptionAsup() {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://cms-collonges-api.adaptable.app/getLastDemandePeremptionAsup`, requestOptions);
+    const result = await response.json();
+    lastDemandePeremptionAsup.value = result;
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function addDemandePeremptionAsup(data) {
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const raw = JSON.stringify(data);
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/addDemandePeremptionAsup", requestOptions);
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function getPeremptionCountAsup(){
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://cms-collonges-api.adaptable.app/getAsupReplacementCount`, requestOptions);
+    const result = await response.json();
+    asupPeremptionData.value = result;
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
   return {
     NextPeremptions,
@@ -493,6 +544,11 @@ async function sendAsupEmail(emailData) {
     asupAvailableMedicaments,
     sendAsupDeclaration,
     responseAsupDeclaration,
-    sendAsupEmail
+    sendAsupEmail,
+    getDemandePeremptionAsup,
+    lastDemandePeremptionAsup,
+    addDemandePeremptionAsup,
+    getPeremptionCountAsup,
+    asupPeremptionData
   };
 });
