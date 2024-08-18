@@ -150,13 +150,22 @@ const archive = async () => {
     const data = {
         idAgent: matricule,
         materielsList: listToProcess.value
-    }
-    await sqlStore.archivePharma(data);
-    listToProcess.value = [];
-    deleting.value = false;
-    deletedSound.play();
-    emit('archive');
-}
+    };
+
+    const confirmArchive = async () => {
+        if (confirm(`Confirmer l'archivage de ${listToProcess.value.length} élément${pluriel()} ?`)) {
+            await sqlStore.archivePharma(data);
+            listToProcess.value = [];
+            deleting.value = false;
+            deletedSound.play();
+            emit('archive');
+        } else {
+            deleting.value = false;
+        }
+    };
+
+    await confirmArchive();
+};
 
 const pluriel = () => {
     if (listToProcess.value.length > 1) {

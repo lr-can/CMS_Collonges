@@ -26,7 +26,7 @@
             <div>
                 Objectif : {{ props.info.objectif }}
                 <br>
-                Restant : <span :class="getClass(props.info.objectif - vsavCount - listToProcess.length)">{{ getText(props.info.objectif - vsavCount - listToProcess.length) }}</span>
+                Restant à sélectionner : <span :class="getClass(props.info.objectif - vsavCount - listToProcess.length)">{{ getText(props.info.objectif - vsavCount - listToProcess.length) }}</span>
             </div>
             <div v-if="visualisationReserve.length == 0">Aucun {{ props.info.nomMateriel }} présent dans la pharmacie.</div>
             <div v-if="visualisationReserve.length > 0" class="visualisation">
@@ -161,13 +161,22 @@ const disposition = async () => {
     const data = {
         idAgent: matricule,
         materielsList: listToProcess.value
-    }
-    await sqlStore.dispoReserve(data);
-    listToProcess.value = [];
-    deleting.value = false;
-    validationSound.play();
-    emit('disposition');
-}
+    };
+
+    const confirmDisposition = async () => {
+        if (confirm(`Confirmer la mise à disposition de ${listToProcess.value.length} élément${pluriel()} ?`)) {
+            await sqlStore.dispoReserve(data);
+            listToProcess.value = [];
+            deleting.value = false;
+            validationSound.play();
+            emit('disposition');
+        } else {
+            deleting.value = false;
+        }
+    };
+
+    await confirmDisposition();
+};
 
 const pluriel = () => {
     if (listToProcess.value.length > 1) {
