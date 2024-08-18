@@ -29,35 +29,35 @@
                 </tr>
                 <tr>
                     <td>Salbutamol 5mg/2,5ml</td>
-                    <td>{{ nbSalbuta5mg25ml1 }}</td>
+                    <td>{{ nbSalbuta5mg25ml1 +  nbSalbuta5mg25ml2}}</td>
                 </tr>
                 <tr>
                     <td>Ipratropium 0,5mg/2,5ml</td>
-                    <td>{{ nbIpra05mg25ml1 }}</td>
+                    <td>{{ nbIpra05mg25ml1 + nbIpra05mg25ml2}}</td>
                 </tr>
                 <tr>
                     <td>Salbutamol 2,5mg/2,5ml</td>
-                    <td>{{ nbSalbuta25mg25ml1 }}</td>
+                    <td>{{ nbSalbuta25mg25ml1 +  nbSalbuta25mg25ml2}}</td>
                 </tr>
                 <tr>
                     <td>Ipratropium 0,25mg/ml</td>
-                    <td>{{ nbIpra025mgml1 }}</td>
+                    <td>{{ nbIpra025mgml1 + nbIpra025mgml2}}</td>
                 </tr>
                 <tr>
                     <td>Nyxoid</td>
-                    <td>{{ nbNyxoid1 }}</td>
+                    <td>{{ nbNyxoid1 + nbNyxoid2 }}</td>
                 </tr>
                 <tr>
                     <td>Anapen 150</td>
-                    <td>{{ nbAnapen1501 }}</td>
+                    <td>{{ nbAnapen1501 + nbAnapen1502 }}</td>
                 </tr>
                 <tr>
                     <td>Anapen 300</td>
-                    <td>{{ nbAnapen3001 }}</td>
+                    <td>{{ nbAnapen3001 + nbAnapen3002  }}</td>
                 </tr>
                 <tr>
                     <td>Anapen 500</td>
-                    <td>{{ nbAnapen5001 }}</td>
+                    <td>{{ nbAnapen5001 + nbAnapen5002 }}</td>
                 </tr>
             </table>
         </div>
