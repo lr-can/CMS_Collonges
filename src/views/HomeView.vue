@@ -30,10 +30,10 @@
       {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
     </div>
     <div class="introText">
-      <introText :profile="currentProfile" />
+      <introText :profile="currentProfile.value" />
     </div>
     <div @click="clicking">
-      <nextExpiration :profile="currentProfile" />
+      <nextExpiration :profile="currentProfile.value" />
     </div>
   </div>
   </div>
