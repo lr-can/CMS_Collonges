@@ -37,12 +37,19 @@ const NextPeremptions = ref([]);
 const showExpiration = ref(false);
 const notificationSource = ref("");
 const blinking = ref(true);
+const props = defineProps(["profile"])
 
 async function getNextExpiration(){
+    if (props.profile === 'asup'){
+        await sqlStore.getNextPeremptionsAsup();
+        NextPeremptions.value = await sqlStore.NextPeremptionsAsup;
+    } else {
     await sqlStore.getNextPeremptions();
     NextPeremptions.value = await sqlStore.NextPeremptions;
+    }
     getImgSource();
 }
+
 const prettyDate = (date) => {
     const today = new Date();
     const expirationDate = new Date(date);
@@ -50,6 +57,7 @@ const prettyDate = (date) => {
     const daysDelta = Math.floor(timeDelta / (1000 * 60 * 60 * 24));
     const weeksDelta = Math.floor(daysDelta / 7);
     const monthsDelta = Math.floor(daysDelta / 30);
+
 
     if (daysDelta < 0) {
         if (daysDelta == -1) {
@@ -76,7 +84,17 @@ const giveClass = (date) => {
     const timeDelta = expirationDate.getTime() - today.getTime();
     const daysDelta = Math.floor(timeDelta / (1000 * 60 * 60 * 24));
 
-    if (daysDelta <= 30) {
+    if (props.profile === 'asup'){
+        if (daysDelta <= 60) {
+            return 'over';
+        } else if (daysDelta < 90) {
+            return 'days';
+        } else if (daysDelta < 100) {
+            return 'weeks';
+        } else {
+            return 'months';
+        }
+    } else if (daysDelta <= 30) {
         return 'over';
     } else if (daysDelta < 60) {
         return 'days';
@@ -85,14 +103,26 @@ const giveClass = (date) => {
     } else {
         return 'months';
     }
+
 }
+
 const giveClassBis = (date) => {
     const today = new Date();
     const expirationDate = new Date(date);
     const timeDelta = expirationDate.getTime() - today.getTime();
     const daysDelta = Math.floor(timeDelta / (1000 * 60 * 60 * 24));
 
-    if (daysDelta <= 30) {
+    if (props.profile === 'asup'){
+        if (daysDelta <= 60) {
+            return 'over_date';
+        } else if (daysDelta < 90) {
+            return 'days_date';
+        } else if (daysDelta < 100) {
+            return 'weeks_date';
+        } else {
+            return 'months_date';
+        }
+    } else if (daysDelta <= 30) {
         return 'over_date';
     }
     if (daysDelta < 60) {
@@ -138,6 +168,7 @@ const getImgSource = () => {
         } else {
             notificationSource.value = base_URL+"takecare.svg";
         }
+        showExpiration.value = true;
 }
 }
 setInterval(() => {

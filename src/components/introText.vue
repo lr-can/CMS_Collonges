@@ -6,35 +6,77 @@
     Etat de la base de données
 </div>
   <div class="display">
-    <div class="total" @click="$router.push({ path: 'search' })">
-        <span class="number">{{ displayPeremptions.nbTotal }}</span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"> produits
+    <div class="total" @click="redirectToSearch()">
+        <span class="number">{{ displayPeremptions.nbTotal }}</span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"> {{ labels[0] }}
     </div>
-    <div class="lots" @click="$router.push({ path: 'search' })">
+    <div class="Lots" @click="redirectToSearch()" :class="colorLots()">
         <span class="number">{{ displayPeremptions.nbLotsTotal }}<img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"></span>
-        <br> lots
+        <br> {{ labels[1] }}
     </div>
-    <div class="reserve" @click="$router.push({ path: 'search' })">
+    <div class="reserve" @click="redirectToSearch()">
         <span class="number">{{ displayPeremptions.nbReserve }}<img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"></span>
-        <br> en réserve
+        <br> {{ labels[2] }}
     </div>
-    <div class="vsav" @click="$router.push({ path: 'search' })">
+    <div class="vsav" @click="redirectToSearch()" :class="colorVSAV()">
         <span class="number">{{ displayPeremptions.nbVSAV }}<img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="notLoading"></span>
-        <br> à disposition
+        <br> {{ labels[3] }}
     </div>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'; 
+import { useRouter } from 'vue-router';
 import { useSqlStore } from "@/stores/database.js";
+
+const props = defineProps(['profile'])
 
 const displayPeremptions = ref({});
 const sqlStore = useSqlStore();
 const notLoading = ref(true);
 
 async function getDisplayData(){
+    if (props.profile === 'asup') {
+        await sqlStore.getPeremptionDisplayAsup();
+        displayPeremptions.value = await sqlStore.PeremptionsDisplayDataAsup;
+    } else {
     await sqlStore.getPeremptionDisplay();
     displayPeremptions.value = await sqlStore.PeremptionsDisplayData;
+    }
     notLoading.value = false;
+}
+
+const $router = useRouter();
+
+const labels = ref([]);
+
+if (props.profile === 'asup') {
+    labels.value = ['médicaments', 'Déclarations ASUP', 'à disposition', 'en remplacement'];
+} else {
+    labels.value = ['médicaments', 'Lots', 'à disposition', 'en remplacement'];
+}
+
+const colorLots = () => {
+    if (props.profile === 'asup') {
+        return 'greenLot';
+    } else {
+        return 'redLots';
+    }
+}
+
+const colorVSAV = () => {
+    if (props.profile === 'asup') {
+        return 'orangeVsav';
+    } else {
+        return '';
+    }
+}
+
+const redirectToSearch = () => {
+    if (props.profile === 'asup') {
+        $router.push({ path: 'reportAsup' });
+    } else {
+        $router.push({ path: 'search' });
+    }
 }
 
 getDisplayData();
@@ -76,16 +118,37 @@ p{
     cursor: pointer;
 }
 .lots{
-    grid-area: lots;
-    background-color: #fef4f4;
-    color: #e1000f;
-    padding: 10px;
+    padding: 2rem;
     padding-top: 5vh;
     padding-bottom: 5vh;
     transition: background-color 0.3s ease-in-out;
 }
-.lots:hover{
-    background-color: #fcd7d7;
+.redLots{
+    padding: 1rem;
+    padding-top: 5vh;
+    padding-bottom: 5vh;
+    transition: background-color 0.3s ease-in-out;
+    grid-area: lots;
+    background-color: #fef4f4;
+    color: #e1000f;
+}
+
+.greenLot{
+    padding: 1rem;
+    padding-top: 5vh;
+    padding-bottom: 5vh;
+    transition: background-color 0.3s ease-in-out;
+    grid-area: lots;
+    background-color: #dffee6;
+    color: #1f8d49;
+}
+.greenLot:hover{
+    background-color: #8afcab;
+    cursor: pointer;
+}
+
+.redlots:hover{
+    background-color: #8afcab;
     cursor: pointer;
 }
 .reserve{
@@ -108,6 +171,17 @@ p{
 }
 .vsav:hover{
     background-color: #ededed;
+    cursor: pointer;
+}
+.orangeVsav{
+    grid-area: vsav;
+    background-color: #fff4f3;
+    color: #d64d00;
+    padding: 5px;
+    transition: background-color 0.3s ease-in-out;
+}
+.orangeVsav:hover{
+    background-color: #ffd7d3;
     cursor: pointer;
 }
 </style>

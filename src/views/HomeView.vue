@@ -9,7 +9,7 @@
   </div>
   <div v-if="isAuthenticated && currentProfile == ''">
     <div class="subtitle">
-      {{ greeting }} {{ grade }} !
+      {{ greeting }} {{ nomAgent }} !
     </div>
     <div class="subsubtitle">
       Choix du profil
@@ -30,10 +30,10 @@
       {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
     </div>
     <div class="introText">
-      <introText/>
+      <introText :profile="currentProfile" />
     </div>
     <div @click="clicking">
-      <nextExpiration/>
+      <nextExpiration :profile="currentProfile" />
     </div>
   </div>
   </div>
@@ -84,6 +84,7 @@ const isloading = ref(false);
 const grade_url = ref("https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logo.png?raw=true");
 const selectedProfile = ref(null);
 const profilesList = ref([]);
+const nomAgent = ref('');
 
 if (!localStorage.getItem('currentProfile')) {
   localStorage.setItem('currentProfile', '');
@@ -146,6 +147,7 @@ async function getAuthentification() {
   if (authentification_status === true){
     isAuthenticated.value = authentification_status;
   let utilisateur = await auth0.user.value;
+  nomAgent.value = await utilisateur.name;
   grade.value = await utilisateur.profile[1];
   grade_url.value = image_grade(grade.value);
 

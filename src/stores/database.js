@@ -24,6 +24,8 @@ export const useSqlStore = defineStore('database', () => {
   const responseAsupDeclaration = ref(null);
   const lastDemandePeremptionAsup = ref({});
   const asupPeremptionData = ref({});
+  const PeremptionsDisplayDataAsup = ref({});
+  const NextPeremptionsAsup = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -501,6 +503,38 @@ async function getPeremptionCountAsup(){
   }
 }
 
+async function getPeremptionDisplayAsup() {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/getAsupPeremptionCount", requestOptions);
+    const result = await response.json();
+    const data = result.data;
+    PeremptionsDisplayDataAsup.value = data[0];
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function getNextPeremptionsAsup() {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/getPeremptionsAsup", requestOptions);
+    const result = await response.json();
+    const data = result.data;
+    NextPeremptionsAsup.value = data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
   return {
     NextPeremptions,
@@ -549,6 +583,10 @@ async function getPeremptionCountAsup(){
     lastDemandePeremptionAsup,
     addDemandePeremptionAsup,
     getPeremptionCountAsup,
-    asupPeremptionData
+    asupPeremptionData,
+    getPeremptionDisplayAsup,
+    PeremptionsDisplayDataAsup,
+    getNextPeremptionsAsup,
+    NextPeremptionsAsup
   };
 });
