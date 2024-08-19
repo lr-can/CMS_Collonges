@@ -30,10 +30,10 @@
       {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
     </div>
     <div class="introText">
-      <introText :profile="currentProfile.value" />
+      <introText :profile="getProfile()" />
     </div>
     <div @click="clicking">
-      <nextExpiration :profile="currentProfile.value" />
+      <nextExpiration :profile="getProfile()" />
     </div>
   </div>
   </div>
@@ -177,6 +177,14 @@ for (let i = 0; i < 20; i++) {
     getAuthentification();
     break;
 
+  }
+}
+
+const getProfile = () => {
+  if (localStorage.getItem('currentProfile') == 'asup') {
+    return 'asup';
+  } else {
+    return 'pharmacie';
   }
 }
 
