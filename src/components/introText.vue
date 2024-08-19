@@ -104,7 +104,7 @@ p{
     text-align: center;
 }
 @media (max-width: 1024px)
-{ .display{ transform: translateX(-10%); }}
+{ .display{ transform: translateX(-15%); }}
 
 .display > div{
     border-radius: 10px;
