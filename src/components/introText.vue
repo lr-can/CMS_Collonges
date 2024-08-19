@@ -52,7 +52,7 @@ const labels = ref([]);
 if (props.profile === 'asup') {
     labels.value = ['médicaments', 'Déclarations ASUP', 'à disposition', 'en remplacement'];
 } else {
-    labels.value = ['médicaments', 'Lots', 'à disposition', 'en remplacement'];
+    labels.value = ['médicaments', 'Lots différents', 'Reserve pharmacie', 'Disponible VSAV'];
 }
 
 const colorLots = () => {
