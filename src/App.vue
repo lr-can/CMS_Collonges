@@ -4,10 +4,31 @@ console.log(`%cFait avec amour 🫶, sueur 💪💦 et larmes 🥹 par le Capora
 import { RouterLink, RouterView } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
 import { ref, watch } from 'vue';
+import { useSqlStore } from "@/stores/database.js";
+
+const sqlStore = useSqlStore();
 
 const auth0 = useAuth0();
 const isAuthenticated = ref(auth0.isAuthenticated);
 const appLoading = ref(true);
+const commitBackend = ref('0');
+const commitFrontend = ref('0');
+const isUpdated = ref(false);
+
+sqlStore.getLastCommitNumber('cms_collonges_backend').then((commit) => {
+  commitBackend.value = commit;
+});
+
+sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
+  commitFrontend.value = commit;
+  if (localStorage.getItem('lastCommitFrontend') !== commit) {
+    isUpdated.value = true;
+    setTimeout(() => {
+      isUpdated.value = false;
+    }, 10000);
+  }
+  localStorage.setItem('lastCommitFrontend', commit);
+});
 
 async function getAuthentification() {
   await new Promise(r => setTimeout(r, 1000));
@@ -25,7 +46,7 @@ for (let i = 0; i < 20; i++) {
 
 setTimeout(() => {
   appLoading.value = false;
-}, 2000);
+}, 2500);
 
 localStorage.setItem('currentProfile', '');
 
@@ -48,6 +69,7 @@ watch(currentProfile, (newValue, oldValue) => {
     <transition>
       <div v-if="appLoading" class="blank">
     <img src="@/assets/loadingApp.gif" alt="Loading" width="200px" height="auto">
+      <div class="versionNum">Version 2.2.0-{{commitBackend}}.{{commitFrontend}}</div>
     </div>
   </transition>
   <header>
@@ -62,6 +84,9 @@ watch(currentProfile, (newValue, oldValue) => {
       </nav>
     </div>
   </header>
+  <div v-if="isUpdated && !appLoading" class="update">
+    <span>Une mise à jour a été effectuée !</span>
+  </div>
   <div id="RouterView">
     <RouterView />
   </div>
@@ -157,5 +182,20 @@ nav a:first-of-type {
     opacity: 0.95;
   }
 
+}
+.versionNum{
+  font-size: 1.2rem;
+  text-align: center;
+  margin-top: 0.5rem;
+  position: absolute;
+  bottom: 2rem;
+  width: 100%;
+}
+.update{
+  background-color: #f4f6ff;
+  color: #0078f3;
+  width: 100%;
+  text-align: center;
+  padding: 0.5rem;
 }
 </style>

@@ -536,6 +536,32 @@ async function getNextPeremptionsAsup() {
 }
 
 
+async function getLastCommitNumber(repo) {
+    const url = `https://api.github.com/repos/lr-can/${repo}/commits?sha=main&per_page=1&page=1`;
+    try {
+        const response = await fetch(url);
+        const linkHeader = response.headers.get('link');
+
+        if (linkHeader) {
+            const lastPageLink = linkHeader.split(',').find(s => s.includes('rel="last"'));
+            if (lastPageLink) {
+                const lastPageUrl = lastPageLink.split(';')[0].trim().slice(1, -1);
+                const urlParams = new URLSearchParams(lastPageUrl.split('?')[1]);
+                const lastPageNumber = urlParams.get('page');
+                console.log('Last page number:', lastPageNumber);
+                return lastPageNumber;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Erreur:', error);
+        return null;
+    }
+}
+
+
+
+
   return {
     NextPeremptions,
     getNextPeremptions,
@@ -587,6 +613,7 @@ async function getNextPeremptionsAsup() {
     getPeremptionDisplayAsup,
     PeremptionsDisplayDataAsup,
     getNextPeremptionsAsup,
-    NextPeremptionsAsup
+    NextPeremptionsAsup,
+    getLastCommitNumber
   };
 });

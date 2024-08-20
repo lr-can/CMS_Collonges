@@ -36,11 +36,17 @@
         Se déconnecter
       </div>
     </div>
+    <div>
+      <div class="versionNum">CMS Collonges | Version 2.2.0-{{commitBackend}}.{{commitFrontend}}</div>
+    </div>
 </template> 
 
 <script setup>
 import { useAuth0 } from '@auth0/auth0-vue';
 import { ref } from 'vue';
+import { useSqlStore } from "@/stores/database.js";
+
+const sqlStore = useSqlStore();
 
 
 import Sap2CL from '../assets/grades/Sap 2CL.png';
@@ -56,6 +62,17 @@ import Capitaine from '../assets/grades/Capitaine.png';
 import Commandant from '../assets/grades/Commandant.png';
 import Professeur from '../assets/grades/Professeur.png';
 import Infirmiere from '../assets/grades/Infirmière.png';
+
+const commitBackend = ref('0');
+const commitFrontend = ref('0');
+
+sqlStore.getLastCommitNumber('cms_collonges_backend').then((commit) => {
+  commitBackend.value = commit;
+});
+
+sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
+  commitFrontend.value = commit;
+});
 
 const dict_grades = {
   'Sap 2CL': Sap2CL,
@@ -151,5 +168,13 @@ const logout = () => {
 }
 #information_role{
   margin-top: 1rem;
+}
+.versionNum{
+  font-size: 12px;
+  text-align: center;
+  position: fixed;
+  bottom: 6rem;
+  width: 100%;
+  left: 0;
 }
 </style>
