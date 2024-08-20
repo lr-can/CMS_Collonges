@@ -6,6 +6,9 @@ import { useAuth0 } from '@auth0/auth0-vue';
 import { ref, watch } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
+import Bing from '@/assets/bing.mp3';
+const UpdateAudio = new Audio(Bing);
+
 const sqlStore = useSqlStore();
 
 const auth0 = useAuth0();
@@ -23,6 +26,7 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
   commitFrontend.value = commit;
   if (localStorage.getItem('lastCommitFrontend') !== commit) {
     isUpdated.value = true;
+    UpdateAudio.play();
     setTimeout(() => {
       isUpdated.value = false;
     }, 10000);
@@ -85,7 +89,7 @@ watch(currentProfile, (newValue, oldValue) => {
     </div>
   </header>
   <div v-if="isUpdated && !appLoading" class="update">
-    <span>Une mise à jour a été effectuée !</span>
+    <span>Une mise à jour de l'application a été effectuée !</span>
   </div>
   <div id="RouterView">
     <RouterView />
