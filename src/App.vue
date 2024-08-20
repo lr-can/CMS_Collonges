@@ -6,7 +6,7 @@ import { useAuth0 } from '@auth0/auth0-vue';
 import { ref, watch } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
-import Bing from '@/assets/bing.mp3';
+import Bing from '@/assets/sounds/Bing.mp3';
 const UpdateAudio = new Audio(Bing);
 
 const sqlStore = useSqlStore();
