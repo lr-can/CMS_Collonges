@@ -26,6 +26,7 @@ export const useSqlStore = defineStore('database', () => {
   const asupPeremptionData = ref({});
   const PeremptionsDisplayDataAsup = ref({});
   const NextPeremptionsAsup = ref([]);
+  const medicamentsList = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -559,6 +560,44 @@ async function getLastCommitNumber(repo) {
     }
 }
 
+async function getMedicamentsList() {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  const acteSoinLabels = {
+    "allergie": "1A - Choc anaphylactique",
+    "asthme": "1B - Crise d'asthme",
+    "naloxone": "1C - Intoxication aux opiacés",
+    "methoxyflurane": "2A - Douleur par inhalation",
+    "paracetamol": "2B - Douleur per os",
+    "glucagon": "2C - Hypoglycémie"
+  };
+  try {
+    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicaments`, requestOptions);
+    const result = await response.json();
+    const groupedMedicaments = result.data.reduce((acc, medicament) => {
+      const { acteSoin, nomMedicament, idMedicament } = medicament;
+      const label = acteSoinLabels[acteSoin] || acteSoin;
+      if (!acc[acteSoin]) {
+        acc[acteSoin] = {
+          label: label,
+          code: acteSoin,
+          items: []
+        };
+      }
+      acc[acteSoin].items.push({ label: nomMedicament, value: idMedicament });
+      return acc;
+    }, {});
+    const medicamentsListArray = Object.values(groupedMedicaments);
+    medicamentsListArray.sort((a, b) => a.label.localeCompare(b.label));
+    medicamentsList.value = medicamentsListArray;
+    console.log(medicamentsListArray);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 
 
 
@@ -614,6 +653,8 @@ async function getLastCommitNumber(repo) {
     PeremptionsDisplayDataAsup,
     getNextPeremptionsAsup,
     NextPeremptionsAsup,
-    getLastCommitNumber
+    getLastCommitNumber,
+    getMedicamentsList,
+    medicamentsList
   };
 });
