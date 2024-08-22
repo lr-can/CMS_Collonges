@@ -8,14 +8,6 @@
     <div v-if="showDocument && !documentSigned">
         <div class="part">
         <div class="subsubtitle">
-            Correspondant ASUP
-        </div>
-        <p>
-            Signataire identifié : {{ nomCorrespondant1 }}
-        </p>
-        </div>
-        <div class="part">
-        <div class="subsubtitle">
             Demande de remplacement de médicaments périmés
         </div>
         <p>
@@ -64,7 +56,18 @@
         </div>
         <div class="part">
         <div class="subsubtitle">
+            Correspondant ASUP
+        </div>
+        <p>
+            Signataire identifié : {{ nomCorrespondant1 }}
+        </p>
+        </div>
+        <div class="part">
+        <div class="subsubtitle">
             Signature
+        </div>
+        <div v-show="signature.value !== ''">
+            <button @click="clearSignature()">Effacer</button>
         </div>
             <Vue3Signature
             ref="signature"
@@ -150,6 +153,9 @@
 
   const auth0 = useAuth0();
   const sqlStore = useSqlStore();
+  const clearSignature = () => {
+            signature.value.clear();
+        }
 
     const onLoad = () => {
             alert("Les données ont été préchargées, vous pouvez appuyer sur 'suivant' jusqu'à pouvoir soumettre le formulaire");
@@ -424,5 +430,30 @@ tr:nth-child(odd) {
 tr{
     border-bottom: 1px solid #bccdff;
 
+}
+button{
+    background-color: white;
+    color: #0078f3;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 0.5rem;
+    border: 1px solid #0078f3;
+    transition: color-fade 0.5s ease-in-out;
+}
+button:hover{
+    background-color: #f4f6ff;
+}
+@keyframes color-fade {
+    0% {
+        color: #0078f3;
+    }
+    50% {
+        color: #f4f6ff;
+    }
+    100% {
+        color: #0078f3;
+    }
 }
 </style>

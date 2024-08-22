@@ -146,6 +146,9 @@ nav {
 }
 
 nav a.router-link-exact-active {
+  opacity: 1;
+}
+nav a{
   opacity: 0.25;
 }
 
