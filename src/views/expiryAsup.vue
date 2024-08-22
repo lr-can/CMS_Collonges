@@ -66,7 +66,7 @@
         <div class="subsubtitle">
             Signature
         </div>
-        <div v-show="signature.value !== ''">
+        <div>
             <button @click="clearSignature()">Effacer</button>
         </div>
             <Vue3Signature
@@ -192,6 +192,7 @@
         penColor: "rgb(0, 0, 0)",
         backgroundColor: "rgb(255,255,255)"
     };
+
 
     const date1 = ref(formattedDate);
     const date2 = ref(formattedDate);
