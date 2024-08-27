@@ -29,7 +29,7 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
     UpdateAudio.play();
     setTimeout(() => {
       isUpdated.value = false;
-    }, 10000);
+    }, 60000);
   }
   localStorage.setItem('lastCommitFrontend', commit);
 });
@@ -67,12 +67,15 @@ watch(currentProfile, (newValue, oldValue) => {
   }
 });
 
+function reloadApp() {
+  window.location.reload();
+}
 </script>
 
 <template>
-    <transition>
-      <div v-if="appLoading" class="blank">
-    <img src="@/assets/loadingApp.gif" alt="Loading" width="200px" height="auto">
+  <transition>
+    <div v-if="appLoading" class="blank">
+      <img src="@/assets/loadingApp.gif" alt="Loading" width="200px" height="auto">
       <div class="versionNum">Version 2.2.0-{{commitBackend}}.{{commitFrontend}}</div>
     </div>
   </transition>
@@ -88,26 +91,25 @@ watch(currentProfile, (newValue, oldValue) => {
       </nav>
     </div>
   </header>
-  <div v-if="isUpdated && !appLoading" class="update">
-    <span>Une mise à jour de l'application a été effectuée !</span>
+  <div v-if="isUpdated && !appLoading" class="update" @click="reloadApp">
+    <span>Une mise à jour de l'application a été effectuée ! Cliquez pour recharger.</span>
   </div>
   <div id="RouterView">
     <RouterView />
   </div>
   <div class="wrapper">
-      <nav>
-        <RouterLink to="/"><img alt="Profile" src="@/assets/icons/home.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/reception" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/disposition" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/search" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/order" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/asupGrandPublic" v-if="!isAuthenticated || currentProfile == ''"><img alt="ASUP" src="@/assets/icons/asup.svg" width="30" height="auto" /></RouterLink>
-        <RouterLink to="/replaceAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/replace.svg" width="25" height="auto" /></RouterLink>
-        <RouterLink to="/expiryAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/expiry.svg" width="25" height="auto" /></RouterLink>
-        <RouterLink to="/reportAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/report.svg" width="25" height="auto" /></RouterLink>
-
-      </nav>
-    </div>
+    <nav>
+      <RouterLink to="/"><img alt="Profile" src="@/assets/icons/home.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/reception" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/disposition" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/search" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/order" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/asupGrandPublic" v-if="!isAuthenticated || currentProfile == ''"><img alt="ASUP" src="@/assets/icons/asup.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/replaceAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/replace.svg" width="25" height="auto" /></RouterLink>
+      <RouterLink to="/expiryAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/expiry.svg" width="25" height="auto" /></RouterLink>
+      <RouterLink to="/reportAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/report.svg" width="25" height="auto" /></RouterLink>
+    </nav>
+  </div>
 </template>
 
 <style scoped>
@@ -118,24 +120,25 @@ header {
   justify-content: space-between;
 }
 
-.top-menu{
+.top-menu {
   height: 12vh;
   padding: 0px;
 }
 
-#profile{
+#profile {
   padding: auto; 
 }
 
-#RouterView{
+#RouterView {
   padding: 1.5rem;
 }
+
 .logo {
   display: block;
   margin: 0 auto 2rem;
 }
 
-#logoNav{
+#logoNav {
   opacity: 1;
 }
 
@@ -148,7 +151,8 @@ nav {
 nav a.router-link-exact-active {
   opacity: 0.25;
 }
-nav a{
+
+nav a {
   opacity: 0.85;
 }
 
@@ -166,21 +170,22 @@ nav a:first-of-type {
   border: 0;
 }
 
-.wrapper{
-    position: fixed; 
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 15vw;
-    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
-    background-color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0;
+.wrapper {
+  position: fixed; 
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 15vw;
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
 }
+
 @media (min-width: 1024px) {
-  .wrapper{
+  .wrapper {
     height: 5vw;
     left: 35vw;
     right: 35vw;
@@ -188,9 +193,9 @@ nav a:first-of-type {
     border-radius: 15px;
     opacity: 0.95;
   }
-
 }
-.versionNum{
+
+.versionNum {
   font-size: 1.2rem;
   text-align: center;
   margin-top: 0.5rem;
@@ -198,11 +203,13 @@ nav a:first-of-type {
   bottom: 2rem;
   width: 100%;
 }
-.update{
+
+.update {
   background-color: #f4f6ff;
   color: #0078f3;
   width: 100%;
   text-align: center;
   padding: 0.5rem;
+  cursor: pointer;
 }
 </style>
