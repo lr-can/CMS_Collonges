@@ -67,11 +67,19 @@ const commitBackend = ref('0');
 const commitFrontend = ref('0');
 
 sqlStore.getLastCommitNumber('cms_collonges_backend').then((commit) => {
-  commitBackend.value = commit;
+  if (commit === null) {
+    commitBackend.value = '00';
+  } else {
+    commitBackend.value = commit;
+  }
 });
 
 sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
-  commitFrontend.value = commit;
+  if (commit === null) {
+    commitBackend.value = '00';
+  } else {
+    commitBackend.value = commit;
+  }
 });
 
 const dict_grades = {
