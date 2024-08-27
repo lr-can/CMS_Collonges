@@ -3,43 +3,43 @@
     Chargement...
   </div>
   <div v-else>
-  <div v-if="!isAuthenticated">
-    <notConnected/>
-  
-  </div>
-  <div v-if="isAuthenticated && currentProfile == ''">
-    <div class="subtitle">
-      {{ greeting }} {{ nomAgent }} !
+    <div v-if="!isAuthenticated">
+      <notConnected/>
     </div>
-    <div class="subsubtitle">
-      Choix du profil
-    </div>
-    <div class="card flex justify-center">
+    <div v-if="isAuthenticated && currentProfile == ''">
+      <div class="subtitle">
+        {{ greeting }} {{ nomAgent }} !
+      </div>
+      <div class="subsubtitle">
+        Choix du profil
+      </div>
+      <div class="card flex justify-center">
         <Listbox v-model="selectedProfile" :options="profilesList" optionLabel="label" class="w-full md:w-56" :disabled="profilesList.length <= 1" />
-    </div>
-    <div class="validationBtn" @click="profileSelection" v-if="profilesList.length > 0">
+      </div>
+      <div class="validationBtn" @click="profileSelection" v-if="profilesList.length > 0">
         Valider
-    </div>
-    <div v-else class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
+      </div>
+      <div v-else class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
         <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
         <div>Accès agents ASUP</div>
+      </div>
     </div>
-  </div>
-  <div v-if="isAuthenticated && currentProfile !== ''">
-    <div class="subtitle">
-      {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
+    <div v-if="isAuthenticated && currentProfile !== ''">
+      <div class="subtitle">
+        {{ greeting }} <span id="grade_img"> <img :src="grade_url"  width="25px" height="auto"></span>{{ grade }} !
+      </div>
+      <div class="introText">
+        <introText :profile="getProfile()" />
+      </div>
+      <div @click="clicking">
+        <nextExpiration :profile="getProfile()" />
+      </div>
     </div>
-    <div class="introText">
-      <introText :profile="getProfile()" />
-    </div>
-    <div @click="clicking">
-      <nextExpiration :profile="getProfile()" />
-    </div>
-  </div>
   </div>
 </template>
+
 <script setup>
-import { ref} from "vue";
+import { ref, onMounted } from "vue";
 import { useAuth0 } from '@auth0/auth0-vue';
 import notConnected from '../components/notConnected.vue';
 import nextExpiration from '../components/nextExpiration.vue';
@@ -76,8 +76,7 @@ const dict_grades = {
   'Infirmière': Infirmiere
 };
 
-
-const isAuthenticated = ref(true);
+const isAuthenticated = ref(false);
 const grade = ref();
 const greeting = ref("Bonjour,");
 const isloading = ref(false);
@@ -91,7 +90,6 @@ if (!localStorage.getItem('currentProfile')) {
 }
 
 const currentProfile = ref(localStorage.getItem('currentProfile'));
-
 
 const auth0 = useAuth0();
 
@@ -109,7 +107,6 @@ async function changeGreeting(grade) {
       greeting.value = `Mes respects, mon`;
     }
   }
-  
 }
 
 const image_grade = (current_grade) => {
@@ -139,46 +136,36 @@ const profileSelection = () => {
   localStorage.setItem('currentProfile', selectedProfile.value.value);
   currentProfile.value = selectedProfile.value;
 }
+
 async function getAuthentification() {
-  await new Promise(r => setTimeout(r, 1000));
-  isAuthenticated.value = false;
-  await auth0.isAuthenticated.value;
-  let authentification_status = auth0.isAuthenticated.value;
-  if (authentification_status === true){
-    isAuthenticated.value = authentification_status;
-  let utilisateur = await auth0.user.value;
-  nomAgent.value = await utilisateur.name;
-  grade.value = await utilisateur.profile[1];
-  grade_url.value = image_grade(grade.value);
+  try {
+    await auth0.getAccessTokenSilently();
+    isAuthenticated.value = true;
+    let utilisateur = await auth0.user.value;
+    nomAgent.value = utilisateur.name;
+    grade.value = utilisateur.profile[1];
+    grade_url.value = image_grade(grade.value);
 
-    let profile = await utilisateur.profile[2];
-    console.log(profile);
-
+    let profile = utilisateur.profile[2];
     changeProfile(profile);
-    
-    console.log(profilesList.value);
 
-  const sapeurs = ['Sap 1CL', 'Sap 2CL']
-  if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
-    grade.value = `Sapeur`;
-  }
-  console.log(grade.value);
-  changeGreeting(grade.value);
-  }
-
-}
-
-
-for (let i = 0; i < 20; i++) {
-  console.log('checking authentification');
-  if (auth0.user.value === null) {
-    getAuthentification();
-  } else {
-    getAuthentification();
-    break;
-
+    const sapeurs = ['Sap 1CL', 'Sap 2CL'];
+    if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
+      grade.value = `Sapeur`;
+    }
+    changeGreeting(grade.value);
+  } catch (error) {
+    if (error.error === 'login_required' || error.error === 'consent_required') {
+      isAuthenticated.value = false;
+    } else {
+      console.error('Erreur d\'authentification', error);
+    }
   }
 }
+
+onMounted(async () => {
+  await getAuthentification();
+});
 
 const getProfile = () => {
   if (localStorage.getItem('currentProfile') == 'asup') {
@@ -187,8 +174,8 @@ const getProfile = () => {
     return 'pharmacie';
   }
 }
-
 </script>
+
 
 <style>
 .Expiration {

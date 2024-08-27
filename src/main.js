@@ -22,7 +22,9 @@ app.use(
       domain: "dev-2hk03xxk88bgh0s8.eu.auth0.com",
       clientId: "GcY1BuX5ievgEqPebRtUCC6Fm32d2feN",
       authorizationParams: {
-        redirect_uri: window.location.origin
+        redirect_uri: window.location.origin,
+        audience: "https://dev-2hk03xxk88bgh0s8.eu.auth0.com/api/v2/",
+        scope: "openid profile email offline_access"
       }
     })
   );

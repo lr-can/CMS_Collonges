@@ -26,10 +26,6 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
   commitFrontend.value = commit;
   if (localStorage.getItem('lastCommitFrontend') !== commit) {
     isUpdated.value = true;
-    UpdateAudio.play();
-    setTimeout(() => {
-      isUpdated.value = false;
-    }, 60000);
   }
   localStorage.setItem('lastCommitFrontend', commit);
 });
@@ -67,7 +63,9 @@ watch(currentProfile, (newValue, oldValue) => {
   }
 });
 
-function reloadApp() {
+async function reloadApp() {
+  UpdateAudio.play();
+  await new Promise(r => setTimeout(r, 1000));
   window.location.reload();
 }
 </script>
@@ -92,7 +90,7 @@ function reloadApp() {
     </div>
   </header>
   <div v-if="isUpdated && !appLoading" class="update" @click="reloadApp">
-    <span>Une mise à jour de l'application a été effectuée ! Cliquez pour recharger.</span>
+    <span>Une mise à jour de l'application a été effectuée !<br> Cliquez pour recharger.</span>
   </div>
   <div id="RouterView">
     <RouterView />
