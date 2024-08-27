@@ -7,6 +7,7 @@ import { ref, watch } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 import Bing from '@/assets/sounds/Bing.mp3';
+import router from './router';
 const UpdateAudio = new Audio(Bing);
 
 const sqlStore = useSqlStore();
@@ -59,6 +60,8 @@ setTimeout(() => {
 localStorage.setItem('currentProfile', '');
 
 const currentProfile = ref(localStorage.getItem('currentProfile'));
+
+router.push('/');
 
 let profileCheck = setInterval(() => {
   currentProfile.value = localStorage.getItem('currentProfile');
