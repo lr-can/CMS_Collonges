@@ -103,6 +103,12 @@ p{
     align-items: center;
     text-align: center;
 }
+@media (max-width: 1024px) {
+    .display{
+        transform: translateY(-10%);
+    }
+    
+}
 
 .display > div{
     border-radius: 10px;
