@@ -156,6 +156,7 @@ async function getAuthentification() {
     changeGreeting(grade.value);
   } catch (error) {
     if (error.error === 'login_required' || error.error === 'consent_required') {
+      console.log('Authentification requise');
       isAuthenticated.value = false;
     } else {
       console.error('Erreur d\'authentification', error);
