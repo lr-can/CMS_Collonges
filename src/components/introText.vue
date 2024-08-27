@@ -105,7 +105,7 @@ p{
 }
 @media (max-width: 1024px) {
     .display{
-        transform: translateY(-10%);
+        transform: translateX(-10%);
     }
     
 }
