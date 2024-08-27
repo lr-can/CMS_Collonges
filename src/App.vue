@@ -146,10 +146,10 @@ nav {
 }
 
 nav a.router-link-exact-active {
-  opacity: 1;
+  opacity: 0.25;
 }
 nav a{
-  opacity: 0.25;
+  opacity: 0.85;
 }
 
 nav a.router-link-exact-active:hover {
