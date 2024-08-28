@@ -27,6 +27,7 @@ export const useSqlStore = defineStore('database', () => {
   const PeremptionsDisplayDataAsup = ref({});
   const NextPeremptionsAsup = ref([]);
   const medicamentsList = ref([]);
+  const medicamentsToReplace = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -599,6 +600,22 @@ async function getMedicamentsList() {
   }
 }
 
+const getMedicamentsToReplace = async (idMedicament) => {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicamentsToReplace/${idMedicament}`, requestOptions);
+    const result = await response.json();
+    medicamentsToReplace.value = result.data;
+    console.log(result);
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+
 
 
   return {
@@ -655,6 +672,8 @@ async function getMedicamentsList() {
     NextPeremptionsAsup,
     getLastCommitNumber,
     getMedicamentsList,
-    medicamentsList
+    medicamentsList,
+    getMedicamentsToReplace,
+    medicamentsToReplace
   };
 });
