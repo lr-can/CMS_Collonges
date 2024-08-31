@@ -166,6 +166,8 @@ async function getAuthentification() {
 
 onMounted(async () => {
   await getAuthentification();
+  await new Promise(r => setTimeout(r, 1000));
+  await getAuthentification();
 });
 
 const getProfile = () => {

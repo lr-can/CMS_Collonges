@@ -40,7 +40,10 @@
     </div>
     <div v-if="showPanel" class="replacementPanelFilter" @click="showPanel = !showPanel"></div>
     <div v-if="showPanel" class="replacementPanel">
-        <div>
+        <div v-if="showPanel && loading">
+            <img src="" alt="">
+        </div>
+        <div v-if="showPanel && !loading">
             <div class="return">
                 <div class="returnBtn" @click="showPanel = !showPanel">Retour</div>
             </div>
@@ -50,15 +53,15 @@
             <div class="vsav" @click="vsav1Selected = !vsav1Selected" :class="vsavSelected('vsav1')">
                 <img src="@/assets/illustrations/SP_vsav_02.png" alt="VSAV Image" style="width: 80px; height: auto;">
                 <div class="vsav-info">
-                    <div class="vsav-title">VSAV1</div>
-                    <div class="vsav-number">{{ nombreVsav1 }}</div>
+                    <div class="vsav-title">VSAV-1</div>
+                    <div class="vsav-number">{{ vsav1Selected ? "OK" : nombreVsav1 }}</div>
                 </div>
             </div>
             <div class="vsav" @click="vsav2Selected = !vsav2Selected" :class="vsavSelected('vsav2')">
                 <img src="@/assets/illustrations/SP_vsav_02.png" alt="VSAV Image" style="width: 80px; height: auto;">
                 <div class="vsav-info">
-                    <div class="vsav-title">VSAV2</div>
-                    <div class="vsav-number">{{ nombreVsav2 }}</div>
+                    <div class="vsav-title">VSAV-2</div>
+                    <div class="vsav-number">{{vsav2Selected ? "OK" : nombreVsav2 }}</div>
                 </div>
             </div>
         </div>
@@ -161,7 +164,20 @@ const vsavSelected = (vsav) => {
 getMateriels();
 
 const validateChange = async () => {
+    let remainingMateriel = parseInt(nombreMedicaments.value) - materielAremplacer.value.length;
+    let newMedicamentInfo = {
+        selectedMedicament: selectedMedicament.value,
+        datePeremption: datePeremption.value,
+        numLot: numLot.value,
+        nombreMedicaments: nombreMedicaments.value
+    };
     console.log(materielAremplacer.value);
+
+    let confirmationMessage = `Confirmez-vous le remplacement de ${materielAremplacer.value.length} médicament${materielAremplacer.value.length == 1 ? "" : "s"}, ainsi que l'ajout de ${nombreMedicaments.value} "${selectedMedicament.value.label}" ?`;
+    console.log(newMedicamentInfo);
+    if (confirm(confirmationMessage)) {
+        await sqlStore.replaceAsup(materielAremplacer.value, remainingMateriel, newMedicamentInfo);
+    }
 }
 </script>
 <style scoped>
