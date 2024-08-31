@@ -41,7 +41,7 @@
     <div v-if="showPanel" class="replacementPanelFilter" @click="showPanel = !showPanel"></div>
     <div v-if="showPanel" class="replacementPanel">
         <div v-if="showPanel && loading">
-            <img src="" alt="">
+            <img src="@/assets/loadingTiles.gif" alt="Loading" width="300px" height="auto">
         </div>
         <div v-if="showPanel && !loading">
             <div class="return">
@@ -225,6 +225,8 @@ p{
     border-radius: 10px;
     padding: 1rem;
     flex-wrap: wrap;
+    min-width: 80%;
+    max-width: 90%;
 }
 .replacementPanel > div {
     margin: 1rem;

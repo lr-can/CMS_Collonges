@@ -150,8 +150,12 @@ const optionsMatNotCounted = ref([
 },
     {shortname: 'Cartons DASRI', fullname: {quantity: 5, nomCommande: 'Cartons DASRI', idMateriel: 'DASRIc'}
 },
-    {shortname: 'Collecteurs d\'aiguilles', fullname: {quantity: 5, nomCommande: 'Collecteurs d\'aiguilles DASRI', idMateriel: 'DASRIa'}
+    {shortname: 'Collecteurs d\'aiguilles', fullname: {quantity: 4, nomCommande: 'Collecteurs d\'aiguilles DASRI', idMateriel: 'DASRIa'}
 },
+    {shortname: 'Rouleau DASRI', fullname: {quantity: 4, nomCommande: 'Rouleaux de sac DASRI', idMateriel: 'DASRIs'}
+},
+    {shortname: 'Rasoir', fullname: {quantity: 4, nomCommande: 'Rasoir à usage unique', idMateriel: 'rasoir'}
+},  
 ])
 async function getMateriels() {
     await sqlStore.getMateriels();
