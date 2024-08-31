@@ -25,6 +25,9 @@
         <div>Accès agents ASUP</div>
         </div>
 </div>
+    <div class="mentionsLegales">
+        <a href="https://ct-collonges.notion.site/CMS-Collonges-3102ab80539a4d81a57ac247f046fa15?pvs=4">Mentions légales & CGU</a>
+    </div>
 </template>
 <script setup>
 import { useAuth0 } from '@auth0/auth0-vue';
@@ -64,6 +67,20 @@ const redirect = () => {
 .asupButton div img{
     opacity: 0.7;
 }
+.mentionsLegales{
+    margin: auto;
+    position: fixed;
+    bottom: 3rem;
+    right: 1rem;
+    text-align: right;
+    font-size: 12px;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+.mentionsLegales > a{
+    color : #7b7b7b;
+}
+
 
 
 </style>

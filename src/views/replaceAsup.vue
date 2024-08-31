@@ -40,10 +40,10 @@
     </div>
     <div v-if="showPanel" class="replacementPanelFilter" @click="showPanel = !showPanel"></div>
     <div v-if="showPanel" class="replacementPanel">
-        <div v-if="showPanel && loadingInfo">
-            <img src="@/assets/loadingTiles.gif" alt="Loading" width="300px" height="auto">
+        <div v-show="showPanel && loadingInfo">
+            <img src="@/assets/loadingTiles.gif" alt="Loading" width="200px" height="auto">
         </div>
-        <div v-if="showPanel && !loadingInfo">
+        <div v-show="showPanel && !loadingInfo">
             <div class="return">
                 <div class="returnBtn" @click="showPanel = !showPanel">Retour</div>
             </div>
@@ -65,7 +65,7 @@
                 </div>
             </div>
         </div>
-        <p v-if="!vsav2Selected && !vsav1Selected">Cliquez sur chaque VSAV lorsque vous avez rajouté le nombre de médicament associé.</p>
+        <p v-if="!vsav2Selected && !vsav1Selected && !loadingInfo">Cliquez sur chaque VSAV lorsque vous avez rajouté le nombre de médicament associé.</p>
         <p v-if="vsav1Selected && !vsav2Selected">Encore {{ nombreVsav2 }} médicaments à rajouter pour VSAV2.</p>
         <p v-if="vsav2Selected && !vsav1Selected">Encore {{ nombreVsav1 }} médicaments à rajouter pour VSAV1.</p>
         <div class="validationBtn" id="replacementValidation" v-if="vsav1Selected && vsav2Selected" @click="validateChange">
@@ -80,6 +80,7 @@ import Dropdown from 'primevue/dropdown';
 import InputNumber from 'primevue/inputnumber';
 import Calendar from 'primevue/calendar';
 import InputText from 'primevue/inputtext';
+import { useAuth0 } from '@auth0/auth0-vue';
 
 const sqlStore = useSqlStore();
 const medicaments = ref([]);
@@ -97,6 +98,10 @@ const nombreVsav1 = ref(0);
 const nombreVsav2 = ref(0);
 const materielAremplacer = ref([]);
 const loadingInfo = ref(false);
+
+const auth0 = useAuth0();
+let utilisateur = auth0.user.value;
+const matricule = ref(utilisateur.profile[0]);
 
 async function getMateriels() {
     await sqlStore.getMedicamentsList();
@@ -152,8 +157,8 @@ async function getMedicamentToReplace(medId) {
 
 const submitForm = async () => {
     console.log(selectedMedicament.value, datePeremption.value, numLot.value, nombreMedicaments.value);
-    await getMedicamentToReplace(selectedMedicament.value.value);
     showPanel.value = true;
+    await getMedicamentToReplace(selectedMedicament.value.value);
 }
 
 const vsavSelected = (vsav) => {
@@ -176,10 +181,10 @@ const validateChange = async () => {
     };
     console.log(materielAremplacer.value);
 
-    let confirmationMessage = `Confirmez-vous le remplacement de ${materielAremplacer.value.length} médicament${materielAremplacer.value.length == 1 ? "" : "s"}, ainsi que l'ajout de ${nombreMedicaments.value} "${selectedMedicament.value.label}" ?`;
+    let confirmationMessage = `Confirmez-vous l'archivage de ${materielAremplacer.value.length} médicament${materielAremplacer.value.length == 1 ? "" : "s"}, ainsi que l'ajout de ${nombreMedicaments.value} "${selectedMedicament.value.label}" ?`;
     console.log(newMedicamentInfo);
     if (confirm(confirmationMessage)) {
-        await sqlStore.replaceAsup(materielAremplacer.value, remainingMateriel, newMedicamentInfo);
+        await sqlStore.replaceAsup(materielAremplacer.value, remainingMateriel, newMedicamentInfo, matricule.value);
     }
 }
 </script>
@@ -230,7 +235,13 @@ p{
     flex-wrap: wrap;
     min-width: 80%;
     max-width: 90%;
+    transition: all 0.5s ease-in-out;
 }
+
+
+
+
+
 .replacementPanel > div {
     margin: 1rem;
 }

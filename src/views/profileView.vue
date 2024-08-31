@@ -32,12 +32,13 @@
       </div>
     </div>
     <div>
-      <div @click="logout" id="logout">
-        Se déconnecter
+      <div class="logoutBtns">
+        <div @click="changeProfile" id="changeProfile">Changer de profil</div>
+        <div @click="logout" id="logout">Se déconnecter</div>
       </div>
     </div>
     <div>
-      <div class="versionNum">CMS Collonges | Version 2.2.0-{{commitBackend}}.{{commitFrontend}}</div>
+      <div class="versionNum">CMS Collonges | Version 2.2.0-{{commitBackend}}.{{commitFrontend}}<br><a href="https://ct-collonges.notion.site/CMS-Collonges-3102ab80539a4d81a57ac247f046fa15?pvs=4">Mentions légales & CGU</a></div>
     </div>
 </template> 
 
@@ -125,6 +126,11 @@ const grade = ref(utilisateur.profile[1]);
 const nom = ref(utilisateur.name);
 const role = ref(utilisateur.profile[2]);
 
+const showButtonProfile = ref(true);
+if (role.value == 'Correspondant ASUP' || role.value == "Resonsable Pharmacie") {
+  showButtonProfile.value = false;
+}
+
 const image_grade = (current_grade) => {
   return dict_grades[current_grade];
 };
@@ -141,7 +147,9 @@ const logout = () => {
           })
     };
 
-
+const changeProfile = () => {
+  window.location.reload();
+};
 </script>
 <style>
 #grade{
@@ -168,12 +176,6 @@ const logout = () => {
     'grade texte texte';
   margin-bottom: 2rem;
 }
-#logout{
-  margin-top: 5rem;
-  color: red;
-  font-size: 16px;
-  text-align: center;
-}
 #information_role{
   margin-top: 1rem;
 }
@@ -185,4 +187,50 @@ const logout = () => {
   width: 100%;
   left: 0;
 }
+.logoutBtns{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  margin-top: 3rem;
+  margin-bottom: 5rem;
+}
+.logoutBtns > div{
+  padding: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-radius: 5px;
+}
+@media (max-width: 768px) {
+  .logoutBtns > div{
+    margin-top: 1rem;
+    min-width: 90%;
+  }
+  
+}
+#logout{
+  color: white;
+  background-color: #f60700;
+  font-size: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+#logout:hover{
+  background-color: #ff5150;
+  cursor: pointer;
+}
+#changeProfile{
+  padding: 0.5rem;
+  border-radius: 5px;
+  color: #0078f3;
+  border : 1px solid #0078f3;
+  font-size: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+#changeProfile:hover{
+  background-color: #0078f3;
+  color: white;
+  cursor: pointer;
+}
+
 </style>
