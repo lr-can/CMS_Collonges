@@ -40,10 +40,10 @@
     </div>
     <div v-if="showPanel" class="replacementPanelFilter" @click="showPanel = !showPanel"></div>
     <div v-if="showPanel" class="replacementPanel">
-        <div v-if="showPanel && loading">
+        <div v-if="showPanel && loadingInfo">
             <img src="@/assets/loadingTiles.gif" alt="Loading" width="300px" height="auto">
         </div>
-        <div v-if="showPanel && !loading">
+        <div v-if="showPanel && !loadingInfo">
             <div class="return">
                 <div class="returnBtn" @click="showPanel = !showPanel">Retour</div>
             </div>
@@ -96,6 +96,7 @@ const medicamentsToReplace = ref([]);
 const nombreVsav1 = ref(0);
 const nombreVsav2 = ref(0);
 const materielAremplacer = ref([]);
+const loadingInfo = ref(false);
 
 async function getMateriels() {
     await sqlStore.getMedicamentsList();
@@ -104,6 +105,7 @@ async function getMateriels() {
 }
 
 async function getMedicamentToReplace(medId) {
+    loadingInfo.value = true;
     await sqlStore.getMedicamentsToReplace(medId);
     medicamentsToReplace.value = sqlStore.medicamentsToReplace;
 
@@ -145,6 +147,7 @@ async function getMedicamentToReplace(medId) {
         ...vsav1.slice(0, nombreVsav1.value),
         ...vsav2.slice(0, nombreVsav2.value)
     ];
+    loadingInfo.value = false;
 }
 
 const submitForm = async () => {
