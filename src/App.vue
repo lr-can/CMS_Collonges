@@ -28,9 +28,9 @@ sqlStore.getLastCommitNumber('cms_collonges_backend').then((commit) => {
 
 sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
   if (commit === null) {
-    commitBackend.value = '00';
+    commitFrontend.value = '00';
   } else {
-    commitBackend.value = commit;
+    commitFrontend.value = commit;
   }
   if (localStorage.getItem('lastCommitFrontend') !== commit) {
     isUpdated.value = true;

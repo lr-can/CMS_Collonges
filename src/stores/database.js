@@ -28,6 +28,7 @@ export const useSqlStore = defineStore('database', () => {
   const NextPeremptionsAsup = ref([]);
   const medicamentsList = ref([]);
   const medicamentsToReplace = ref([]);
+  const materielAAssocier = ref({});
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -616,6 +617,81 @@ const getMedicamentsToReplace = async (idMedicament) => {
   }
 }
 
+const replaceAsup = async (materielsAremplacer, vsavNombreDict, newMedicamentInfo, matricule) => {
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const raw1 = JSON.stringify({ materielsAremplacer, matricule });
+  console.log(raw1);
+  const requestOptions1 = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw1,
+    redirect: "follow"
+  };
+
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/replaceStep1", requestOptions1);
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+
+  const myHeaders2 = new Headers();
+  myHeaders2.append("Content-Type", "application/json");
+  const raw2 = JSON.stringify({ vsavNombreDict, newMedicamentInfo, matricule });
+  console.log(raw2);
+  const requestOptions2 = {
+    method: "POST",
+    headers: myHeaders2,
+    body: raw2,
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/replaceStep2", requestOptions2);
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+
+}
+
+async function getWhithAffection(idMedicament) {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://cms-collonges-api.adaptable.app/getReplaceStep3/${idMedicament}`, requestOptions);
+    const result = await response.json();
+    materielAAssocier.value = result.data;
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function affectToVsav(data) {
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const raw = JSON.stringify(data);
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+  console.log(raw);
+  try {
+    const response = await fetch("https://cms-collonges-api.adaptable.app/replaceStep3", requestOptions);
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
 
   return {
@@ -674,6 +750,10 @@ const getMedicamentsToReplace = async (idMedicament) => {
     getMedicamentsList,
     medicamentsList,
     getMedicamentsToReplace,
-    medicamentsToReplace
+    medicamentsToReplace,
+    replaceAsup,
+    getWhithAffection,
+    materielAAssocier,
+    affectToVsav
   };
 });
