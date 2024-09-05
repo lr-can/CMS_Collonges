@@ -41,11 +41,14 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
 onMounted(async () => {
   console.log('Checking authentication');
   try {
+    console.log(auth0.getAccessTokenSilently());
     await auth0.checkSession();
     isAuthenticated.value = auth0.isAuthenticated;
     if (isAuthenticated.value) {
+      console.log(auth0.getAccessTokenSilently());
       console.log('Authentication successful');
     } else {
+      console.log(auth0.getAccessTokenSilently());
       console.log('Authentication required');
     }
   } catch (error) {
@@ -54,7 +57,6 @@ onMounted(async () => {
   await new Promise(r => setTimeout(r, 1500));
   appLoading.value = false;  // End the loading state here
 });
-
 
 localStorage.setItem('currentProfile', '');
 
