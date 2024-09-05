@@ -202,6 +202,7 @@ onMounted(async () => {
   await new Promise(r => setTimeout(r, 1000));
   await getAuthentification();
   let profileCheck = setInterval(() => {
+    console.log('Checking profile');
     getAuthInfo;
     if (isAuthenticated.value == true) {
         clearInterval(profileCheck);
