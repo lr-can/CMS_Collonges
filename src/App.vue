@@ -41,27 +41,28 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
 
 const isFirefox = /firefox/i.test(navigator.userAgent);
 const isChrome = /chrome|crios|chromium/i.test(navigator.userAgent);
+const isEdge = /edge/i.test(navigator.userAgent);
 
 onMounted(async () => {
   console.log('Checking authentication');
   try {
-    if (isFirefox || isChrome) {
+    if (isEdge || isFirefox || isChrome) {
       console.log("Browser is Safari/Firefox/Chrome, attempting silent login.");
       console.log(auth0.getAccessTokenSilently());
-      await auth0.checkSession();
+    } else {
+      // For other browsers, force regular login
+      console.log("Non-supported browser, redirecting to login.");
+    }
+  } catch (error) {
+    console.error('Error during authentication check', error);
+  } finally {
+    await auth0.checkSession();
       isAuthenticated.value = auth0.isAuthenticated;
       if (isAuthenticated.value) {
         console.log('Authentication successful');
       } else {
         console.log('Authentication required');
       }
-    } else {
-      // For other browsers, force regular login
-      console.log("Non-supported browser, redirecting to login.");
-      await auth0.loginWithRedirect();
-    }
-  } catch (error) {
-    console.error('Error during authentication check', error);
   }
   await new Promise(r => setTimeout(r, 1500));
   appLoading.value = false;  // End the loading state here
