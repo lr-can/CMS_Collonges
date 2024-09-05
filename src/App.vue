@@ -2,7 +2,7 @@
 console.log(`%cFait avec amour 🫶, sueur 💪💦 et larmes 🥹 par le Caporal Lorcan BRENDERS pour un stage de projet universitaire.`, "background-color: #f4f6ff; color: #0078f3; text-align:justify; padding: 1rem; border-radius: 1rem;font-size:20px;font-weight:bold;");
 import { RouterLink, RouterView } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch} from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 import Bing from '@/assets/sounds/Bing.mp3';

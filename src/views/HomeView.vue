@@ -180,10 +180,33 @@ async function getAuthentification() {
   }
 }
 
+const getAuthInfo = async () => {
+      isAuthenticated.value = auth0.isAuthenticated;
+      let utilisateur = await auth0.user.value;
+      nomAgent.value = utilisateur.name;
+      grade.value = utilisateur.profile[1];
+      grade_url.value = image_grade(grade.value);
+
+      let profile = utilisateur.profile[2];
+      changeProfile(profile);
+
+      const sapeurs = ['Sap 1CL', 'Sap 2CL'];
+      if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
+        grade.value = `Sapeur`;
+      }
+      changeGreeting(grade.value);
+}
+
 
 onMounted(async () => {
   await new Promise(r => setTimeout(r, 1000));
   await getAuthentification();
+  let profileCheck = setInterval(() => {
+    getAuthInfo;
+    if (isAuthenticated.value == true) {
+        clearInterval(profileCheck);
+      }
+  }, 1000);
 });
 
 const getProfile = () => {
