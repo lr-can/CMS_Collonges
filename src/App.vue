@@ -53,6 +53,7 @@ const initialise = async () => {
     } else {
       // For other browsers, force regular login
       console.log("Non-supported browser, redirecting to login.");
+      await new Promise(r => setTimeout(r, 1500));
     }
   } catch (error) {
     console.error('Error during authentication check', error);
