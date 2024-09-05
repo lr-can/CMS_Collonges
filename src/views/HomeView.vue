@@ -164,11 +164,9 @@ async function getAuthentification() {
     } else if (isSafari) {
       // Authentification requise pour Safari
       console.log('Authentification requise pour Safari');
-      isAuthenticated.value = false;
     } else {
       // Authentification requise pour autres navigateurs
       console.log('Authentification requise pour un autre navigateur');
-      isAuthenticated.value = false;
     }
   } catch (error) {
     if (error.error === 'login_required' || error.error === 'consent_required') {
@@ -181,7 +179,8 @@ async function getAuthentification() {
 }
 
 const getAuthInfo = async () => {
-      let utilisateur = await auth0.user.value;
+      console.log(auth0.user.value);
+      let utilisateur = auth0.user.value;
       nomAgent.value = utilisateur.name;
       grade.value = utilisateur.profile[1];
       grade_url.value = image_grade(grade.value);
@@ -198,16 +197,17 @@ const getAuthInfo = async () => {
 
 
 onMounted(async () => {
-  await new Promise(r => setTimeout(r, 1000));
   await getAuthentification();
-  let profileCheck = setInterval(() => {
+  let profileCheck = setInterval(async () => {
     console.log('Checking profile');
-    getAuthInfo;
-    isAuthenticated.value = auth0.isAuthenticated;
+    getAuthInfo();
+    await auth0.checkSession();
+    isAuthenticated.value = auth0.isAuthenticated.value;
+    console.log("isAuthenticated: ", isAuthenticated.value);
     if (isAuthenticated.value == true) {
         clearInterval(profileCheck);
       }
-  }, 1000);
+  }, 2000);
 });
 
 const getProfile = () => {
