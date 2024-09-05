@@ -43,7 +43,7 @@ const isFirefox = /firefox/i.test(navigator.userAgent);
 const isChrome = /chrome|crios|chromium/i.test(navigator.userAgent);
 const isEdge = /edge/i.test(navigator.userAgent);
 
-onMounted(async () => {
+const initialise = async () => {
   console.log('Checking authentication');
   try {
     if (isEdge || isFirefox || isChrome) {
@@ -66,7 +66,7 @@ onMounted(async () => {
   }
   await new Promise(r => setTimeout(r, 1500));
   appLoading.value = false;  // End the loading state here
-});
+};
 
 localStorage.setItem('currentProfile', '');
 
@@ -90,6 +90,8 @@ async function reloadApp() {
   await new Promise(r => setTimeout(r, 1000));
   window.location.reload();
 }
+
+initialise();
 </script>
 
 
