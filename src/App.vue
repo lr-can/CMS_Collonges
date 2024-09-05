@@ -38,18 +38,27 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
   localStorage.setItem('lastCommitFrontend', commit);
 });
 
+
+const isFirefox = /firefox/i.test(navigator.userAgent);
+const isChrome = /chrome|crios|chromium/i.test(navigator.userAgent);
+
 onMounted(async () => {
   console.log('Checking authentication');
   try {
-    console.log(auth0.getAccessTokenSilently());
-    await auth0.checkSession();
-    isAuthenticated.value = auth0.isAuthenticated;
-    if (isAuthenticated.value) {
+    if (isFirefox || isChrome) {
+      console.log("Browser is Safari/Firefox/Chrome, attempting silent login.");
       console.log(auth0.getAccessTokenSilently());
-      console.log('Authentication successful');
+      await auth0.checkSession();
+      isAuthenticated.value = auth0.isAuthenticated;
+      if (isAuthenticated.value) {
+        console.log('Authentication successful');
+      } else {
+        console.log('Authentication required');
+      }
     } else {
-      console.log(auth0.getAccessTokenSilently());
-      console.log('Authentication required');
+      // For other browsers, force regular login
+      console.log("Non-supported browser, redirecting to login.");
+      await auth0.loginWithRedirect();
     }
   } catch (error) {
     console.error('Error during authentication check', error);
@@ -81,6 +90,7 @@ async function reloadApp() {
   window.location.reload();
 }
 </script>
+
 
 <template>
   <transition>
