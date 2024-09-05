@@ -38,27 +38,23 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
   localStorage.setItem('lastCommitFrontend', commit);
 });
 
-async function getAuthentification() {
-  await new Promise(r => setTimeout(r, 1000));
-}
-
 onMounted(async () => {
-  console.log('checking authentification');
-  for (let i = 0; i < 50; i++) {
-    await getAuthentification();
-    console.log('checking authentification', i);
-    if (auth0.isAuthenticated) {
-      console.log('authentification done');
-      break;
+  console.log('Checking authentication');
+  try {
+    await auth0.checkSession();
+    isAuthenticated.value = auth0.isAuthenticated;
+    if (isAuthenticated.value) {
+      console.log('Authentication successful');
+    } else {
+      console.log('Authentication required');
     }
-    i++;
+  } catch (error) {
+    console.error('Error during authentication check', error);
   }
-  isAuthenticated.value = auth0.isAuthenticated;
-
-  setTimeout(() => {
-    appLoading.value = false;
-  }, 2500);
+  await new Promise(r => setTimeout(r, 1500));
+  appLoading.value = false;  // End the loading state here
 });
+
 
 localStorage.setItem('currentProfile', '');
 

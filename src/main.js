@@ -24,7 +24,9 @@ app.use(
       authorizationParams: {
         redirect_uri: window.location.origin,
         audience: "https://dev-2hk03xxk88bgh0s8.eu.auth0.com/api/v2/",
-        scope: "openid profile email offline_access"
+        scope: "openid profile email offline_access",
+        cacheLocation: 'localstorage',
+        useRefreshTokens: true
       }
     })
   );
