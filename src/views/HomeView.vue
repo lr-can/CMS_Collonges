@@ -8,7 +8,7 @@
     </div>
     <div v-if="isAuthenticated && currentProfile == ''">
       <div class="subtitle">
-        {{ greeting }} {{ nomAgent }} !
+        Bonjour, {{ nomAgent }} !
       </div>
       <div class="subsubtitle">
         Choix du profil
@@ -138,22 +138,38 @@ const profileSelection = () => {
 }
 
 async function getAuthentification() {
+  const userAgent = navigator.userAgent;
+  const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+  const isFirefox = userAgent.includes("Firefox");
+  const isChrome = userAgent.includes("Chrome") && !isSafari;
+
   try {
-    await auth0.getAccessTokenSilently();
-    isAuthenticated.value = true;
-    let utilisateur = await auth0.user.value;
-    nomAgent.value = utilisateur.name;
-    grade.value = utilisateur.profile[1];
-    grade_url.value = image_grade(grade.value);
+    if (isChrome || isFirefox) {
+      // Authentification silencieuse pour Chrome et Firefox uniquement
+      await auth0.getAccessTokenSilently();
+      isAuthenticated.value = true;
+      let utilisateur = await auth0.user.value;
+      nomAgent.value = utilisateur.name;
+      grade.value = utilisateur.profile[1];
+      grade_url.value = image_grade(grade.value);
 
-    let profile = utilisateur.profile[2];
-    changeProfile(profile);
+      let profile = utilisateur.profile[2];
+      changeProfile(profile);
 
-    const sapeurs = ['Sap 1CL', 'Sap 2CL'];
-    if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
-      grade.value = `Sapeur`;
+      const sapeurs = ['Sap 1CL', 'Sap 2CL'];
+      if (grade.value == sapeurs[0] || grade.value == sapeurs[1]) {
+        grade.value = `Sapeur`;
+      }
+      changeGreeting(grade.value);
+    } else if (isSafari) {
+      // Authentification requise pour Safari
+      console.log('Authentification requise pour Safari');
+      isAuthenticated.value = false;
+    } else {
+      // Authentification requise pour autres navigateurs
+      console.log('Authentification requise pour un autre navigateur');
+      isAuthenticated.value = false;
     }
-    changeGreeting(grade.value);
   } catch (error) {
     if (error.error === 'login_required' || error.error === 'consent_required') {
       console.log('Authentification requise');
@@ -164,8 +180,8 @@ async function getAuthentification() {
   }
 }
 
+
 onMounted(async () => {
-  await getAuthentification();
   await new Promise(r => setTimeout(r, 1000));
   await getAuthentification();
 });
