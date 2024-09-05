@@ -181,7 +181,6 @@ async function getAuthentification() {
 }
 
 const getAuthInfo = async () => {
-      isAuthenticated.value = auth0.isAuthenticated;
       let utilisateur = await auth0.user.value;
       nomAgent.value = utilisateur.name;
       grade.value = utilisateur.profile[1];
@@ -204,6 +203,7 @@ onMounted(async () => {
   let profileCheck = setInterval(() => {
     console.log('Checking profile');
     getAuthInfo;
+    isAuthenticated.value = auth0.isAuthenticated;
     if (isAuthenticated.value == true) {
         clearInterval(profileCheck);
       }
