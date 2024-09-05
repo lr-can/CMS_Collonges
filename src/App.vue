@@ -44,7 +44,15 @@ async function getAuthentification() {
 
 onMounted(async () => {
   console.log('checking authentification');
-  await getAuthentification();
+  for (let i = 0; i < 50; i++) {
+    await getAuthentification();
+    console.log('checking authentification', i);
+    if (auth0.isAuthenticated) {
+      console.log('authentification done');
+      break;
+    }
+    i++;
+  }
   isAuthenticated.value = auth0.isAuthenticated;
 
   setTimeout(() => {
