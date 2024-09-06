@@ -179,8 +179,13 @@
 <script setup>
 import { useAuth0 } from '@auth0/auth0-vue';
 const auth0 = useAuth0();
-let utilisateur = auth0.user.value;
-const matriculeProfile = ref(utilisateur.profile[0]);
+const matriculeProfile = ref(null);
+let utilisateur = {profile : [{matricule: 'Vxxxxx'}]};
+if (auth0.user.value){
+  utilisateur = auth0.user.value;
+  matriculeProfile.value = ref(utilisateur.profile[0]);
+}
+
 
 import Sap2CL from '../assets/grades/Sap 2CL.png';
 import Sap1CL from '../assets/grades/Sap 1CL.png';
