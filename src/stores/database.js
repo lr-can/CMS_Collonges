@@ -37,7 +37,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch("https://cms-collonges-api.adaptable.app/Peremptions", requestOptions);
+      const response = await fetch("https://api.cms-collonges.fr/Peremptions", requestOptions);
       const result = await response.json();
       const data = result.data;
       NextPeremptions.value = data;
@@ -54,7 +54,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch("https://cms-collonges-api.adaptable.app/peremptionscount", requestOptions);
+      const response = await fetch("https://api.cms-collonges.fr/peremptionscount", requestOptions);
       const result = await response.json();
       const data = result.data;
       PeremptionsDisplayData.value = data[0];
@@ -70,7 +70,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch("https://cms-collonges-api.adaptable.app/materielstheoriques", requestOptions);
+      const response = await fetch("https://api.cms-collonges.fr/materielstheoriques", requestOptions);
       const result = await response.json();
       const data = result.data;
       materielsList.value = data;
@@ -92,7 +92,7 @@ export const useSqlStore = defineStore('database', () => {
     
     try {
       console.log(requestOptions.body)
-      const response = await fetch("https://cms-collonges-api.adaptable.app/createDB", requestOptions);
+      const response = await fetch("https://api.cms-collonges.fr/createDB", requestOptions);
       const result = await response.json();
       responseCreation.value = result;
       console.log(result);
@@ -110,7 +110,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/todayCreation/${idMateriel}`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/todayCreation/${idMateriel}`, requestOptions);
       const result = await response.json();
       const data = result.data;
       todayCreationList.value = data;
@@ -126,7 +126,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/remove/${idStock}`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/remove/${idStock}`, requestOptions);
       const result = await response.json();
       const data = result.data;
       deleteResponse.value = data;
@@ -142,7 +142,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/dataVision/${idMateriel}`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/dataVision/${idMateriel}`, requestOptions);
       const result = await response.json();
       const data = result.data;
       dbVisionData.value = data;
@@ -158,7 +158,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/archivePeremption`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/archivePeremption`, requestOptions);
       const result = await response.json();
       const data = result.data;
       console.log(data);
@@ -176,7 +176,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/getOneMonthPeremption`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/getOneMonthPeremption`, requestOptions);
       const result = await response.json();
       const data = result.data;
       oneMonthPeremption.value = data[0].perimant;
@@ -192,7 +192,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch("https://cms-collonges-api.adaptable.app/getRealCount", requestOptions);
+      const response = await fetch("https://api.cms-collonges.fr/getRealCount", requestOptions);
       const result = await response.json();
       const data = result.data;
       realCountList.value = data;
@@ -207,7 +207,7 @@ export const useSqlStore = defineStore('database', () => {
       redirect: "follow"
     };
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/getMaterielsToCheck/${typeRequest}`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/getMaterielsToCheck/${typeRequest}`, requestOptions);
       const result = await response.json();
       const data = result.data;
       materielsToCheck.value = data;
@@ -223,7 +223,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/getPharmaItems/${idMateriel}`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/getPharmaItems/${idMateriel}`, requestOptions);
       const result = await response.json();
       const data = result.data;
       visualisationPharma.value = data;
@@ -245,7 +245,7 @@ export const useSqlStore = defineStore('database', () => {
 
     try {
       console.log(requestOptions.body)
-      const response = await fetch("https://cms-collonges-api.adaptable.app/archivePharma", requestOptions);
+      const response = await fetch("https://api.cms-collonges.fr/archivePharma", requestOptions);
       const result = await response.json();
       responseArchivePharma.value = result.message;
       console.log(result);
@@ -263,7 +263,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/getReserveItems/${idMateriel}`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/getReserveItems/${idMateriel}`, requestOptions);
       const result = await response.json();
       const data = result.data;
       visualisationReserve.value = data;
@@ -285,7 +285,7 @@ export const useSqlStore = defineStore('database', () => {
 
     try {
       console.log(requestOptions.body)
-      const response = await fetch("https://cms-collonges-api.adaptable.app/dispoReserve", requestOptions);
+      const response = await fetch("https://api.cms-collonges.fr/dispoReserve", requestOptions);
       const result = await response.json();
       responseArchivePharma.value = result.message;
       console.log(result);
@@ -303,7 +303,7 @@ export const useSqlStore = defineStore('database', () => {
     };
     
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/reinitialiserRetourInter`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/reinitialiserRetourInter`, requestOptions);
       const result = await response.json();
       const data = result.data;
       console.log(data);
@@ -321,7 +321,7 @@ export const useSqlStore = defineStore('database', () => {
       };
 
       try {
-        const response = await fetch(`https://cms-collonges-api.adaptable.app/getAsupAgents/${idAgent}`, requestOptions);
+        const response = await fetch(`https://api.cms-collonges.fr/getAsupAgents/${idAgent}`, requestOptions);
         const result = await response.json();
         infoAsupAgent.value = result;
         console.log(result);
@@ -338,7 +338,7 @@ export const useSqlStore = defineStore('database', () => {
     };
 
     try {
-      const response = await fetch(`https://cms-collonges-api.adaptable.app/getDoctor/${rppsNumber}`, requestOptions);
+      const response = await fetch(`https://api.cms-collonges.fr/getDoctor/${rppsNumber}`, requestOptions);
       const result = await response.json();
       doctorInfo.value = result;
       console.log(result);
@@ -376,7 +376,7 @@ async function getAsupAvailableMedicaments(acte, vsav) {
   };
 
   try {
-    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicamentsForCare/${acte}/${vsav}`, requestOptions);
+    const response = await fetch(`https://api.cms-collonges.fr/getMedicamentsForCare/${acte}/${vsav}`, requestOptions);
     const result = await response.json();
     const data = result.data;
 
@@ -424,7 +424,7 @@ async function sendAsupDeclaration(data) {
   };
 
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/newUtilisationAsup", requestOptions);
+    const response = await fetch("https://api.cms-collonges.fr/newUtilisationAsup", requestOptions);
     const result = await response.json();
     responseAsupDeclaration.value = result.meta;
     console.log(result);
@@ -445,7 +445,7 @@ async function sendAsupEmail(emailData) {
     redirect: "follow"
   };
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/sendEmailAsup", requestOptions);
+    const response = await fetch("https://api.cms-collonges.fr/sendEmailAsup", requestOptions);
     const result = await response.json();
     if (response.ok) {
       console.log(result);
@@ -463,7 +463,7 @@ async function getDemandePeremptionAsup() {
     redirect: "follow"
   };
   try {
-    const response = await fetch(`https://cms-collonges-api.adaptable.app/getLastDemandePeremptionAsup`, requestOptions);
+    const response = await fetch(`https://api.cms-collonges.fr/getLastDemandePeremptionAsup`, requestOptions);
     const result = await response.json();
     lastDemandePeremptionAsup.value = result;
     console.log(result);
@@ -483,7 +483,7 @@ async function addDemandePeremptionAsup(data) {
     redirect: "follow"
   };
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/addDemandePeremptionAsup", requestOptions);
+    const response = await fetch("https://api.cms-collonges.fr/addDemandePeremptionAsup", requestOptions);
     const result = await response.json();
     console.log(result);
   } catch (error) {
@@ -497,7 +497,7 @@ async function getPeremptionCountAsup(){
     redirect: "follow"
   };
   try {
-    const response = await fetch(`https://cms-collonges-api.adaptable.app/getAsupReplacementCount`, requestOptions);
+    const response = await fetch(`https://api.cms-collonges.fr/getAsupReplacementCount`, requestOptions);
     const result = await response.json();
     asupPeremptionData.value = result;
     console.log(result);
@@ -513,7 +513,7 @@ async function getPeremptionDisplayAsup() {
   };
   
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/getAsupPeremptionCount", requestOptions);
+    const response = await fetch("https://api.cms-collonges.fr/getAsupPeremptionCount", requestOptions);
     const result = await response.json();
     const data = result.data;
     PeremptionsDisplayDataAsup.value = data[0];
@@ -529,7 +529,7 @@ async function getNextPeremptionsAsup() {
   };
   
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/getPeremptionsAsup", requestOptions);
+    const response = await fetch("https://api.cms-collonges.fr/getPeremptionsAsup", requestOptions);
     const result = await response.json();
     const data = result.data;
     NextPeremptionsAsup.value = data;
@@ -576,7 +576,7 @@ async function getMedicamentsList() {
     "glucagon": "2C - Hypoglycémie"
   };
   try {
-    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicaments`, requestOptions);
+    const response = await fetch(`https://api.cms-collonges.fr/getMedicaments`, requestOptions);
     const result = await response.json();
     const groupedMedicaments = result.data.reduce((acc, medicament) => {
       const { acteSoin, nomMedicament, idMedicament } = medicament;
@@ -607,7 +607,7 @@ const getMedicamentsToReplace = async (idMedicament) => {
     redirect: "follow"
   };
   try {
-    const response = await fetch(`https://cms-collonges-api.adaptable.app/getMedicamentsToReplace/${idMedicament}`, requestOptions);
+    const response = await fetch(`https://api.cms-collonges.fr/getMedicamentsToReplace/${idMedicament}`, requestOptions);
     const result = await response.json();
     medicamentsToReplace.value = result.data;
     console.log(result);
@@ -630,7 +630,7 @@ const replaceAsup = async (materielsAremplacer, vsavNombreDict, newMedicamentInf
   };
 
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/replaceStep1", requestOptions1);
+    const response = await fetch("https://api.cms-collonges.fr/replaceStep1", requestOptions1);
     const result = await response.json();
     console.log(result);
   } catch (error) {
@@ -648,7 +648,7 @@ const replaceAsup = async (materielsAremplacer, vsavNombreDict, newMedicamentInf
     redirect: "follow"
   };
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/replaceStep2", requestOptions2);
+    const response = await fetch("https://api.cms-collonges.fr/replaceStep2", requestOptions2);
     const result = await response.json();
     console.log(result);
   } catch (error) {
@@ -663,7 +663,7 @@ async function getWhithAffection(idMedicament) {
     redirect: "follow"
   };
   try {
-    const response = await fetch(`https://cms-collonges-api.adaptable.app/getReplaceStep3/${idMedicament}`, requestOptions);
+    const response = await fetch(`https://api.cms-collonges.fr/getReplaceStep3/${idMedicament}`, requestOptions);
     const result = await response.json();
     materielAAssocier.value = result.data;
     console.log(result);
@@ -684,7 +684,7 @@ async function affectToVsav(data) {
   };
   console.log(raw);
   try {
-    const response = await fetch("https://cms-collonges-api.adaptable.app/replaceStep3", requestOptions);
+    const response = await fetch("https://api.cms-collonges.fr/replaceStep3", requestOptions);
     const result = await response.json();
     console.log(result);
   } catch (error) {

@@ -180,10 +180,13 @@
 import { useAuth0 } from '@auth0/auth0-vue';
 const auth0 = useAuth0();
 const matriculeProfile = ref(null);
-let utilisateur = {profile : [{matricule: 'Vxxxxx'}]};
+let utilisateur = null;
+
 if (auth0.user.value){
   utilisateur = auth0.user.value;
-  matriculeProfile.value = ref(utilisateur.profile[0]);
+  console.log('Utilisateur:', utilisateur);
+  matriculeProfile.value = utilisateur.profile[0];
+  console.log('Matricule:', matriculeProfile.value);
 }
 
 
