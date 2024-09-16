@@ -29,6 +29,7 @@ export const useSqlStore = defineStore('database', () => {
   const medicamentsList = ref([]);
   const medicamentsToReplace = ref([]);
   const materielAAssocier = ref({});
+  const asupVizData = ref({})
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -692,6 +693,21 @@ async function affectToVsav(data) {
   }
 }
 
+async function getAsupVizData() {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://api.cms-collonges.fr/getVizDataAsup`, requestOptions);
+    const result = await response.json();
+    asupVizData.value = result.data;
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
 
   return {
@@ -754,6 +770,8 @@ async function affectToVsav(data) {
     replaceAsup,
     getWhithAffection,
     materielAAssocier,
-    affectToVsav
+    affectToVsav,
+    getAsupVizData,
+    asupVizData
   };
 });
