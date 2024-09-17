@@ -6,52 +6,109 @@
         </div>
             <div class="subtitle">Intervention {{ detailData.numIntervention }}</div>
             <div class="illustration" @click="navigate()">
-                <img :src="backgroundImageSrc()" alt="Illustration" width="100%" height="auto" class="illustrationImg">
+                <img :src="backgroundImageSrc()" alt="Illustration" width="100%" height="auto" class="illustrationImg" @load="imgLoading = false">
+                <div v-if="imgLoading" class="imgLoading">
+                    <img src="@/assets/loading.gif" alt="Loading" width="50px" height="auto">
+                </div>
             </div>
             <div>
                 <p>
-                    <span class="bold">Raison :</span> {{ detailData.interventionDetails.notificationTitre }}
+                    <span class="bold">Raison :<br></span> {{ detailData.interventionDetails.notificationTitre }}
                 </p>
                 <p>
-                    <span class="bold">Date :</span> {{ new Date(detailData.dateActe).toLocaleDateString() }}
+                    <span class="bold">Date :<br></span> {{ new Date(detailData.dateActe).toLocaleDateString() }}
                 </p>
                 <p>
-                    <span class="bold">Heure :</span> {{ new Date(detailData.dateActe).toLocaleTimeString() }}
+                    <span class="bold">Heure :<br></span> {{ new Date(detailData.dateActe).toLocaleTimeString() }}
                 </p>
                 <p>
-                    <span class="bold">Lieu :</span> {{ detailData.interventionDetails.notificationAdresse }}
+                    <span class="bold">Lieu :<br></span> {{ detailData.interventionDetails.notificationAdresse }}
                 </p>
             </div>
             <div class="subtitle">ASUP</div>
             <div>
                 <p>
-                    <span class="bold">Agent :</span> {{ detailData.agent.nomAgent }} {{ detailData.agent.prenomAgent }} ({{ detailData.matriculeAgent }})
+                    <span class="bold">Agent :<br></span> <span class="agentInfo"><img :src="image_grade(detailData.agent.grade)" width="25px" height="auto"><span>{{ detailData.agent.nomAgent }} {{ detailData.agent.prenomAgent }} ({{ detailData.matriculeAgent }})</span></span>
                 </p>
                 <p>
-                    <span class="bold">Acte :</span> {{ detailData.acteSoin }}
+                    <span class="bold">Acte :<br></span> {{ detailData.acteSoin }}
                 </p>
                 <p>
-                    <span class="bold">Médicaments :</span> {{ detailData.idMedicamentsList.length != 0 ? detailData.idMedicamentsList.length : 'Aucun' }}
+                    <span class="bold">Médicaments :<br></span> {{ detailData.idMedicamentsList.length != 0 ? detailData.idMedicamentsList.length : 'Aucun' }}
                 </p>
                 <p>
-                    <span class="bold">Prescripteur :</span> Dr {{ detailData.medecinPrescripteur.nomExercice }} {{ detailData.medecinPrescripteur.prenomExercice }} ({{ detailData.medecinPrescripteur.identifiantRPPS }})
+                    <span class="bold">Prescripteur :<br></span> Dr {{ detailData.medecinPrescripteur.nomExercice }} {{ detailData.medecinPrescripteur.prenomExercice }} ({{ detailData.medecinPrescripteur.identifiantRPPS }})
                 </p>
                 <p>
-                    <span class="bold">Effets secondaires :</span> {{ detailData.effetsSecondaires != null ? detailData.effetsSecondaires : 'Aucun' }}
+                    <span class="bold">Effets secondaires :<br></span> {{ detailData.effetsSecondaires != null ? detailData.effetsSecondaires : 'Aucun' }}
                 </p>
                 <p>
-                    <span class="bold">Commentaire :</span> {{ detailData.commentaire != null ? detailData.commentaire : 'Aucun' }}
+                    <span class="bold">Commentaire :<br></span> {{ detailData.commentaire != null ? detailData.commentaire : 'Aucun' }}
                 </p>
             </div>
         </div>
     <div class="subtitle">
         Données ASUP
     </div>
+    <p class="message">
+        Plus d'informations sont disponibles sur les rapports mensuels que vous recevez par mail.
+    </p>
     <div id="viz">
        <div v-if="isLoading">
             <img src="@/assets/loadingTiles.gif" alt="Loading" width="300px" height="auto">
        </div>
        <div v-else>
+            <div class="utilisationsASUP">
+                <div class="utilisationsASUP-title">Historique ASUP</div>
+                <div v-if="asupData.rows4.length != 0" class="utilisationsASUP-content">
+                    <div class="utilisationsASUP-header">
+                        <div class="utilisationsASUP-header-item">Agent</div>
+                        <div class="utilisationsASUP-header-item">Date</div>
+                        <div class="utilisationsASUP-header-item">Inter</div>
+                        <div class="utilisationsASUP-header-item">ASUP</div>
+                        <div class="utilisationsASUP-header-item">Méd. Utilisés</div>
+                        <div class="utilisationsASUP-header-item">Prescripteur</div>
+                    </div>
+                    <div class="utilisationsASUP-content-items" v-for="item in asupData.rows4" :key="item.id" @click="showDetail(item.numIntervention)">
+                        <div class="utilisationsASUP-content-item agentInfo"><img :src="image_grade(item.agent.grade)" width="25px" height="auto"><span>{{ item.agent.nomAgent }} {{ item.agent.prenomAgent }}</span></div>
+                        <div class="utilisationsASUP-content-item">{{ new Date(item.dateActe).toLocaleDateString() }}</div>
+                        <div class="utilisationsASUP-content-item">{{ item.numIntervention }}</div>
+                        <div class="utilisationsASUP-content-item">{{ item.acteSoin }}</div>
+                        <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList.length }}</div>
+                        <div class="utilisationsASUP-content-item">Dr {{ item.medecinPrescripteur.nomExercice }}</div>
+                    </div>
+                </div>
+                <div v-else class="utilisationsASUP-message">Aucune utilisation ASUP enregistrée.</div>
+            </div>
+            <div class="database">
+                <div class="database-title">Médicaments enregistrés</div>
+                <div>
+                    <Dropdown id="dropdown" v-model="selectedSoin" :options="groupedSoins" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" placeholder="Sélectionnez un acte" class="w-full md:w-56" />
+                </div>
+                <div>
+                    <div v-if="selectedSoin != null">
+                        <div v-if="sortedData[selectedSoin.code]" class="status1-content">
+                            <div class="status1-header">
+                                <div class="status1-header-item">Nbre</div>
+                                <div class="status1-header-item">Nom Médicament</div>
+                                <div class="status1-header-item">VSAV</div>
+                                <div class="status1-header-item">Créateur</div>
+                                <div class="status1-header-item">Date Péremption</div>
+                                <div class="status1-header-item">Num Lot</div>
+                            </div>
+                            <div class="status1-content-items" v-for="item in sortedData[selectedSoin.code]" :key="item.id">
+                                <div class="status1-content-item">{{ item.count }}</div>
+                                <div class="status1-content-item">{{ item.nomMedicament }}</div>
+                                <div class="status1-content-item">{{ item.affectationVSAV }}</div>
+                                <div class="status1-content-item agentInfo"><img :src="image_grade(item.createur.grade)" width="25px" height="auto"><span>{{ item.createur.nomAgent }} {{ item.createur.prenomAgent }}</span></div>
+                                <div class="status1-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
+                                <div class="status1-content-item">{{ item.numLot }}</div>           
+                            </div>
+                        </div>
+                        <div v-else class="status1-message">Aucun médicament enregistré pour cet acte.</div>
+                    </div>
+                </div>
+            </div>
             <div class="status3">
                 <div class="status3-title">Remplacements pour péremption</div>
                 <div v-if="asupData.rows3.length != 0" class="status3-content">
@@ -67,7 +124,7 @@
                         <div class="status3-content-item">{{ item.count }}</div>
                         <div class="status3-content-item">{{ item.nomMedicament }}</div>
                         <div class="status3-content-item">{{ item.affectationVSAV }}</div>
-                        <div class="status3-content-item">{{ item.matriculeCreateur }}</div>
+                        <div class="status3-content-item agentInfo"><img :src="image_grade(item.createur.grade)" width="25px" height="auto"><span>{{ item.createur.nomAgent }} {{ item.createur.prenomAgent }}</span></div>
                         <div class="status3-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
                         <div class="status3-content-item">{{ item.numLot }}</div>           
                     </div>
@@ -89,34 +146,12 @@
                         <div class="status2-content-item">{{ item.count }}</div>
                         <div class="status2-content-item">{{ item.nomMedicament }}</div>
                         <div class="status2-content-item">{{ item.affectationVSAV }}</div>
-                        <div class="status2-content-item">{{ item.matriculeCreateur }}</div>
+                        <div class="status2-content-item agentInfo"><img :src="image_grade(item.createur.grade)" width="25px" height="auto"><span>{{ item.createur.nomAgent }} {{ item.createur.prenomAgent }}</span></div>
                         <div class="status2-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
                         <div class="status2-content-item">{{ item.numLot }}</div>           
                     </div>
                 </div>
                 <div v-else class="status2-message">Aucun médicament utilisé en cours de remplacement.</div>
-            </div>
-            <div class="utilisationsASUP">
-                <div class="utilisationsASUP-title">Historique ASUP</div>
-                <div v-if="asupData.rows4.length != 0" class="utilisationsASUP-content">
-                    <div class="utilisationsASUP-header">
-                        <div class="utilisationsASUP-header-item">Agent</div>
-                        <div class="utilisationsASUP-header-item">Date</div>
-                        <div class="utilisationsASUP-header-item">Inter</div>
-                        <div class="utilisationsASUP-header-item">ASUP</div>
-                        <div class="utilisationsASUP-header-item">Méd. Utilisés</div>
-                        <div class="utilisationsASUP-header-item">Prescripteur</div>
-                    </div>
-                    <div class="utilisationsASUP-content-items" v-for="item in asupData.rows4" :key="item.id" @click="showDetail(item.numIntervention)">
-                        <div class="utilisationsASUP-content-item">{{ item.agent.nomAgent }} {{ item.agent.prenomAgent }}</div>
-                        <div class="utilisationsASUP-content-item">{{ new Date(item.dateActe).toLocaleDateString() }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.numIntervention }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.acteSoin }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList.length }}</div>
-                        <div class="utilisationsASUP-content-item">Dr {{ item.medecinPrescripteur.nomExercice }}</div>
-                    </div>
-                </div>
-                <div v-else class="utilisationsASUP-message">Aucune utilisation ASUP enregistrée.</div>
             </div>
        </div>
     </div>
@@ -124,6 +159,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
+import Dropdown from 'primevue/dropdown';
 
 
 const sqlStore = useSqlStore();
@@ -131,12 +167,79 @@ const asupData = ref({});
 const isLoading = ref(false);
 const showPanel = ref(false);
 const detailData = ref({});
+const imgLoading = ref(true);
+const sortedData = ref({});
+const groupedSoins = ref([
+  {
+    label: 'ASUP Niv. 1',
+    code: 'asup1',
+    items: [
+      { label: 'Crise d\'asthme', code : 'asthme'},
+      { label: 'Overdose d\'opiacés', code : 'naloxone'},
+      {label: 'Choc anaphylactique', code : 'allergie'}
+    ]
+  },
+  {
+    label: 'ASUP Niv. 2',
+    code: 'asup2',
+    items: [
+      {label: 'Prise en charge de la douleur', code: 'methoxyflurane'},
+      {label: 'Douleurs aigües par voie orale', code: 'paracetamol'},
+      {label: 'Hypoglycémie', code: 'glucagon'}
+    ]
+  }
+]);
+
+import Sap2CL from '../assets/grades/Sap 2CL.png';
+import Sap1CL from '../assets/grades/Sap 1CL.png';
+import Caporal from '../assets/grades/Caporal.png';
+import CaporalChef from '../assets/grades/Caporal-Chef.png';
+import Sergent from '../assets/grades/Sergent.png';
+import SergentChef from '../assets/grades/Sergent-Chef.png';
+import Adjudant from '../assets/grades/Adjudant.png';
+import AdjudantChef from '../assets/grades/Adjudant-Chef.png';
+import Lieutenant from '../assets/grades/Lieutenant.png';
+import Capitaine from '../assets/grades/Capitaine.png';
+import Commandant from '../assets/grades/Commandant.png';
+import Professeur from '../assets/grades/Professeur.png';
+import Infirmiere from '../assets/grades/Infirmière.png';
+
+const dict_grades = {
+  'Sap 2CL': Sap2CL,
+  'Sap 1CL': Sap1CL,
+  'Caporal': Caporal,
+  'Caporal-Chef': CaporalChef,
+  'Sergent': Sergent,
+  'Sergent-Chef': SergentChef,
+  'Adjudant': Adjudant,
+  'Adjudant-Chef': AdjudantChef,
+  'Lieutenant': Lieutenant,
+  'Capitaine': Capitaine,
+  'Commandant': Commandant,
+  'Infirmière': Infirmiere,
+  'Professeur': Professeur
+};
+
+const image_grade = (current_grade) => {
+  return dict_grades[current_grade];
+};
+
+const selectedSoin = ref(null);
 
 const getData = async () => {
     isLoading.value = true;
     await sqlStore.getAsupVizData();
     asupData.value = sqlStore.asupVizData;
+    sortedData.value = asupData.value.rows1.reduce((acc, item) => {
+        if (!acc[item.acteSoin]) {
+            acc[item.acteSoin] = [];
+        }
+        acc[item.acteSoin].push(item);
+        return acc;
+    }, {});
+    console.log(sortedData.value);
     isLoading.value = false;
+
 };
 
 getData();
@@ -150,7 +253,7 @@ const showDetail = (numIntervention) => {
 const backgroundImageSrc = () => {
     let lon = detailData.value.interventionDetails.notificationLon;
     let lat = detailData.value.interventionDetails.notificationLat;
-    let url = `https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=600&height=200&center=lonlat:${lon},${lat}&zoom=14&marker=lonlat:${lon},${lat};type:circle;color:%23ff0000;size:xx-large;icon:sos;icontype:material;iconsize:small;strokecolor:%23ff0000&scaleFactor=2&apiKey=75c6e5ac06e84d3a95473195e7af529d`;
+    let url = `https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=600&height=300&center=lonlat:${lon},${lat}&zoom=14&marker=lonlat:${lon},${lat};type:circle;color:%23ff0000;size:xx-large;icon:sos;icontype:material;iconsize:small;strokecolor:%23ff0000&scaleFactor=2&apiKey=75c6e5ac06e84d3a95473195e7af529d`;
     return url;
 }
 
@@ -175,6 +278,25 @@ const navigate = () => {
     scale: 1.2;
     cursor: pointer;
 }
+.agentInfo {
+    display: flex;
+    align-items: center;
+}
+.agentInfo > img {
+    margin-right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    border-radius: 5px;
+}
+.agentInfo > span {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+}
+.illustration > div{
+    margin: auto;
+}
 .replacementPanelFilter {
     backdrop-filter: blur(10px) brightness(0.8);
     width: 100vw;
@@ -188,7 +310,6 @@ const navigate = () => {
 
 .replacementPanel {
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     position: fixed;
@@ -204,24 +325,34 @@ const navigate = () => {
     max-width: 50%;
     max-height: 80vh;
     transition: all 0.5s ease-in-out;
-    overflow-y: auto;
+    overflow-y: scroll;
 }
 @media screen and (max-width: 768px) {
     .replacementPanel {
-        min-width: 90%;
-        max-width: 90%;
+        min-width: 90vw;
+        max-width: 90vw;
     }
     
 }
 .bold{
     font-weight: bold;
 }
-
+#dropdown{
+    width: 100%;
+    margin: auto;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+.imgLoading{
+    margin: auto;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
 
 .replacementPanel > div {
     margin: 1rem;
 }
-.status3, .status2, .utilisationsASUP{
+.status3, .status2, .utilisationsASUP, .database{
     margin-bottom: 1rem;
     border-bottom: 1px solid #e5e5e5;
     padding-bottom: 1rem;
@@ -244,6 +375,12 @@ const navigate = () => {
     margin-bottom: 1rem;
     color: #009081;
 }
+.database-title{
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #C08C65;
+}
 
 .status3-content {
     display: table;
@@ -265,6 +402,16 @@ const navigate = () => {
     margin-bottom: 1rem;
     overflow-x: scroll;
     white-space: nowrap;
+}
+.status1-content {
+    display: table;
+    width: 120%;
+    margin-bottom: 1rem;
+    overflow-x: scroll;
+    white-space: nowrap;
+}
+.status1-header{
+    display: table-row;
 }
 .status3-header{
     display: table-row;
@@ -299,6 +446,7 @@ const navigate = () => {
     text-align: center;
     vertical-align: middle;
 }
+
 .status3-content-items{
     display: table-row;
     padding: 0.5rem;
@@ -308,6 +456,10 @@ const navigate = () => {
     padding: 0.5rem;
 }
 .utilisationsASUP-content-items{
+    display: table-row;
+    padding: 0.5rem;
+}
+.status1-content-items{
     display: table-row;
     padding: 0.5rem;
 }
@@ -332,6 +484,21 @@ const navigate = () => {
     vertical-align: middle;
     padding: 0.5rem;
 }
+.status1-content-item{
+    display: table-cell;
+    border-bottom: 1px solid #C08C65;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.5rem;
+}
+.status1-header-item{
+    display: table-cell;
+    font-weight: bold;
+    padding: 0.5rem;
+    border-bottom: 1px solid #C08C65;
+    text-align: center;
+    vertical-align: middle;
+}
 .utilisationsASUP-content-item:hover{
     background-color: #dffdf7;
     cursor: pointer;
@@ -345,12 +512,16 @@ const navigate = () => {
 .utilisationsASUP-content-items:nth-child(odd){
     background-color: #dffdf7;
 }
-.status3-message, .status2-message, .utilisationsASUP-message{
+.status1-content-items:nth-child(odd){
+    background-color: #fbf5f2;
+}
+.status3-message, .status2-message, .utilisationsASUP-message, .status1-message, .message{
     font-size: 1rem;
     font-style: italic;
     text-align: center;
     margin-top: 1rem;
     text-align: left;
     color: #666666;
+    margin-bottom: 1.3rem;
 }
 </style>
