@@ -202,9 +202,9 @@ const navigate = () => {
     flex-wrap: wrap;
     min-width: 30%;
     max-width: 50%;
+    max-height: 80vh;
     transition: all 0.5s ease-in-out;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    overflow: scroll;
+    overflow-y: auto;
 }
 @media screen and (max-width: 768px) {
     .replacementPanel {
