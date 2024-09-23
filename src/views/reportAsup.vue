@@ -60,6 +60,9 @@
        <div v-else>
             <div class="utilisationsASUP">
                 <div class="utilisationsASUP-title">Historique ASUP</div>
+                <p id="utilisationMessage">
+                    Cliquez sur une ligne pour obtenir des informations détaillées sur l'intervention.
+                </p>
                 <div v-if="asupData.rows4.length != 0" class="utilisationsASUP-content">
                     <div class="utilisationsASUP-header">
                         <div class="utilisationsASUP-header-item">Agent</div>
@@ -352,6 +355,12 @@ const navigate = () => {
 .replacementPanel > div {
     margin: 1rem;
 }
+#utilisationMessage{
+    font-style: italic;
+    color: #666666;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+}
 .status3, .status2, .utilisationsASUP, .database{
     margin-bottom: 1rem;
     border-bottom: 1px solid #e5e5e5;
@@ -516,12 +525,12 @@ const navigate = () => {
     background-color: #fbf5f2;
 }
 .status3-message, .status2-message, .utilisationsASUP-message, .status1-message, .message{
-    font-size: 1rem;
     font-style: italic;
     text-align: center;
     margin-top: 1rem;
     text-align: left;
     color: #666666;
     margin-bottom: 1.3rem;
+    font-size: 0.8rem;
 }
 </style>
