@@ -34,7 +34,7 @@
                     <span class="bold">Acte :<br></span> {{ detailData.acteSoin }}
                 </p>
                 <p>
-                    <span class="bold">Médicaments :<br></span> {{ detailData.idMedicamentsList.length != 0 ? detailData.idMedicamentsList.length : 'Aucun' }}
+                    <span class="bold">Médicaments :<br></span> {{ detailData.idMedicamentsList ? detailData.idMedicamentsList.length : 'Aucun' }}
                 </p>
                 <p>
                     <span class="bold">Prescripteur :<br></span> Dr {{ detailData.medecinPrescripteur.nomExercice }} {{ detailData.medecinPrescripteur.prenomExercice }} ({{ detailData.medecinPrescripteur.identifiantRPPS }})
@@ -77,7 +77,7 @@
                         <div class="utilisationsASUP-content-item">{{ new Date(item.dateActe).toLocaleDateString() }}</div>
                         <div class="utilisationsASUP-content-item">{{ item.numIntervention }}</div>
                         <div class="utilisationsASUP-content-item">{{ item.acteSoin }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList.length }}</div>
+                        <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList ? item.idMedicamentsList.length() : "Aucun" }}</div>
                         <div class="utilisationsASUP-content-item">Dr {{ item.medecinPrescripteur.nomExercice }}</div>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                 </div>
                 <div>
                     <div v-if="selectedSoin != null">
-                        <div v-if="sortedData[selectedSoin.code]" class="status1-content">
+                        <div v-if="sortedData && sortedData[selectedSoin.code] && sortedData[selectedSoin.code].length > 0" class="status1-content">
                             <div class="status1-header">
                                 <div class="status1-header-item">Nbre</div>
                                 <div class="status1-header-item">Nom Médicament</div>
@@ -113,11 +113,11 @@
                 </div>
             </div>
             <div class="status3">
-                <div class="status3-title">Remplacements pour péremption</div>
-                <div v-if="asupData.rows3.length != 0" class="status3-content">
-                    <div class="status3-header">
-                        <div class="status3-header-item">Nbre</div>
-                        <div class="status3-header-item">Nom Médicament</div>
+            <div class="status3-title">Remplacements pour péremption</div>
+            <div v-if="asupData && asupData.rows3 && asupData.rows3.length != 0" class="status3-content">
+                <div class="status3-header">
+                    <div class="status3-header-item">Nbre</div>
+                    <div class="status3-header-item">Nom Médicament</div>
                         <div class="status3-header-item">VSAV</div>
                         <div class="status3-header-item">Créateur</div>
                         <div class="status3-header-item">Date Péremption</div>
