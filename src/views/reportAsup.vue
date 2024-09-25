@@ -281,22 +281,6 @@ const navigate = () => {
     scale: 1.2;
     cursor: pointer;
 }
-.agentInfo {
-    display: flex;
-    align-items: center;
-}
-.agentInfo > img {
-    margin-right: 0.5rem;
-    display: inline-flex;
-    align-items: center;
-    vertical-align: middle;
-    border-radius: 5px;
-}
-.agentInfo > span {
-    display: inline-flex;
-    align-items: center;
-    vertical-align: middle;
-}
 .illustration > div{
     margin: auto;
 }
@@ -336,6 +320,12 @@ const navigate = () => {
         max-width: 90vw;
     }
     
+}
+@media screen and (min-width: 900px) {
+    .replacementPanel {
+        min-width: 20vw;
+        max-width: 20vw;
+    }
 }
 .bold{
     font-weight: bold;
@@ -435,12 +425,14 @@ const navigate = () => {
     display: table-cell;
     font-weight: bold;
     padding: 0.5rem;
+    color: #d64d00;
     border-bottom: 1px solid #d64d00;
     text-align: center;
     vertical-align: middle;
 }
 .status2-header-item{
     display: table-cell;
+    color: #0078f3;
     font-weight: bold;
     padding: 0.5rem;
     border-bottom: 1px solid #0078f3;
@@ -448,6 +440,7 @@ const navigate = () => {
     vertical-align: middle;
 }
 .utilisationsASUP-header-item{
+    color: #009081;
     display: table-cell;
     font-weight: bold;
     padding: 0.5rem;
@@ -504,6 +497,7 @@ const navigate = () => {
     display: table-cell;
     font-weight: bold;
     padding: 0.5rem;
+    color: #C08C65;
     border-bottom: 1px solid #C08C65;
     text-align: center;
     vertical-align: middle;
@@ -532,5 +526,24 @@ const navigate = () => {
     color: #666666;
     margin-bottom: 1.3rem;
     font-size: 0.8rem;
+}
+
+
+.agentInfo {
+    display: flex;
+    align-items: left;
+    text-align: left;
+}
+.agentInfo > img {
+    margin-right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    border-radius: 5px;
+}
+.agentInfo > span {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
 }
 </style>
