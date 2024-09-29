@@ -19,7 +19,7 @@ app.use(PrimeVue);
 app.use(ConfirmationService);
 app.use(
     createAuth0({
-      domain: "dev-2hk03xxk88bgh0s8.eu.auth0.com",
+      domain: "auth.cms-collonges.fr",
       clientId: "GcY1BuX5ievgEqPebRtUCC6Fm32d2feN",
       authorizationParams: {
         redirect_uri: window.location.origin,
