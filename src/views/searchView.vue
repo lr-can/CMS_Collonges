@@ -1,7 +1,7 @@
 <template>
     <div class="subtitle">Base de données</div>
     <div class="button">
-        <a href="https://cms-collonges-api.adaptable.app/getRecap">📄 Récapitulatif PDF</a>
+        <a href="https://api.cms-collonges.fr/getRecap">📄 Récapitulatif PDF</a>
     </div>
     <form autocomplete="off">
         <label for="materiel">Matériel<span class="mandatory">*</span>
