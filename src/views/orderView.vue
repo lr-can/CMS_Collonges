@@ -157,7 +157,8 @@ const optionsMatNotCounted = ref([
     {shortname: 'Rasoir', fullname: {quantity: 4, nomCommande: 'Rasoir à usage unique', idMateriel: 'rasoir'}
 },
     {shortname: 'Spray désinfectant', fullname: {quantity: 2, nomCommande: 'Sprays désinfectants', idMateriel: 'spray'}},
-    {shortname: 'Désinfectant cellule', fullname: {quantity: 2, nomCommande: 'Bidons de désinfectant pour cellule de VSAV', idMateriel: 'desinfectantCellule'}}
+    {shortname: 'Désinfectant cellule', fullname: {quantity: 2, nomCommande: 'Bidons de désinfectant pour cellule de VSAV', idMateriel: 'desinfectantCellule'}},
+    {shortname: "Electrodes pour ECG", fullname: {quantity: 1, nomCommande: 'Carton d\'électrodes pour ECG', idMateriel: 'electrodesECG'}},
 ])
 
 optionsMatNotCounted.value.sort((a, b) => a.shortname.localeCompare(b.shortname));
