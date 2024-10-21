@@ -19,9 +19,9 @@
                 <InputSwitch v-model="notCountedItems" class="input"/>
                 <div class="questionText">Matériel non compté</div>
             </div>
-            <div class="question" v-if="notCountedItems">
+            <div class="question" v-if="notCountedItems" id="notCountedSelector">
                 <div class="questionText" id="notCounted">Sélectionnez le matériel à inclure : </div>
-                <SelectButton class="selector" v-model="notCountedList" :options="optionsMatNotCounted" optionLabel="shortname" multiple aria-labelledby="multiple" />
+                <MultiSelect v-model="notCountedList" display="chip" filter :options="optionsMatNotCounted" optionLabel="shortname" placeholder="Sélectionnez le matériel" />
             </div>
             <div class="validationBtn" @click="submitForm"><span v-if="gettingInfo">Chargement...</span><span v-if="!gettingInfo">Créer la commande</span></div>
         </form>
@@ -93,7 +93,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
-import SelectButton from 'primevue/selectbutton';
+import MultiSelect from 'primevue/multiselect';
 import InputSwitch from 'primevue/inputswitch';
 import InputNumber from 'primevue/inputnumber';
 import ToggleButton from 'primevue/togglebutton';
@@ -155,8 +155,12 @@ const optionsMatNotCounted = ref([
     {shortname: 'Rouleau DASRI', fullname: {quantity: 4, nomCommande: 'Rouleaux de sac DASRI', idMateriel: 'DASRIs'}
 },
     {shortname: 'Rasoir', fullname: {quantity: 4, nomCommande: 'Rasoir à usage unique', idMateriel: 'rasoir'}
-},  
+},
+    {shortname: 'Spray désinfectant', fullname: {quantity: 2, nomCommande: 'Sprays désinfectants', idMateriel: 'spray'}},
+    {shortname: 'Désinfectant cellule', fullname: {quantity: 2, nomCommande: 'Bidons de désinfectant pour cellule de VSAV', idMateriel: 'desinfectantCellule'}}
 ])
+
+optionsMatNotCounted.value.sort((a, b) => a.shortname.localeCompare(b.shortname));
 async function getMateriels() {
     await sqlStore.getMateriels();
     materiels.value = await sqlStore.materielsList;
@@ -466,5 +470,10 @@ margin-top: 2rem;
     justify-content: center;
     align-items: center;
     margin-top: 1rem;
+}
+#notCountedSelector{
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 </style>
