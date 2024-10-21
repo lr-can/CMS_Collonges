@@ -4,6 +4,13 @@
             Scan des étiquettes
         </div>
         <Dropdown v-model="selected" :options="devices" optionLabel="label" optionsValue="deviceId" placeholder="Sélectionnez une autre camera" @change="newSelection" class="form-item" v-if="devices.length > 1"/>
+        <div class="manualInput">
+            <label for="withoutgrouping">ID à ajouter</label>
+            <div id="inputTextDiv">
+                <InputText v-model="inputedNumber" inputId="withoutgrouping" stye="width:200px"/>
+            </div>
+        </div>
+        <div class="validationBtn" @click="changeResult()" id="SmallBtn">Valider l'entrée</div>
         <div id="camera">
             <QrcodeStream 
             :paused="paused"
@@ -49,6 +56,7 @@
 
 <script setup>
 import { QrcodeStream } from 'vue-qrcode-reader';
+import InputText from 'primevue/inputnumber';
 import { ref, computed } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import { useSqlStore } from "@/stores/database.js";
@@ -58,6 +66,7 @@ import Error from '../assets/sounds/Error.mp3';
 import Loading from '../assets/sounds/Loading.mp3';
 import Deleted from '../assets/sounds/Deleted.mp3';
 
+const inputedNumber = ref(999999);
 const isValid = ref(false);
 const paused = ref(false);
 const result = ref('null');
@@ -108,6 +117,34 @@ const validationSuccess = computed(() => {
 const validationError = computed(() => {
     return isValid.value === false
 })
+const changeResult = async function() {
+    result.value = inputedNumber.value;
+    paused.value = true;
+    loadingSound.play();
+    await sendRequest();
+    console.log(await dbResponse.value);
+    if (dbResponse.value.message == "Le matériel a bien été créé."){
+        isValid.value = true;
+        loadingSound.pause();
+        validationSound.play();
+        getTodayItems();
+        await timeout(2000);
+    } else {
+        isValid.value = false;
+        loadingSound.pause();
+        errorSound.play();
+        if (dbResponse.value.message.includes('foreign')){
+            dbResponse.value = {message: "L'utilisateur ne dispose pas des droits nécessaires pour effectuer cette action."};
+        } else if (dbResponse.value.message.includes('Duplicate')){
+            dbResponse.value = {message: `ID-${result.value} déjà présent dans la base de données.`};
+        }
+        await timeout(2000);
+    }
+        getTodayItems();
+        paused.value = false;
+        resetValidationState();
+    
+}
 
 const onError = console.error
 
@@ -200,7 +237,7 @@ function vibrate(){
 }
 </script>
 
-<style scoped>  
+<style>  
 .reader{
     position: relative;
     width: 100%;
@@ -306,5 +343,37 @@ function vibrate(){
 
 #productSuppression{
     font-weight: bold;
+}
+.manualInput{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    padding: 1rem;
+    background-color: #f6f6f6;
+    border-radius: 5px;
+}
+.manualInput > label{
+    margin-right: 0.5rem;
+    flex: 0.1;
+}
+#withoutgrouping{
+    width: 100%;
+    flex: 0.5;
+}
+#inputTextDiv{
+    width: 100%;
+    margin-left: 2rem;
+    flex: 0.5;
+}
+inputTextDiv > span, input{
+    width: 100%;
+    min-width: 100px;
+}
+#SmallBtn{
+    margin-top: 0;
+    margin-bottom: 1rem;
 }
 </style>
