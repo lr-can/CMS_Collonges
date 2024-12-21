@@ -22,11 +22,15 @@
         <br> {{ labels[3] }}
     </div>
   </div>
+  <div v-if="profileIsFormation()" class="btnGSheet">
+    <gSheetBtn></gSheetBtn>
+  </div>
 </template>
 <script setup>
 import { ref } from 'vue'; 
 import { useRouter } from 'vue-router';
 import { useSqlStore } from "@/stores/database.js";
+import gSheetBtn from './gSheetBtn.vue';
 
 const props = defineProps(['profile'])
 
@@ -52,10 +56,17 @@ const $router = useRouter();
 
 const labels = ref([]);
 
+const profileIsFormation = () => {
+    if (props.profile === 'formation'){
+        return true;
+    }
+    return false;
+}
+
 if (props.profile === 'asup') {
     labels.value = ['médicaments', 'Déclarations ASUP', 'à disposition', 'en remplacement'];
 } else if (props.profile === 'formation') {
-    labels.value = ['Agents', 'Agents recyclés', 'Agents sans ICP', 'Agents non recyclés'];
+    labels.value = ['Agents', 'Agents recyclés', 'Sans ICP', 'Non recyclés'];
 } else {
     labels.value = ['médicaments', 'Lots différents', 'Reserve pharmacie', 'Disponible VSAV'];
 }
@@ -88,6 +99,9 @@ getDisplayData();
 
 </script>
 <style>
+.btnGSheet {
+    margin-top: 3rem;
+}
 p{
     margin-top: 10px
 }
