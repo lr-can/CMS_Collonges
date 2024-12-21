@@ -2,12 +2,12 @@
     <div class="subtitle">
         Recherche par type de FMPA
     </div>
-    <gSheetBtn></gSheetBtn>
+    <gSheetBtn :typeBtn="'partial'"></gSheetBtn>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
-import gSheetBtn from '../components/gSheetBtn.vue';
+import gSheetBtn from '../components/gSheetBtnReduce.vue';
 </script>
 
 <style scoped>

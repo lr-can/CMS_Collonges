@@ -718,13 +718,11 @@ async function getPeremptionDisplayFormation() {
   try {
     const response = await fetch(`https://opensheet.elk.sh/1aiagcxGaeehUTY8WEfY_ekOn3dol7HmveFylOWoX2OE/Avancement%20FMPA%20${currentYear}`, requestOptions);
     const result = await response.json();
-    console.log(result);
     const nbAgents = result.length;
     let nbRecycle = parseInt(nbAgents);
     let nbNonRecycle = 0;
     let nbSansICP = 0;
     for (const agent of result) {
-      console.log(agent);
       if (agent['FMPA \nOpérations divers'] === "Pas recyclé" || agent['FMPA \nIncendie'] === "Pas recyclé" || agent['FMPA \nCOD 1'] === "Pas recyclé" || agent["FMPA \nCOD 4"] === "Pas recyclé") {
         nbNonRecycle++;
         nbRecycle--;
@@ -735,7 +733,6 @@ async function getPeremptionDisplayFormation() {
     }
 
     PeremptionsDisplayDataFormation.value = {nbTotal: nbAgents, nbLotsTotal: nbRecycle, nbReserve: nbSansICP, nbVSAV: nbNonRecycle};
-    console.log(PeremptionsDisplayDataFormation.value);
   } catch (error) {
     console.error(error);
   }

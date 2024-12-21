@@ -1,7 +1,6 @@
 <template>
     <div class="gSheetBtn" @click="redirectToGoogleSheets()">
         <img src="@/assets/icons/GSHEETS.svg" alt="Google Sheets Logo" width="30px" height="auto">
-        <span class="gSheetBtn" :class="showDetail">Modifier les données</span>
     </div>
 
 </template>
@@ -10,13 +9,7 @@ const redirectToGoogleSheets = () => {
     window.open('https://docs.google.com/spreadsheets/d/1aiagcxGaeehUTY8WEfY_ekOn3dol7HmveFylOWoX2OE/edit?gid=0#gid=0', '_blank');
 }
 
-const props = defineProps(['typeBtn']);
 
-const showDetail = () => {
-    return props.typeBtn === 'full' ? "" : "hide";
-}
-
-console.log(showDetail());
 </script>
 <style scoped>
 .gSheetBtn {
@@ -29,14 +22,10 @@ console.log(showDetail());
     border-radius: 50px;
     transition: all 0.3s;
     padding: 10px;
+    min-width: 10%;
+    max-width: 20%;
 }
 .gSheetBtn:hover{
     background-color: #18753c;
-}
-.gSheetBtn > span {
-    background-color: transparent;
-}
-.hide {
-    display: none;
 }
 </style>
