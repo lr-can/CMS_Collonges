@@ -31,6 +31,7 @@ export const useSqlStore = defineStore('database', () => {
   const materielAAssocier = ref({});
   const asupVizData = ref({});
   const PeremptionsDisplayDataFormation = ref({});
+  const listSinistres = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -738,6 +739,45 @@ async function getPeremptionDisplayFormation() {
   }
 }
 
+async function getListSinistres() {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres`, requestOptions);
+    const data = await response.json();
+    const formattedResult = data
+      .filter(item => item.sinistreStatut === "1")
+      .reduce((acc, item) => {
+        const { sinistreCat, sinistreLib, sinistreLibInter, sinistreGFOBase, sinistreCode } = item;
+        const category = acc.find(cat => cat.label === sinistreCat);
+        const newItem = {
+          label: sinistreLib,
+          labelComplet: sinistreLibInter,
+          listGfo: sinistreGFOBase.split(", "),
+          code: sinistreCode
+        };
+
+        if (category) {
+          category.items.push(newItem);
+        } else {
+          acc.push({
+            label: sinistreCat,
+            items: [newItem]
+          });
+        }
+
+        return acc;
+      }, []);
+
+    listSinistres.value = formattedResult;
+    console.log(listSinistres.value);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
   return {
     NextPeremptions,
@@ -803,6 +843,8 @@ async function getPeremptionDisplayFormation() {
     getAsupVizData,
     asupVizData,
     getPeremptionDisplayFormation,
-    PeremptionsDisplayDataFormation
+    PeremptionsDisplayDataFormation,
+    getListSinistres,
+    listSinistres
   };
 });

@@ -4,7 +4,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createAuth0 } from '@auth0/auth0-vue';
 import PrimeVue from 'primevue/config';
-import 'primevue/resources/themes/aura-light-blue/theme.css'
+import 'primevue/resources/themes/aura-light-blue/theme.css';
 import ConfirmationService from 'primevue/confirmationservice';
 
 
