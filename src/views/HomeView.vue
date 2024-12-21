@@ -31,7 +31,7 @@
       <div class="introText">
         <introText :profile="getProfile()" />
       </div>
-      <div @click="clicking">
+      <div @click="clicking" v-if="getProfile() != 'formation'">
         <nextExpiration :profile="getProfile()" />
       </div>
     </div>
@@ -114,10 +114,11 @@ const image_grade = (current_grade) => {
 };
 
 const changeProfile = (profile) => {
-  if ( profile == 'Developpeur' || profile == 'Chef de Caserne' || profile == 'Rôles multiples') {
+  if ( profile == 'Developpeur' || profile == 'Chef de Caserne') {
     profilesList.value = [
       { label: 'Gestion pharmacie', value: 'pharmacie' },
       { label: 'Gestion ASUP', value: 'asup' },
+      { label: 'Gestion formation', value: 'formation' },
     ];
   } else if ( profile == 'Responsable Pharmacie') {
     profilesList.value = [
@@ -129,6 +130,22 @@ const changeProfile = (profile) => {
       { label: 'Gestion ASUP', value: 'asup' },
     ];
     selectedProfile.value = profilesList.value[0];
+  } else if ( profile == 'Responsable Formation') {
+    profilesList.value = [
+      { label: 'Gestion formation', value: 'formation' },
+    ];
+    selectedProfile.value = profilesList.value[0];
+  } else {
+    profilesList.value = [];
+    for (const profil of profile.split("_")) {
+      if (profil == 'pharmacie') {
+        profilesList.value.push({ label: 'Gestion pharmacie', value: 'pharmacie' });
+      } else if (profil == 'asup') {
+        profilesList.value.push({ label: 'Gestion ASUP', value: 'asup' });
+      } else if (profil == "formation"){
+        profilesList.value.push({ label: 'Gestion formation', value: 'formation' });
+      }
+    }
   }
 }
 
@@ -213,6 +230,8 @@ onMounted(async () => {
 const getProfile = () => {
   if (localStorage.getItem('currentProfile') == 'asup') {
     return 'asup';
+  } else if (localStorage.getItem('currentProfile') == 'formation') {
+    return 'formation';
   } else {
     return 'pharmacie';
   }

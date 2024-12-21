@@ -132,6 +132,9 @@ initialise();
       <RouterLink to="/replaceAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/replace.svg" width="25" height="auto" /></RouterLink>
       <RouterLink to="/expiryAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/expiry.svg" width="25" height="auto" /></RouterLink>
       <RouterLink to="/reportAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/report.svg" width="25" height="auto" /></RouterLink>
+      <RouterLink to="/formationSearch" v-if="isAuthenticated && currentProfile == 'formation'"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/formationAgentSearch" v-if="isAuthenticated && currentProfile == 'formation'"><img alt="Search Agent" src="@/assets/icons/searchAgent.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/telex" v-if="isAuthenticated && (currentProfile == 'formation' || currentProfile == 'asup')"><img alt="telex" src="@/assets/icons/telex.svg" width="30" height="auto" /></RouterLink>
     </nav>
   </div>
 </template>

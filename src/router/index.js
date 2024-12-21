@@ -11,6 +11,9 @@ import asupGrandPublic from '@/views/asupGrandPublic.vue'
 import expiryAsup from '@/views/expiryAsup.vue'
 import reportAsup from '@/views/reportAsup.vue'
 import replaceAsup from '@/views/replaceAsup.vue'
+import formationSearch from '@/views/formationSearch.vue'
+import formationSearchAgent from '@/views/formationSearchAgent.vue'
+import telexView from '@/views/telexView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -64,6 +67,21 @@ const router = createRouter({
       path: '/replaceAsup',
       name: 'replaceAsup',
       component: replaceAsup
+    },
+    {
+      path: '/formationSearch',
+      name: 'formationSearch',
+      component: formationSearch
+    },
+    {
+      path: '/formationSearchAgent',
+      name: 'formationSearchAgent',
+      component: formationSearchAgent
+    },
+    {
+      path: '/telex',
+      name: 'telex',
+      component: telexView
     }
   ]
 })

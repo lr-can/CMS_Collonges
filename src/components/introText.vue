@@ -38,6 +38,9 @@ async function getDisplayData(){
     if (props.profile === 'asup') {
         await sqlStore.getPeremptionDisplayAsup();
         displayPeremptions.value = await sqlStore.PeremptionsDisplayDataAsup;
+    } else if (props.profile === 'formation') {
+        await sqlStore.getPeremptionDisplayFormation();
+        displayPeremptions.value = await sqlStore.PeremptionsDisplayDataFormation;
     } else {
     await sqlStore.getPeremptionDisplay();
     displayPeremptions.value = await sqlStore.PeremptionsDisplayData;
@@ -51,12 +54,14 @@ const labels = ref([]);
 
 if (props.profile === 'asup') {
     labels.value = ['médicaments', 'Déclarations ASUP', 'à disposition', 'en remplacement'];
+} else if (props.profile === 'formation') {
+    labels.value = ['Agents', 'Agents recyclés', 'Agents sans ICP', 'Agents non recyclés'];
 } else {
     labels.value = ['médicaments', 'Lots différents', 'Reserve pharmacie', 'Disponible VSAV'];
 }
 
 const colorLots = () => {
-    if (props.profile === 'asup') {
+    if (props.profile === 'asup' || props.profile === 'formation') {
         return 'greenLot';
     } else {
         return 'redLots';
@@ -64,7 +69,7 @@ const colorLots = () => {
 }
 
 const colorVSAV = () => {
-    if (props.profile === 'asup') {
+    if (props.profile === 'asup' || props.profile === 'formation') {
         return 'orangeVsav';
     } else {
         return '';

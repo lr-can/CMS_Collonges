@@ -124,10 +124,10 @@ let utilisateur = auth0.user.value;
 const matricule = ref(utilisateur.profile[0]);
 const grade = ref(utilisateur.profile[1]);
 const nom = ref(utilisateur.name);
-const role = ref(utilisateur.profile[2]);
+const role = ref(utilisateur.profile[2].replace(/_(.*)/, ''));
 
 const showButtonProfile = ref(true);
-if (role.value == 'Correspondant ASUP' || role.value == "Resonsable Pharmacie") {
+if (role.value == 'Correspondant ASUP' || role.value == "Resonsable Pharmacie" || role.value == "Responsable Formation") {
   showButtonProfile.value = false;
 }
 
