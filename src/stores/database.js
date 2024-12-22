@@ -33,6 +33,7 @@ export const useSqlStore = defineStore('database', () => {
   const PeremptionsDisplayDataFormation = ref({});
   const listSinistres = ref([]);
   const searchedAddress = ref([]);
+  const moreAddress = ref({});
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -790,8 +791,9 @@ async function searchAddress(query){
     const features = result.features;
     const formattedResult = features.reduce((acc, feature) => {
       const { postcode, city, name, distance, ...rest } = feature.properties;
-      const label = `${postcode} ${city}`;
-      const newItem = { label: name, distance, ...rest };
+      const [lon, lat] = feature.geometry.coordinates;
+      const label = `${postcode} - ${city}`;
+      const newItem = { label: name, distance, city, lon, lat, ...rest };
 
       const group = acc.find(g => g.label === label);
       if (group) {
@@ -819,6 +821,19 @@ async function searchAddress(query){
 
 }
 
+async function getMoreAddress(lon, lat){
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://api.cms-collonges.fr/getFormationCoordinates/${lon}/${lat}`, requestOptions);
+    const result = await response.json();
+    moreAddress.value = result;    
+  } catch (error) {
+    console.error(error);
+  }
+}
 
   return {
     NextPeremptions,
@@ -888,6 +903,8 @@ async function searchAddress(query){
     getListSinistres,
     listSinistres,
     searchAddress,
-    searchedAddress
+    searchedAddress,
+    getMoreAddress,
+    moreAddress
   };
 });
