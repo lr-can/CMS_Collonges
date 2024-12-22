@@ -32,6 +32,7 @@ export const useSqlStore = defineStore('database', () => {
   const asupVizData = ref({});
   const PeremptionsDisplayDataFormation = ref({});
   const listSinistres = ref([]);
+  const searchedAddress = ref([]);
 
   async function getNextPeremptions() {
     const requestOptions = {
@@ -778,6 +779,46 @@ async function getListSinistres() {
   }
 }
 
+async function searchAddress(query){
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://api.cms-collonges.fr/getFormationAutoSuggest/${encodeURIComponent(query)}`, requestOptions);
+    const result = await response.json();
+    const features = result.features;
+    const formattedResult = features.reduce((acc, feature) => {
+      const { postcode, city, name, distance, ...rest } = feature.properties;
+      const label = `${postcode} ${city}`;
+      const newItem = { label: name, distance, ...rest };
+
+      const group = acc.find(g => g.label === label);
+      if (group) {
+      group.items.push(newItem);
+      } else {
+      acc.push({
+        label: label,
+        items: [newItem]
+      });
+      }
+
+      return acc;
+    }, []);
+
+    // Sort each group by minimum distance
+    formattedResult.forEach(group => {
+      group.items.sort((a, b) => a.distance - b.distance);
+    });
+
+    searchedAddress.value = formattedResult;
+    console.log(searchedAddress.value);
+  } catch (error) {
+    console.error(error);
+  }
+
+}
+
 
   return {
     NextPeremptions,
@@ -845,6 +886,8 @@ async function getListSinistres() {
     getPeremptionDisplayFormation,
     PeremptionsDisplayDataFormation,
     getListSinistres,
-    listSinistres
+    listSinistres,
+    searchAddress,
+    searchedAddress
   };
 });

@@ -56,7 +56,7 @@
                     Lieu de l'intervention
             </div>
             <div class="formElement">
-                <AutoComplete v-model="selectedCity" :suggestions="filteredCities" @complete="search" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" placeholder="Hint: type 'a'">
+                <AutoComplete v-model="selectedAddres" :suggestions="searchedAddress" @complete="search" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" placeholder="Chercher l'adresse">
                     <template #optiongroup="slotProps">
                         <div class="flex align-items-center country-item">
                             <div>{{ slotProps.option.label }}</div>
@@ -100,12 +100,22 @@ const manualHour = ref(false);
 const timeDateInter = ref(new Date());
 const sinistres = ref([]);
 const selectedSinistre = ref();
+const selectedAddres = ref();
+const searchedAddress = ref([]);
 
 const sqlStore = useSqlStore();
 
 async function getSinistres(){
     await sqlStore.getListSinistres();
     sinistres.value = await sqlStore.listSinistres;
+}
+
+const search = async (event) => {
+    if (event.query.length <= 4) {
+        return;
+    }
+    await sqlStore.searchAddress(event.query);
+    searchedAddress.value = await sqlStore.searchedAddress;
 }
 
 getSinistres();
