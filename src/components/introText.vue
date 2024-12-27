@@ -23,7 +23,7 @@
     </div>
   </div>
   <div v-if="profileIsFormation()" class="btnGSheet">
-    <gSheetBtn :typeBtn="'full'"></gSheetBtn>
+    <gSheetBtn></gSheetBtn>
   </div>
 </template>
 <script setup>

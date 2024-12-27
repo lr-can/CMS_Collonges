@@ -10,13 +10,7 @@ const redirectToGoogleSheets = () => {
     window.open('https://docs.google.com/spreadsheets/d/1aiagcxGaeehUTY8WEfY_ekOn3dol7HmveFylOWoX2OE/edit?gid=0#gid=0', '_blank');
 }
 
-const props = defineProps(['typeBtn']);
 
-const showDetail = () => {
-    return props.typeBtn === 'full' ? "" : "hide";
-}
-
-console.log(showDetail());
 </script>
 <style scoped>
 .gSheetBtn {

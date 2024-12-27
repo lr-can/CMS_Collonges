@@ -103,18 +103,175 @@
                     <label for="Batiment" class="labelForm">Bâtiment</label>
                     <InputText v-model="addressBatiment" inputId="Batiment" placeholder="Bâtiment" class="w-5rem md:w-5rem" />
                 </div>
+            </div>  
+            <div v-if="showAddress" class="subsubtitle">
+                PRV, PRI, PRM
+            </div>
+            <div v-if="showAddress" id="prvField">
+                <div class="flex items-center gap-2">
+                <Checkbox v-model="prvCondition" inputId="prv" name="dateModify" value="false" :disabled="prvCondition" />
+                    <label for="prv">Ajouter un PRV </label>
+                </div>
+                <div class="formElement" v-if="prvCondition">
+                <AutoComplete v-model="selectedAddressPRV" :suggestions="searchedAddressPRV" @complete="search" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" placeholder="Chercher l'adresse" :disabled="showAddress3">
+                    <template #optiongroup="slotProps">
+                        <div class="flex align-items-center country-item">
+                            <div>{{ slotProps.option.label }}</div>
+                        </div>
+                    </template>
+                </AutoComplete>
+                <button @click="getMoreAddress3" class="arrow-button" :class="isLoading" v-if="!showAddress3 && typeof(selectedAddressPRV) == 'object'">
+                    <span v-if="!loading">→</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span>
+                </button>
+                </div>
+                <div v-if="showAddress3">
+                <label for="Voie" class="labelForm">Voie</label>
+                <InputText v-model="addressVoiePRV" inputId="Voie" placeholder="Voie de l'adresse" />
+            </div>
+            <div v-if="showAddress3">
+                <label for="Commune" class="labelForm">Commune</label>
+                <InputText v-model="addressCommunePRV" inputId="Commune" placeholder="Commune" />
+            </div>
+            <div v-if="showAddress3" class="flexx">
+                <div>
+                    <label for="Livre" class="labelForm">Livre</label><br>
+                    <Dropdown v-model="addressLivrePRV" :options="livres" placeholder="Livre" class="w-full md:w-14rem" />
+                </div>
+                <div id="coordonnees">
+                    <label for="coordonnees" class="labelForm">Coordonnées</label>
+                    <InputText v-model="coordonneesPRV" inputId="coordonnees" placeholder="Coordonnées Livre" />
+                </div>
+            </div>
+            <div v-if="showAddress3">
+                <label for="erp" class="labelForm">ERP</label><br>
+                <Dropdown v-model="erpPRV" :options="erpList" placeholder="Sélectionner un ERP" fluid class="w-full md:w-14rem" />
+            </div>
+            <div v-if="showAddress3" class="flexx">
+                <div>
+                    <label for="Etage" class="labelForm">Etage</label><br>
+                    <Dropdown v-model="addressEtagePRV" :options="etages" placeholder="Etage" class="w-full md:w-14rem" />
+                </div>
+                <div id="Batiment">
+                    <label for="Batiment" class="labelForm">Bâtiment</label>
+                    <InputText v-model="addressBatimentPRV" inputId="Batiment" placeholder="Bâtiment" class="w-5rem md:w-5rem" />
+                </div>
+            </div>
+            </div>
+            <div v-if="showAddress" id="priField">
+                <div class="flex items-center gap-2">
+                <Checkbox v-model="priCondition" inputId="pri" name="dateModify" value="false" :disabled="priCondition" />
+                    <label for="pri">Ajouter un PRI </label>
+                </div>
+                <div class="formElement" v-if="priCondition">
+                <AutoComplete v-model="selectedAddressPRI" :suggestions="searchedAddressPRI" @complete="search" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" placeholder="Chercher l'adresse" :disabled="showAddress4">
+                    <template #optiongroup="slotProps">
+                        <div class="flex align-items-center country-item">
+                            <div>{{ slotProps.option.label }}</div>
+                        </div>
+                    </template>
+                </AutoComplete>
+                <button @click="getMoreAddress4" class="arrow-button" :class="isLoading" v-if="!showAddress4 && typeof(selectedAddressPRI) == 'object'">
+                    <span v-if="!loading">→</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span>
+                </button>
+                </div>
+                <div v-if="showAddress4">
+                <label for="Voie" class="labelForm">Voie</label>
+                <InputText v-model="addressVoiePRI" inputId="Voie" placeholder="Voie de l'adresse" />
+            </div>
+            <div v-if="showAddress4">
+                <label for="Commune" class="labelForm">Commune</label>
+                <InputText v-model="addressCommunePRI" inputId="Commune" placeholder="Commune" />
+            </div>
+            <div v-if="showAddress4" class="flexx">
+                <div>
+                    <label for="Livre" class="labelForm">Livre</label><br>
+                    <Dropdown v-model="addressLivrePRI" :options="livres" placeholder="Livre" class="w-full md:w-14rem" />
+                </div>
+                <div id="coordonnees">
+                    <label for="coordonnees" class="labelForm">Coordonnées</label>
+                    <InputText v-model="coordonneesPRI" inputId="coordonnees" placeholder="Coordonnées Livre" />
+                </div>
+            </div>
+            <div v-if="showAddress4">
+                <label for="erp" class="labelForm">ERP</label><br>
+                <Dropdown v-model="erpPRI" :options="erpList" placeholder="Sélectionner un ERP" fluid class="w-full md:w-14rem" />
+            </div>
+            <div v-if="showAddress4" class="flexx">
+                <div>
+                    <label for="Etage" class="labelForm">Etage</label><br>
+                    <Dropdown v-model="addressEtagePRI" :options="etages" placeholder="Etage" class="w-full md:w-14rem" />
+                </div>
+                <div id="Batiment">
+                    <label for="Batiment" class="labelForm">Bâtiment</label>
+                    <InputText v-model="addressBatimentPRI" inputId="Batiment" placeholder="Bâtiment" class="w-5rem md:w-5rem" />
+                </div>
+            </div>
+            </div>
+            <div v-if="showAddress" id="prmField">
+                <div class="flex items-center gap-2">
+                <Checkbox v-model="prmCondition" inputId="prm" name="dateModify" value="false" :disabled="prmCondition" />
+                    <label for="prm">Ajouter un PRM </label>
+                </div>
+                <div class="formElement" v-if="prmCondition">
+                <AutoComplete v-model="selectedAddressPRM" :suggestions="searchedAddressPRM" @complete="search" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items" placeholder="Chercher l'adresse" :disabled="showAddress2">
+                    <template #optiongroup="slotProps">
+                        <div class="flex align-items-center country-item">
+                            <div>{{ slotProps.option.label }}</div>
+                        </div>
+                    </template>
+                </AutoComplete>
+                <button @click="getMoreAddress2" class="arrow-button" :class="isLoading" v-if="!showAddress2 && typeof(selectedAddressPRM) == 'object'">
+                    <span v-if="!loading">→</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span>
+                </button>
+                </div>
+                <div v-if="showAddress2">
+                <label for="Voie" class="labelForm">Voie</label>
+                <InputText v-model="addressVoiePRM" inputId="Voie" placeholder="Voie de l'adresse" />
+            </div>
+            <div v-if="showAddress2">
+                <label for="Commune" class="labelForm">Commune</label>
+                <InputText v-model="addressCommunePRM" inputId="Commune" placeholder="Commune" />
+            </div>
+            <div v-if="showAddress2" class="flexx">
+                <div>
+                    <label for="Livre" class="labelForm">Livre</label><br>
+                    <Dropdown v-model="addressLivrePRM" :options="livres" placeholder="Livre" class="w-full md:w-14rem" />
+                </div>
+                <div id="coordonnees">
+                    <label for="coordonnees" class="labelForm">Coordonnées</label>
+                    <InputText v-model="coordonneesPRM" inputId="coordonnees" placeholder="Coordonnées Livre" />
+                </div>
+            </div>
+            <div v-if="showAddress2">
+                <label for="erp" class="labelForm">ERP</label><br>
+                <Dropdown v-model="erpPRM" :options="erpList" placeholder="Sélectionner un ERP" fluid class="w-full md:w-14rem" />
+            </div>
+            <div v-if="showAddress2" class="flexx">
+                <div>
+                    <label for="Etage" class="labelForm">Etage</label><br>
+                    <Dropdown v-model="addressEtagePRM" :options="etages" placeholder="Etage" class="w-full md:w-14rem" />
+                </div>
+                <div id="Batiment">
+                    <label for="Batiment" class="labelForm">Bâtiment</label>
+                    <InputText v-model="addressBatimentPRM" inputId="Batiment" placeholder="Bâtiment" class="w-5rem md:w-5rem" />
+                </div>
+            </div>
+            <p>REMARQUE : Vous aurez la possibilité d'affecter certains <br>ou tous les engins à des PRM, PRV ou PRI plus tard.</p>
             </div>
             <div class="subsubtitle">
                     Sélection de la raison de l'intervention
             </div>
             <div class="formElement">
-                <Dropdown v-model="selectedSinistre" :options="sinistres" optionLabel="label" editable optionGroupLabel="label" optionGroupChildren="items" placeholder="Sélectionner un sinistre" class="w-full md:w-14rem">
+                <Dropdown v-model="selectedSinistre" :options="sinistres" @change="getSinistreGFO" optionLabel="labelComplet" editable optionGroupLabel="label" optionGroupChildren="items" placeholder="Sélectionner un sinistre" class="w-full md:w-14rem">
                     <template #optiongroup="slotProps">
                     <div class="flex align-items-center">
                         <div>{{ slotProps.option.label }}</div>
                     </div>
                     </template>
                 </Dropdown>
+            </div>
+            <div v-if="typeof(selectedSinistre) == 'object'" class="gfoList">
+                <Chips v-model="gfos" />
             </div>
             <div id="layoutMargin"></div>
         </div>
@@ -129,7 +286,8 @@ import Dropdown from 'primevue/dropdown';
 import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
 import AutoComplete from 'primevue/autocomplete';
-import { ref, watch } from "vue";
+import Chips from 'primevue/chips';
+import { ref, watch, computed } from "vue";
 
 const verifyIfPhone = () => {
     return window.innerWidth < 768;
@@ -176,6 +334,9 @@ const search = async (event) => {
     }
     await sqlStore.searchAddress(event.query);
     searchedAddress.value = await sqlStore.searchedAddress;
+    searchedAddressPRM.value = await sqlStore.searchedAddress;
+    searchedAddressPRV.value = await sqlStore.searchedAddress;
+    searchedAddressPRI.value = await sqlStore.searchedAddress;
 }
 
 getSinistres();
@@ -195,10 +356,45 @@ const coordonnees = ref('Coordonnées de base');
 const erp = ref('');
 const addressBatiment = ref('');
 const addressEtage = ref('');
+const prmCondition = ref(false);
+const selectedAddressPRM = ref();
+const searchedAddressPRM = ref([]);
+const showAddress2 = ref(false);
+const addressVoiePRM = ref('Voie de base');
+const addressCommunePRM = ref('Commune de base');
+const addressLivrePRM = ref('Collonges');
+const coordonneesPRM = ref('Coordonnées de base');
+const erpPRM = ref('');
+const addressBatimentPRM = ref('');
+const addressEtagePRM = ref('');
+const gfos = ref([]);
+const gfosBase = ref([]);
+const addressLivrePRV = ref('Collonges');
+const addressEtagePRV = ref('');
+const addressBatimentPRV = ref('');
+const selectedAddressPRV = ref();
+const searchedAddressPRV = ref([]);
+const showAddress3 = ref(false);
+const addressVoiePRV = ref('Voie de base');
+const addressCommunePRV = ref('Commune de base');
+const coordonneesPRV = ref('Coordonnées de base');
+const erpPRV = ref('');
+const prvCondition = ref(false);
+const addressLivrePRI = ref('Collonges');
+const addressEtagePRI = ref('');
+const addressBatimentPRI = ref('');
+const selectedAddressPRI = ref();
+const searchedAddressPRI = ref([]);
+const showAddress4 = ref(false);
+const addressVoiePRI = ref('Voie de base');
+const addressCommunePRI = ref('Commune de base');
+const coordonneesPRI = ref('Coordonnées de base');
+const erpPRI = ref('');
+const priCondition = ref(false);
 
 const livres = ["Collonges",  "Fontaines", "Caluire","LYON RD", "Albigny", "Neuville", "Rillieux", "StDidier"];
 const erpList = ref([]);
-const etages = ["-3", "-2", "-1", "RdC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"];
+const etages = ["MI","VP", "-3", "-2", "-1", "RdC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"];
 
 
 const getMoreAddress = async () => {
@@ -220,16 +416,99 @@ const getMoreAddress = async () => {
     
     loading.value = false;
 }
+const getMoreAddress2 = async () => {
+    loading.value = true;
+    await sqlStore.getMoreAddress(selectedAddressPRM.value.lon, selectedAddressPRM.value.lat);
+    moreAddress.value = await sqlStore.moreAddress;
+    showAddress2.value = true;
+    console.log(moreAddress.value);
+    addressVoiePRM.value = selectedAddressPRM.value.housenumber ? selectedAddressPRM.value.housenumber + ' ' + selectedAddressPRM.value.street : selectedAddressPRM.value.street;
+    addressCommunePRM.value = selectedAddressPRM.value.city.toUpperCase();
+    coordonneesPRM.value = moreAddress.value.mapCoordinates == "inconnu" ? "" : moreAddress.value.mapCoordinates;
+    erpList.value.push(" ");
+    for (const erp of moreAddress.value.erp){
+        erpList.value.push(erp.feature.toUpperCase().replace(/GROUPEMENT/g, 'GT').replace(/ETABLISSEMENT/g, 'ETB'));	
+    }
+    if(moreAddress.value.erp[0].distance < 60){
+        erpPRM.value = moreAddress.value.erp[0].feature.toUpperCase().replace(/GROUPEMENT/g, 'GT');
+    }
+    
+    loading.value = false;
+}
+
+const getMoreAddress3 = async () => {
+    loading.value = true;
+    await sqlStore.getMoreAddress(selectedAddressPRV.value.lon, selectedAddressPRV.value.lat);
+    moreAddress.value = await sqlStore.moreAddress;
+    showAddress3.value = true;
+    console.log(moreAddress.value);
+    addressVoiePRV.value = selectedAddressPRV.value.housenumber ? selectedAddressPRV.value.housenumber + ' ' + selectedAddressPRV.value.street : selectedAddressPRV.value.street;
+    addressCommunePRV.value = selectedAddressPRV.value.city.toUpperCase();
+    coordonneesPRV.value = moreAddress.value.mapCoordinates == "inconnu" ? "" : moreAddress.value.mapCoordinates;
+    erpList.value.push(" ");
+    for (const erp of moreAddress.value.erp){
+        erpList.value.push(erp.feature.toUpperCase().replace(/GROUPEMENT/g, 'GT').replace(/ETABLISSEMENT/g, 'ETB'));	
+    }
+    if(moreAddress.value.erp[0].distance < 60){
+        erpPRV.value = moreAddress.value.erp[0].feature.toUpperCase().replace(/GROUPEMENT/g, 'GT');
+    }
+    
+    loading.value = false;
+}
+
+const getMoreAddress4 = async () => {
+    loading.value = true;
+    await sqlStore.getMoreAddress(selectedAddressPRI.value.lon, selectedAddressPRI.value.lat);
+    moreAddress.value = await sqlStore.moreAddress;
+    showAddress4.value = true;
+    console.log(moreAddress.value);
+    addressVoiePRI.value = selectedAddressPRI.value.housenumber ? selectedAddressPRI.value.housenumber + ' ' + selectedAddressPRI.value.street : selectedAddressPRI.value.street;
+    addressCommunePRI.value = selectedAddressPRI.value.city.toUpperCase();
+    coordonneesPRI.value = moreAddress.value.mapCoordinates == "inconnu" ? "" : moreAddress.value.mapCoordinates;
+    erpList.value.push(" ");
+    for (const erp of moreAddress.value.erp){
+        erpList.value.push(erp.feature.toUpperCase().replace(/GROUPEMENT/g, 'GT').replace(/ETABLISSEMENT/g, 'ETB'));	
+    }
+    if(moreAddress.value.erp[0].distance < 60){
+        erpPRI.value = moreAddress.value.erp[0].feature.toUpperCase().replace(/GROUPEMENT/g, 'GT');
+    }
+    
+    loading.value = false;
+}
 
 const isLoading = () => {
     return loading.value ? 'loading' : '';
 }
+
+let maxConfigCollonges = {
+    "SAP" : 2,
+    "PSSAP": 3,
+    "PSINC": 1,
+    "INC": 1,
+    "INFAMU": 2,
+    "CDG": 2,
+    "AQUA": 1
+
+}
+
+const getSinistreGFO = async () => {
+    console.log(selectedSinistre.value);
+    gfos.value = selectedSinistre.value.listGfo;
+    gfosBase.value = selectedSinistre.value.listGfo;
+}
+
+const gfoSuppression = computed(() => {
+    return gfosBase.value.filter(gfo => !gfos.value.includes(gfo));
+})
 
 </script>
 
 <style scoped>
 .full {
     width: 100%;
+}
+.gfoList{
+    margin-top: 1rem;
 }
 .fullView {
     width: 100vw;
@@ -247,6 +526,9 @@ const isLoading = () => {
     padding-right: 5rem;
     transform: translateX(+5rem);
     overflow: auto;
+}
+#prvField, #priField, #prmField{
+    margin-top: 1rem;
 }
 .asupButton:hover{
     background-color: #e0e0e0;
