@@ -876,6 +876,49 @@ async function getAgentsList() {
   }
 }
 
+const availableEngins = ref([]);
+async function getAvailableEngins(gfo) {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES`, requestOptions);
+    const result = await response.json();
+    console.log("result", result);
+    let availableEnginsDump = [];
+    for (const item of result) {
+      console.log(item[`priorite_GFO_${gfo}`])
+      if (item[`priorite_GFO_${gfo}`] != "0") {
+        availableEnginsDump.push(item.libEngin);
+      }
+    }
+    availableEngins.value = availableEnginsDump;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+const availableRoles = ref([]);
+async function getAvailableRoles(gfo) {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS`, requestOptions);
+    const result = await response.json();
+    for (const item of result) {
+      if (item.GFO === gfo) {
+        availableRoles.value = item.emploisGFO_pref.split(', ');
+        break;
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
   return {
     NextPeremptions,
     getNextPeremptions,
@@ -948,6 +991,10 @@ async function getAgentsList() {
     getMoreAddress,
     moreAddress,
     getAgentsList,
-    agentsList
+    agentsList,
+    getAvailableRoles,
+    availableRoles,
+    getAvailableEngins,
+    availableEngins
   };
 });

@@ -336,11 +336,11 @@
                 <div class="subsubtitle">
                     GFO
                 </div>
-                <Dropdown v-model="popupGFO" :options="gfos" placeholder="Sélectionner un GFO" class="w-full md:w-14rem" />
+                <Dropdown v-model="popupGFO" :options="gfos" placeholder="Sélectionner un GFO" @change="loadRoles()" class="w-full md:w-14rem" />
                 <div class="subsubtitle">
                     Engin
                 </div>
-                <Dropdown v-model="popupEngin" :options="enginsAffected" option-label="engin" placeholder="Sélectionner un engin" class="w-full md:w-14rem" />
+                <Dropdown v-model="popupEngin" :options="enginsGfo" placeholder="Sélectionner un engin" class="w-full md:w-14rem" />
                 <div class="subsubtitle">
                     Rôle
                 </div>
@@ -356,7 +356,7 @@
                         <div class="agent">
                             <div class="agentMatricule">{{agent.matricule}}</div>
                             <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
-                            <div v-if="agent.engin != ''" class="agentGFO">{{ agent.engin }} - {{ agent.emploi }}</div>
+                            <div v-if="agent.engin != ''" class="agentGFO greenText">{{ agent.engin }} ({{ agent.emploi }}) <span class="redCross" @click="removeAffectation(agent)">X</span></div>
                             <div v-else class="affectAgentLink" @click="affectAgentManually(agent)">Affecter manuellement</div>
                         </div>
                     </div>
@@ -371,9 +371,12 @@
                             <div class="affectation">
                                 <div v-if="vehicule.affectation.length > 0">
                                     <div v-for="agent in vehicule.affectation" :key="agent.matricule">
-                                        <div class="agent">
-                                            <div class="agentMatricule">{{agent.matricule}}</div>
-                                            <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
+                                        <div class="agent flexed">
+                                            <div class="roleAgent">{{ agent.emploi.split("_")[1].toUpperCase() }}</div>
+                                            <div class="part2">                                        
+                                                <div class="agentMatricule">{{agent.matricule}}</div>
+                                                <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -528,6 +531,8 @@ const addressCommunePRI = ref('Commune de base');
 const coordonneesPRI = ref('Coordonnées de base');
 const erpPRI = ref('');
 const priCondition = ref(false);
+const availableRoles = ref([]);
+const enginsGfo = ref([]);
 
 const livres = ["Collonges",  "Fontaines", "Caluire","LYON RD", "Albigny", "Neuville", "Rillieux", "StDidier"];
 const erpList = ref([]);
@@ -617,6 +622,16 @@ const isLoading = () => {
     return loading.value ? 'loading' : '';
 }
 
+const loadRoles = async () => {
+    if (popupGFO.value){
+        await sqlStore.getAvailableEngins(popupGFO.value);
+        enginsGfo.value = sqlStore.availableEngins;
+        console.log(enginsGfo.value);
+        await sqlStore.getAvailableRoles(popupGFO.value);
+        availableRoles.value = sqlStore.availableRoles;
+    }
+}
+
 let maxConfigCollonges = computed(() => {
     const max = {
     "SAP" : 2,
@@ -699,7 +714,7 @@ const gfoSuppression = computed(() => {
 
     return [...manuallyAddedGFO.value,...gfosBase.value.filter(gfo => !gfos.value.includes(gfo))];
 })
-
+const affectationPersonnalises = ref([]);
 const addGfo = () => {
     if (toAddGfo.value){
         gfos.value.push(toAddGfo.value);
@@ -758,12 +773,51 @@ const affectAgentManually = (agent) => {
     showPopup.value = true;
 }
 
+const affectAgent = () => {
+    const agent = toAffectAgents.value.find(agent => agent.label == popupTitle.value);
+    const engin = enginsAffected.value.find(engin => engin.engin == popupEngin.value);
+    const role = availableRoles.value.find(role => role == popupRole.value);
+    if (agent && engin && role){
+        engin.affectation.push({ ...agent, emploi: role, engin: popupEngin.value });
+        affectationPersonnalises.value.push({ ...agent, emploi: role, engin: popupEngin.value });
+        agent.emploi = role;
+        agent.engin = popupEngin.value;
+        showPopup.value = false;
+        popupGFO.value = '';
+        popupEngin.value = '';
+        popupRole.value = '';
+    }
+}
+
+const removeAffectation = (agent) => {
+    const engin = enginsAffected.value.find(engin => engin.affectation.find(affectation => affectation.matricule == agent.matricule));
+    const affectation = engin.affectation.find(affectation => affectation.matricule == agent.matricule);
+    const agentToModify = toAffectAgents.value.find(agent => agent.matricule == affectation.matricule);
+    agentToModify.emploi = '';
+    agentToModify.engin = '';
+    engin.affectation = engin.affectation.filter(affectation => affectation.matricule != agent.matricule);
+    affectationPersonnalises.value = affectationPersonnalises.value.filter(affectation => affectation.matricule != agent.matricule);
+}
+
+
 </script>
 
 <style scoped>
 .greyText, .agentMatricule{
     color: #666666;
     font-size: 0.8rem;
+}
+.greenText{
+    color: #1f8d49;
+    font-size: 0.8rem;
+}
+.redCross{
+    color: red;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.redCross:hover{
+    background-color: #f0f0f0;
 }
 .full {
     width: 100%;
@@ -774,6 +828,19 @@ const affectAgentManually = (agent) => {
 }
 .agent{
     margin-top: 0.5rem;
+}
+.flexed{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    background-color: white;
+    padding: 0.5rem;
+    border-radius: 30px;
+    align-items: center;
+    box-shadow: 0 0 5px 0 rgba(0,0,0,0.1);
+}
+.part2{
+    flex: 0.8;
 }
 
 .fullView {
@@ -890,6 +957,8 @@ const affectAgentManually = (agent) => {
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
+    overflow-y: auto;
+    max-height: 80vh;
 }
 .vehicule{
     background-color: #f6f6f6;
