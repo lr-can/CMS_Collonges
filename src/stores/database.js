@@ -835,6 +835,47 @@ async function getMoreAddress(lon, lat){
   }
 }
 
+const agentsList = ref([]);
+
+function gradeAbbreviation(grade){
+  const grades = {
+    "Sap 2CL": "SAP",
+    "Sap 1CL": "SAP",
+    "Caporal" : "CAP",
+    "Caporal-Chef": "CCH",
+    "Sergent": "SGT",
+    "Sergent-Chef": "SCHE",
+    "Adjudant": "ADJ",
+    "Adjudant-Chef": "ADC",
+    "Lieutenant": "LTN",
+    "Capitaine": "CNE",
+    "Commandant": "CDT",
+    "Colonel": "COL",
+    "Lieutenant-Colonel": "LCL",
+    "Infirmière": "INF",
+  }
+  return grades[grade];
+  }
+
+async function getAgentsList() {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsASUP`, requestOptions);
+    let result = await response.json();
+    result = result.map(item => ({
+      ...item,
+      label: `${item.matricule} - ${gradeAbbreviation(item.grade)} ${item.nomAgent} ${item.prenomAgent}`
+    }));
+    agentsList.value = result;
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+
   return {
     NextPeremptions,
     getNextPeremptions,
@@ -905,6 +946,8 @@ async function getMoreAddress(lon, lat){
     searchAddress,
     searchedAddress,
     getMoreAddress,
-    moreAddress
+    moreAddress,
+    getAgentsList,
+    agentsList
   };
 });

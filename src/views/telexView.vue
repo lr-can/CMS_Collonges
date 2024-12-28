@@ -38,7 +38,7 @@
         <div class="logoApp">
             <img src="@/assets/logoTitle.png" width="200px" height="auto" >
         </div>
-        <div id="mapid" v-if="selectedAddress != ''">
+        <div id="mapid" v-if="step == 1 || step == 2">
                 <img :src="mapSource"
                 width="300px" height="300px"/>
         </div>
@@ -265,13 +265,126 @@
                 <Dropdown v-model="selectedSinistre" :options="sinistres" @change="getSinistreGFO" optionLabel="labelComplet" editable optionGroupLabel="label" optionGroupChildren="items" placeholder="Sélectionner un sinistre" class="w-full md:w-14rem">
                     <template #optiongroup="slotProps">
                     <div class="flex align-items-center">
-                        <div>{{ slotProps.option.label }}</div>
+                        <div>{{ slotProps.option.labelComplet }}</div>
                     </div>
                     </template>
                 </Dropdown>
             </div>
-            <div v-if="typeof(selectedSinistre) == 'object'" class="gfoList">
-                <Chips v-model="gfos" />
+            <div v-if="typeof(selectedSinistre) == 'object' && gfos" class="gfoList">
+                <div>
+                    <b>GFO</b>
+                </div>
+                <div>
+                    <Chips v-model="gfos" />
+                </div>
+                <div class="gfoList"><Dropdown v-model="toAddGfo" :options="maxConfigCollonges" @change="addGfo" placeholder="Ajouter un GFO pour Collonges" class="w-full md:w-14rem" /></div>
+            </div>
+            <div v-if="step2Possible" class="validationBtn" @click="step = 2">Passer à l'étape suivante</div>
+            <div id="layoutMargin"></div>
+        </div>
+        <div v-if="step == 2">
+            <div id="layoutMargin"></div>
+            <div>
+                <div>
+                    <div class="subsubtitle">
+                        Intervention
+                    </div>
+                </div>
+                <div class="leftMargin">
+                    <b>{{selectedSinistre.label}} à {{ addressCommune }}</b>
+                </div>
+            </div>
+            <div class="subsubtitle">
+                    GFO
+            </div>
+                <div class="leftMargin">
+                    {{ gfos.join(', ') }}
+                </div>
+            <br>
+            <div class="subtitle">
+                Sélection des agents de la caserne
+            </div>
+            <div>
+                <MultiSelect v-model="selectedAgents" display="chip" :options="agents" optionLabel="label" placeholder="Sélectionner des agents" class="gfoList">
+                <template #chip="slotProps">
+                    <div>{{ slotProps.value.matricule }}</div>
+                </template>
+                </MultiSelect>
+            </div>
+            <p v-if="selectedAgents.length != 0" class="greyText">
+                Vous avez sélectionné {{selectedAgents.length}} agent{{selectedAgents.length == 1 ? "": "s"}}.
+            </p>
+            <div v-if="selectedAgents.length >= 2" class="validationBtn" @click="step3function">Passer à l'étape suivante</div>
+            <div id="layoutMargin"></div>
+        </div>
+        <div v-if="step == 3">
+            <div id="layoutMargin"></div>
+            <div class="subtitle">
+                Affectation des agents de la caserne
+            </div>
+            <div class="blurBck" v-if="showPopup"></div>
+            <div class="popupAffectation" v-if="showPopup">
+                <div class="subtitle">
+                    Affectation manuelle
+                </div>
+                <div class="subsubtitle">
+                    Agent
+                </div>
+                <div class="leftMargin">
+                    {{popupTitle}}
+                </div>
+                <div class="subsubtitle">
+                    GFO
+                </div>
+                <Dropdown v-model="popupGFO" :options="gfos" placeholder="Sélectionner un GFO" class="w-full md:w-14rem" />
+                <div class="subsubtitle">
+                    Engin
+                </div>
+                <Dropdown v-model="popupEngin" :options="enginsAffected" option-label="engin" placeholder="Sélectionner un engin" class="w-full md:w-14rem" />
+                <div class="subsubtitle">
+                    Rôle
+                </div>
+                <Dropdown v-model="popupRole" :options="availableRoles" placeholder="Sélectionner un rôle" class="w-full md:w-14rem" />
+                <div class="validationBtn" @click="affectAgent">Affecter</div>
+            </div>
+            <div class="twoColumns">
+                <div class="firstColumn">
+                    <div class="subsubtitle noBorder">
+                        Agents de la caserne sur la manœuvre
+                    </div>
+                    <div v-for="agent in toAffectAgents" :key="agent.matricule">
+                        <div class="agent">
+                            <div class="agentMatricule">{{agent.matricule}}</div>
+                            <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
+                            <div v-if="agent.engin != ''" class="agentGFO">{{ agent.engin }} - {{ agent.emploi }}</div>
+                            <div v-else class="affectAgentLink" @click="affectAgentManually(agent)">Affecter manuellement</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="secondColumn">
+                    <div v-for="vehicule of enginsAffected" :key="vehicule.engin">
+                        <div class="vehicule">
+                            <div class="vehiculeName">
+                                <img :src="getIconSrc(vehicule.engin)" height="40px" width="auto">
+                                <span class="vehiculeNameSpan">{{vehicule.engin}}</span>
+                            </div>
+                            <div class="affectation">
+                                <div v-if="vehicule.affectation.length > 0">
+                                    <div v-for="agent in vehicule.affectation" :key="agent.matricule">
+                                        <div class="agent">
+                                            <div class="agentMatricule">{{agent.matricule}}</div>
+                                            <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else>
+                                    <div class="noAgent">Aucun agent affecté</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
             <div id="layoutMargin"></div>
         </div>
@@ -286,8 +399,26 @@ import Dropdown from 'primevue/dropdown';
 import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
 import AutoComplete from 'primevue/autocomplete';
+import MultiSelect from 'primevue/multiselect';
 import Chips from 'primevue/chips';
 import { ref, watch, computed } from "vue";
+
+
+import BPSM from '../assets/icons/engins/Dl-BPSM.png';
+import VSAV from '../assets/icons/engins/Dl-VSAV.png';
+import FPTL from '../assets/icons/engins/Dl-FPTL.png';
+import VLCDG from '../assets/icons/engins/Dl-VLCDG.png';
+import VFI from '../assets/icons/engins/Dl-VFI.png';
+import VTUTP from '../assets/icons/engins/Dl-VTUTP.png';
+
+const engIcons = {
+    'BPSM': BPSM,
+    'VSAV': VSAV,
+    'FPTL': FPTL,
+    'VLCDG': VLCDG,
+    'VFI': VFI,
+    'VTUTP': VTUTP
+}
 
 const verifyIfPhone = () => {
     return window.innerWidth < 768;
@@ -301,7 +432,13 @@ const selectedSinistre = ref();
 const selectedAddress = ref();
 const searchedAddress = ref([]);
 const showAddress = ref(false);
+const showPopup = ref(false);
+const popupTitle = ref('');
+const popupGFO = ref('');
+const popupEngin = ref('');
+const popupRole = ref('');
 const loading = ref(false);
+const toAddGfo = ref();
 const moreAddress = ref({});
 const mapSource = ref('https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=500&height=500&center=lonlat:4.84665,45.81745&zoom=15&marker=lonlat:4.84665,45.81745;type:circle;color:%23ff0000;size:small;icon:local_fire_department;icontype:material;iconsize:small;strokecolor:%23ff0000&scaleFactor=2&apiKey=75c6e5ac06e84d3a95473195e7af529d');
 
@@ -480,36 +617,165 @@ const isLoading = () => {
     return loading.value ? 'loading' : '';
 }
 
-let maxConfigCollonges = {
+let maxConfigCollonges = computed(() => {
+    const max = {
     "SAP" : 2,
     "PSSAP": 3,
     "PSINC": 1,
     "INC": 1,
     "INFAMU": 2,
     "CDG": 2,
-    "AQUA": 1
+    "AQUA": 1,
+    "DIV": 2,
+    "DIVPRE": 1
+    }
+    const result = [];
+    for (const gfo of gfos.value){
+        if (gfo == "AQUA"){
+            max["AQUA"] -= 1;
+            max["DIV"] -= 1;
+            max["DIVPRE"] -= 1;
+            max["PSSAP"] -= 1;
+        } else if (gfo == "INFAMU") {
+            max["INFAMU"] -= 1;
+            max["CDG"] -= 1;
+            max["DIV"] -= 1;
+        } else if (gfo == "DIVPRE"){
+            max["DIVPRE"] -= 1;
+            max["DIV"] -= 1;
+            max["PSSAP"] -= 1;
+        } else if (gfo == "SAP") {
+            max["SAP"] -= 1;
+            max["PSSAP"] -= 1;
+        } else if (gfo == "PSSAP"){
+            max["PSSAP"] -= 1;
+            max["SAP"] -= 1;
+        } else if (gfo == "PSINC"){
+            max["PSINC"] -= 1;
+            max["INC"] -= 1;
+        } else if (gfo == "INC"){
+            max["INC"] -= 1;
+            max["PSINC"] -= 1;
+        } else if (gfo == "CDG"){
+            max["CDG"] -= 1;
+            max["INFAMU"] -= 1;
+        } else if (gfo == "DIV"){
+            max["DIV"] -= 1;
+            max["CDG"] -= 1;
+            max["INFAMU"] -= 1;
+            max["DIVPRE"] -= 1;
+            max["PSSAP"] -= 1;
+            max["AQUA"] -= 1;
+        }
+    }
+    for (const [key, value] of Object.entries(max)){
+        value > 0 ? result.push(key) : null;
+    }
 
-}
+    return result;
+})
+
+const manuallyAddedGFO = ref([]);
 
 const getSinistreGFO = async () => {
-    console.log(selectedSinistre.value);
-    gfos.value = selectedSinistre.value.listGfo;
-    gfosBase.value = selectedSinistre.value.listGfo;
+    const possibleGFO = ["SAP", "PSSAP", "PSINC", "INC", "INFAMU", "CDG", "AQUA", "DIV", "DIVPRE"];
+    if (selectedSinistre.value && selectedSinistre.value.listGfo) {
+        gfos.value = selectedSinistre.value.listGfo.filter(gfo => possibleGFO.includes(gfo));
+        gfosBase.value = selectedSinistre.value.listGfo.filter(gfo => possibleGFO.includes(gfo));
+        if (gfos.value.filter(gfo => gfo === "INC").length > 1) {
+            const index = gfos.value.lastIndexOf("INC");
+            if (index > -1) {
+                gfos.value.splice(index, 1);
+                manuallyAddedGFO.value.push("INC");
+            }
+        }
+    }
 }
 
 const gfoSuppression = computed(() => {
-    return gfosBase.value.filter(gfo => !gfos.value.includes(gfo));
+    if (!Array.isArray(gfosBase.value) || gfosBase.value.length == 0) {
+        return [];
+    }
+
+    return [...manuallyAddedGFO.value,...gfosBase.value.filter(gfo => !gfos.value.includes(gfo))];
 })
+
+const addGfo = () => {
+    if (toAddGfo.value){
+        gfos.value.push(toAddGfo.value);
+    }
+    toAddGfo.value = null;
+}
+
+const step2Possible = computed(() => {
+    return selectedAddress.value && selectedSinistre.value && gfos.value.length > 0;
+})
+const selectedAgents = ref([]);
+const toAffectAgents = ref([]);
+const step3function = () => {
+    step.value = 3;
+    toAffectAgents.value = selectedAgents.value.map(agent => ({ ...agent, emploi: "", engin: "" }));
+}
+const agents = ref([]);
+
+const getAgentsList = async () => {
+    await sqlStore.getAgentsList();
+    agents.value = await sqlStore.agentsList;
+}
+getAgentsList();
+
+const getIconSrc = (enginName) => {
+    return engIcons[enginName.split('-')[0]];
+}
+
+const enginsAffected = ref([
+    {engin : "VSAV-1",
+        affectation : []
+    },
+    {engin : "VSAV-2",
+        affectation : []
+    },
+    {engin : "FPTL-1",
+        affectation : []
+    },
+    {engin : "VTUTP-1",
+        affectation : []
+    },
+    {engin : "VLCDG-1",
+        affectation : []
+    },
+    {engin : "VFI-1",
+        affectation : []
+    },
+    {engin : "BPSM-1",
+        affectation : []
+    }
+]);
+
+const affectAgentManually = (agent) => {
+    console.log(agent);
+    popupTitle.value = agent.label;
+    showPopup.value = true;
+}
 
 </script>
 
 <style scoped>
+.greyText, .agentMatricule{
+    color: #666666;
+    font-size: 0.8rem;
+}
 .full {
     width: 100%;
 }
 .gfoList{
     margin-top: 1rem;
+    max-width: 400px;
 }
+.agent{
+    margin-top: 0.5rem;
+}
+
 .fullView {
     width: 100vw;
     height: 100vh;
@@ -550,6 +816,10 @@ const gfoSuppression = computed(() => {
     justify-content: left;
     align-items: center;
 }
+.vehiculeNameSpan{
+    font-weight: bold;
+    font-size: 1.2rem;
+}
 .arrow-button{
   background-color: #0078f3;
   flex: 0.2;
@@ -574,6 +844,75 @@ const gfoSuppression = computed(() => {
     background-color: white;
     border: #0078f3 1px solid;
     cursor: not-allowed;
+}
+.twoColumns{
+    width: 95vw;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.firstColumn{
+    flex: 0.2;
+    overflow-x: auto;
+    max-height: 80vh;
+    background-color: #f6f6f6;
+    border-radius: 30px;
+    padding: 1rem;
+}
+.popupAffectation{
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 30px;
+    padding: 1rem;
+    z-index: 1000;
+    width: 30rem;
+}
+.blurBck{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    backdrop-filter: blur(5px);
+}
+.secondColumn{
+    flex: 0.9;
+    padding: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.vehicule{
+    background-color: #f6f6f6;
+    border-radius: 30px;
+    padding: 1rem;
+    width: 20rem;
+    margin-bottom: 1rem;
+}
+.vehiculeName{
+    border-bottom: 1px solid #919191;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.7rem;
+}
+.vehiculeName > img{
+    margin-right: 1rem;
+}
+.affectAgentLink{
+    color: #0078f3;
+    cursor: pointer;
+    text-decoration: underline;
 }
 .titleApp{
     position: fixed;
@@ -606,6 +945,9 @@ const gfoSuppression = computed(() => {
 }
 .return:hover{
     background-color: #e0e0e0;
+}
+.leftMargin{
+    margin-left: 1rem;
 }
 .consigne{
     color: #666666;
@@ -654,5 +996,8 @@ const gfoSuppression = computed(() => {
 .subsubtitle{
     padding-top: 1rem;
     border-top: #e5e5e5 1px solid;
+}
+.noBorder{
+    border-top: none;
 }
 </style>
