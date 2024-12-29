@@ -919,6 +919,28 @@ async function getAvailableRoles(gfo) {
   }
 }
 
+const automaticAffectationRes = ref();
+async function automaticAffectation(payload) {
+  console.log("payload", payload);
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const raw = JSON.stringify(payload);
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch("https://api.cms-collonges.fr/vehiculesAffectation", requestOptions);
+    const result = await response.json();
+    automaticAffectationRes.value = result;
+    console.log("res", result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
   return {
     NextPeremptions,
     getNextPeremptions,
@@ -995,6 +1017,8 @@ async function getAvailableRoles(gfo) {
     getAvailableRoles,
     availableRoles,
     getAvailableEngins,
-    availableEngins
+    availableEngins,
+    automaticAffectation,
+    automaticAffectationRes
   };
 });

@@ -309,7 +309,15 @@
                 <template #chip="slotProps">
                     <div>{{ slotProps.value.matricule }}</div>
                 </template>
+                <template #footer>
+                    <button @click="selectedAgents = agents">Ajouter tous</button>
+                    <button @click="selectedAgents = []">Supprimer tous</button>
+                </template>
                 </MultiSelect>
+            </div>
+            <div class="marginTop">
+                <p v-if="manuallyAddedAgent != '' && !isAnAgent">😕 Le matricule {{ manuallyAddedAgent }} n'est pas reconnu</p> <p v-if="manuallyAddedAgent != '' && isAnAgent">👌 Appuyez sur la touche Entrer pour ajouter ce matricule.</p>
+                <InputText v-model="manuallyAddedAgent" placeholder="Ajouter un agent par son matricule" @keydown.enter="addManually" :invalid="manuallyAddedAgent != '' && !isAnAgent" />
             </div>
             <p v-if="selectedAgents.length != 0" class="greyText">
                 Vous avez sélectionné {{selectedAgents.length}} agent{{selectedAgents.length == 1 ? "": "s"}}.
@@ -349,6 +357,7 @@
             </div>
             <div class="twoColumns">
                 <div class="firstColumn">
+                    <div class="validationBtn" @click="automaticAffectation()"><span v-if="!loading">Affecter automatiquement</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
                     <div class="subsubtitle noBorder">
                         Agents de la caserne sur la manœuvre
                     </div>
@@ -714,6 +723,14 @@ const gfoSuppression = computed(() => {
 
     return [...manuallyAddedGFO.value,...gfosBase.value.filter(gfo => !gfos.value.includes(gfo))];
 })
+
+const gfoAddition = computed(() => {
+    if (!Array.isArray(gfosBase.value) || gfosBase.value.length == 0) {
+        return [];
+    }
+
+    return gfos.value.filter(gfo => !gfosBase.value.includes(gfo));
+})
 const affectationPersonnalises = ref([]);
 const addGfo = () => {
     if (toAddGfo.value){
@@ -773,6 +790,22 @@ const affectAgentManually = (agent) => {
     showPopup.value = true;
 }
 
+const manuallyAddedAgent = ref('');
+const addManually = () => {
+    const agent = agents.value.find(agent => agent.matricule == manuallyAddedAgent.value);
+    if (agent && !selectedAgents.value.includes(agent)){
+        selectedAgents.value.push(agent);
+        manuallyAddedAgent.value = '';
+    }
+}
+const isAnAgent = computed(() => {
+    const agent = agents.value.find(agent => agent.matricule == manuallyAddedAgent.value);
+    if (agent){
+        return true;
+    }
+    return false;
+})
+
 const affectAgent = () => {
     const agent = toAffectAgents.value.find(agent => agent.label == popupTitle.value);
     const engin = enginsAffected.value.find(engin => engin.engin == popupEngin.value);
@@ -786,7 +819,11 @@ const affectAgent = () => {
         popupGFO.value = '';
         popupEngin.value = '';
         popupRole.value = '';
+        engin.affectation.sort((a, b) => {
+        return roleOrder[a.emploi.split("_")[1]] - roleOrder[b.emploi.split("_")[1]];
+    });
     }
+    enginsAffected.value.sort((a, b) => b.affectation.length - a.affectation.length);
 }
 
 const removeAffectation = (agent) => {
@@ -797,6 +834,59 @@ const removeAffectation = (agent) => {
     agentToModify.engin = '';
     engin.affectation = engin.affectation.filter(affectation => affectation.matricule != agent.matricule);
     affectationPersonnalises.value = affectationPersonnalises.value.filter(affectation => affectation.matricule != agent.matricule);
+    engin.affectation.sort((a, b) => {
+        return roleOrder[a.emploi.split("_")[1]] - roleOrder[b.emploi.split("_")[1]];
+    });
+}
+
+const roleOrder = {
+    "ca": 1,
+    "inf":1,
+    "cdg": 1,
+    "cd":2,
+    "ce":3,
+    "eq":4,
+    "eqc":5
+}
+
+const automaticAffectation = async () => {
+    loading.value = true;
+    const payload = {
+        "matricules" : toAffectAgents.value.map(agent => agent.matricule),
+        "codeSinistre" : selectedSinistre.value.code,
+        "personnalise": {
+            "agents": affectationPersonnalises.value,
+            "gfo_additionnel" : gfoAddition.value,
+            "gfo_suppression" : gfoSuppression.value
+        }
+    }
+    await sqlStore.automaticAffectation(payload);
+    const automaticAffectations = sqlStore.automaticAffectationRes.affectation;
+    for (const vehicule of automaticAffectations) {
+        const engin = enginsAffected.value.find(e => e.engin === vehicule.engin);
+        if (engin) {
+            engin.affectation = [];
+            vehicule.affectation.forEach(agent => {
+            if (agent.matricule) {
+                engin.affectation.push({
+                matricule: agent.matricule,
+                label: `${agent.grade} ${agent.nom} ${agent.prenom}`,
+                emploi: agent.emploi,
+                engin: agent.engin,
+                grade: agent.grade
+                });
+                const agentToModify = toAffectAgents.value.find(a => a.matricule === agent.matricule);
+                agentToModify.emploi = agent.emploi;
+                agentToModify.engin = agent.engin;
+                engin.affectation.sort((a, b) => {
+                    return roleOrder[a.emploi.split("_")[1]] - roleOrder[b.emploi.split("_")[1]];
+                });
+            }
+            });
+        }
+    }
+    enginsAffected.value.sort((a, b) => b.affectation.length - a.affectation.length);
+    loading.value = false;
 }
 
 
@@ -815,9 +905,12 @@ const removeAffectation = (agent) => {
     color: red;
     cursor: pointer;
     transition: all 0.3s ease;
+    padding: 0.2rem;
 }
 .redCross:hover{
-    background-color: #f0f0f0;
+    background-color: red;
+    border-radius: 5px;
+    color: white;
 }
 .full {
     width: 100%;
@@ -840,7 +933,10 @@ const removeAffectation = (agent) => {
     box-shadow: 0 0 5px 0 rgba(0,0,0,0.1);
 }
 .part2{
-    flex: 0.8;
+    flex: 0.9;
+}
+.marginTop{
+    margin-top: 1rem;
 }
 
 .fullView {
