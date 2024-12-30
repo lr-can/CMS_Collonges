@@ -409,7 +409,7 @@
             <div class="subtitle">
                 Affectation des agents extérieurs
             </div> 
-            <div class="blurBck" v-if="popupEnginExtCond"></div>
+            <div class="blurBck" v-if="popupEnginExtCond || popupAgentExtCond"></div>
             <div class="popupAffectation" v-if="popupEnginExtCond">
                 <div class="subtitle">
                     Ajout d'un véhicule
@@ -420,7 +420,10 @@
                 <div class="leftMargin">
                     <Dropdown v-model="popupEnginExt" :options="enginsListAll" filter optionLabel="label" placeholder="Sélectionner un véhicule" class="w-full md:w-14rem" />
                 </div>
-                <div class="leftMargin">
+                <div class="subsubtitle">
+                    Numéro de l'engin
+                </div>
+                <div class="leftMargin secondItem">
                     <InputText v-model="popupEnginNum" placeholder="Numéro de l'engin" />
                 </div>
                 <div class="subsubtitle">
@@ -429,12 +432,65 @@
                 <div class="leftMargin">
                     <Dropdown v-model="popupCaserneExt" :options="caserneList" optionLabel="name" filter placeholder="Sélectionner une caserne" class="w-full md:w-14rem" />
                 </div>
-                <div class="validationBtn" @click="addCaserneEngin">Ajouter</div>
+                <div v-if="typeof(popupEnginExt) == 'object' && popupEnginNum != '' && typeof(popupCaserneExt) == 'object'" class="validationBtn" @click="addCaserneEngin">Ajouter</div>
+            </div>
+            <div class="popupAffectation autoOverflow" v-if="popupAgentExtCond">
+                <div class="subtitle">
+                    Ajout d'un agent
+                </div>
+                <div class="subsubtitle">
+                    Grade
+                </div>
+                <div class="leftMargin secondItem">
+                    <Dropdown v-model="gradePopupAgent" :options="grades" placeholder="Sélectionner un grade" class="w-full md:w-14rem" />
+                </div>
+                <div class="subsubtitle">
+                    Nom de famille
+                </div>
+                <div class="leftMargin">
+                    <InputText v-model="nomPopupAgent" placeholder="Nom de famille" />
+                </div>
+                <div class="subsubtitle">
+                    Prénom
+                </div>
+                <div class="leftMargin">
+                    <InputText v-model="prenomPopupAgent" placeholder="Prénom" />
+                </div>
+                <div class="subsubtitle">
+                    GFO
+                </div>
+                <div class="leftMargin secondItem">
+                    <InputText v-model="gfoPopupAgent" placeholder="Indiquer un GFO" />
+                </div>
+                <div class="subsubtitle">
+                    Rôle
+                </div>
+                <div class="leftMargin">
+                    <InputText v-model="rolePopupAgent" placeholder="Indiquer un rôle" />
+                </div>
+                <div class="subsubtitle">
+                    Véhicule
+                </div>
+                <div class="leftMargin">
+                    <CascadeSelect v-model="affectationPopupAgent" :options="groupedByCaserneEngins" optionLabel="name" optionGroupLabel="caserne" :optionGroupChildren="['vehicules']" placeholder="Sélectionner un véhicule" class="w-full md:w-14rem" />
+                </div>
+                <div class="validationBtn" v-if="gradePopupAgent && nomPopupAgent && prenomPopupAgent && gfoPopupAgent && rolePopupAgent && affectationPopupAgent" @click="addAgentPopup">Ajouter {{ gradePopupAgent }} {{ nomPopupAgent.toUpperCase() }}</div>
             </div>
             <div class="twoColumns">
                 <div class="firstColumn">
                     <div class="validationBtn" @click="startAddEngin"><span v-if="!loading">Ajouter un engin</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
-
+                    <div class="validationBtn" @click="startAddAgent"><span v-if="!loading">Ajouter un agent</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+                    <div class="subsubtitle noBorder">
+                        Agents extérieurs sur la manœuvre
+                    </div>
+                    <div v-for="agent in toAffectAgentsExt" :key="agent.matricule">
+                        <div class="agent">
+                            <div class="agentMatricule">{{agent.matricule}}</div>
+                            <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
+                            <div v-if="agent.engin != ''" class="agentGFO greenText">{{ agent.engin }} ({{ agent.emploi }}) <span class="redCross" @click="removeAffectationExt(agent)">X</span></div>
+                            <div v-else class="affectAgentLink" @click="affectAgentManuallyExt(agent)">Affecter manuellement</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="secondColumn">
                     <div v-if="enginsAffectedExt.length == 0">
@@ -480,6 +536,7 @@ import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
 import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
+import CascadeSelect from 'primevue/cascadeselect';
 import Chips from 'primevue/chips';
 import { ref, watch, computed } from "vue";
 
@@ -557,6 +614,24 @@ const search = async (event) => {
 }
 
 getSinistres();
+
+const grades = ref([
+    "SAP",
+    "CAP",
+    "CCH",
+    "SGT",
+    "SCH",
+    "ADJ",
+    "ADC",
+    "LTN",
+    "CNE",
+    "CDT",
+    "LCL",
+    "COL",
+    "CGL",
+    "INF",
+    "EXP"
+])
 
 let timeDateInterInterval = setInterval(() => {
     if (!manualHour.value){
@@ -1002,6 +1077,102 @@ const startAddEngin = async () => {
     caserneList.value = sqlStore.casernesList;
     popupEnginExtCond.value = true;
 }
+const groupedByCaserneEngins = computed(() => {
+    const grouped = [];
+    for (const engin of enginsAffected.value) {
+        let caserneGroup = grouped.find(group => group.caserne === engin.caserne);
+        if (!caserneGroup) {
+            caserneGroup = { caserne: engin.caserne, vehicules: [] };
+            grouped.push(caserneGroup);
+        }
+        caserneGroup.vehicules.push({ name: engin.engin, affectation: engin.affectation });
+    }
+    return grouped;
+})
+
+const startAddAgent = () => {
+    loading.value = true;
+    popupAgentExtCond.value = true;
+}
+const popupAgentExtCond = ref(false);
+const gradePopupAgent = ref('');
+const nomPopupAgent = ref('');
+const prenomPopupAgent = ref('');
+const gfoPopupAgent = ref('');
+const rolePopupAgent = ref('');
+const affectationPopupAgent = ref('');
+
+const addAgentPopup = () => {
+    const agent = {
+        matricule: `${nomPopupAgent.value.toUpperCase().substring(0, 3)}${prenomPopupAgent.value.toUpperCase().substring(0, 3)}`,
+        grade: gradePopupAgent.value,
+        nom: nomPopupAgent.value.toUpperCase(),
+        prenom: prenomPopupAgent.value,
+        label: `${gradePopupAgent.value} ${nomPopupAgent.value.toUpperCase()} ${prenomPopupAgent.value}`,
+        emploi: gfoPopupAgent.value.toUpperCase() + '_' + rolePopupAgent.value.toLowerCase(),
+        engin: affectationPopupAgent.value.name
+    }
+    console.log("agent", agent);
+    toAffectAgents.value.push(agent);
+    const engin = enginsAffected.value.find(e => e.engin === affectationPopupAgent.value.name);
+    if (engin) {
+        engin.affectation.push({
+            matricule: agent.matricule,
+            label: `${agent.grade} ${agent.nom} ${agent.prenom}`,
+            emploi: agent.emploi,
+            engin: agent.engin,
+            grade: agent.grade
+        });
+        engin.affectation.sort((a, b) => {
+            return roleOrder[a.emploi.split("_")[1]] - roleOrder[b.emploi.split("_")[1]];
+        });
+    }
+    loading.value = false;
+    popupAgentExtCond.value = false;
+    gradePopupAgent.value = '';
+    nomPopupAgent.value = '';
+    prenomPopupAgent.value = '';
+    gfoPopupAgent.value = '';
+    rolePopupAgent.value = '';
+    affectationPopupAgent.value = '';
+    loading.value = false;
+}
+
+const affectAgentManuallyExt = (agent) => {
+    const engin = enginsAffected.value.find(e => e.affectation.find(a => a.matricule === agent.matricule));
+    if (engin) {
+        engin.affectation = engin.affectation.filter(a => a.matricule !== agent.matricule);
+    }
+    toAffectAgents.value = toAffectAgents.value.filter(a => a.matricule !== agent.matricule);
+    gradePopupAgent.value = agent.grade;
+    nomPopupAgent.value = agent.nom;
+    prenomPopupAgent.value = agent.prenom;
+    gfoPopupAgent.value = agent.emploi.split('_')[0];
+    rolePopupAgent.value = agent.emploi.split('_')[1];
+    affectationPopupAgent.value = "";
+    popupAgentExtCond.value = true;
+    
+}
+
+const removeAffectationExt = (agent) => {
+    const engin = enginsAffected.value.find(e => e.affectation.find(a => a.matricule === agent.matricule));
+    if (engin) {
+        engin.affectation = engin.affectation.filter(a => a.matricule !== agent.matricule);
+    }
+    toAffectAgents.value = toAffectAgents.value.filter(a => a.matricule !== agent.matricule);
+    gradePopupAgent.value = agent.grade;
+    nomPopupAgent.value = agent.nom;
+    prenomPopupAgent.value = agent.prenom;
+    gfoPopupAgent.value = agent.emploi.split('_')[0];
+    rolePopupAgent.value = agent.emploi.split('_')[1];
+    affectationPopupAgent.value = "";
+    popupAgentExtCond.value = true;
+    
+}
+
+const toAffectAgentsExt = computed(() => {
+    return toAffectAgents.value.filter(agent => agent.engin != '' && !/^V\d{5}$/.test(agent.matricule));
+})
 
 </script>
 
@@ -1054,6 +1225,14 @@ const startAddEngin = async () => {
 }
 .agent{
     margin-top: 0.5rem;
+}
+.autoOverflow{
+    overflow: auto;
+    max-height: 80vh;
+}
+.secondItem{
+    margin-top: 1rem;
+    max-width: 100px;
 }
 .flexed{
     display: flex;
