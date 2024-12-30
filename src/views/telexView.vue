@@ -483,6 +483,9 @@
                     <div class="subsubtitle noBorder">
                         Agents extérieurs sur la manœuvre
                     </div>
+                    <div v-if="toAffectAgentsExt.length == 0">
+                        <div class="noAgent">Aucun agent extérieur ajouté.</div>
+                    </div>
                     <div v-for="agent in toAffectAgentsExt" :key="agent.matricule">
                         <div class="agent">
                             <div class="agentMatricule">{{agent.matricule}}</div>
@@ -522,6 +525,8 @@
                     </div>
                 </div>
             </div>
+            <div id="returnBtnStep2" @click="step = 3">Retour</div>
+            <div class="validationBtn" id="validationBtn3" @click="step = 5">Passer à l'étape suivante</div>
             <div id="layoutMargin"></div>
         </div>
     </div>
