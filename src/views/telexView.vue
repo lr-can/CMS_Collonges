@@ -258,26 +258,28 @@
             </div>
             <p>REMARQUE : Vous aurez la possibilité d'affecter certains <br>ou tous les engins à des PRM, PRV ou PRI plus tard.</p>
             </div>
-            <div class="subsubtitle">
-                    Sélection de la raison de l'intervention
-            </div>
-            <div class="formElement">
-                <Dropdown v-model="selectedSinistre" :options="sinistres" @change="getSinistreGFO" optionLabel="labelComplet" editable optionGroupLabel="label" optionGroupChildren="items" placeholder="Sélectionner un sinistre" class="w-full md:w-14rem">
-                    <template #optiongroup="slotProps">
-                    <div class="flex align-items-center">
-                        <div>{{ slotProps.option.labelComplet }}</div>
+            <div v-if="showAddress && typeof(selectedAddress) == 'object'">
+                <div class="subsubtitle">
+                        Sélection de la raison de l'intervention
+                </div>
+                <div class="formElement">
+                    <Dropdown v-model="selectedSinistre" :options="sinistres" @change="getSinistreGFO" optionLabel="labelComplet" filter optionGroupLabel="label" optionGroupChildren="items" placeholder="Sélectionner un sinistre" class="w-full md:w-14rem">
+                        <template #optiongroup="slotProps">
+                        <div class="flex align-items-center">
+                            <div>{{ slotProps.option.labelComplet }}</div>
+                        </div>
+                        </template>
+                    </Dropdown>
+                </div>
+                <div v-if="typeof(selectedSinistre) == 'object' && gfos" class="gfoList">
+                    <div>
+                        <b>GFO</b>
                     </div>
-                    </template>
-                </Dropdown>
-            </div>
-            <div v-if="typeof(selectedSinistre) == 'object' && gfos" class="gfoList">
-                <div>
-                    <b>GFO</b>
+                    <div>
+                        <Chips v-model="gfos" />
+                    </div>
+                    <div class="gfoList"><Dropdown v-model="toAddGfo" :options="maxConfigCollonges" @change="addGfo" placeholder="Ajouter un GFO pour Collonges" class="w-full md:w-14rem" /></div>
                 </div>
-                <div>
-                    <Chips v-model="gfos" />
-                </div>
-                <div class="gfoList"><Dropdown v-model="toAddGfo" :options="maxConfigCollonges" @change="addGfo" placeholder="Ajouter un GFO pour Collonges" class="w-full md:w-14rem" /></div>
             </div>
             <div v-if="step2Possible" class="validationBtn" @click="step = 2">Passer à l'étape suivante</div>
             <div id="layoutMargin"></div>
@@ -305,7 +307,7 @@
                 Sélection des agents de la caserne
             </div>
             <div>
-                <MultiSelect v-model="selectedAgents" display="chip" :options="agents" optionLabel="label" placeholder="Sélectionner des agents" class="gfoList">
+                <MultiSelect v-model="selectedAgents" display="chip" :options="agents" optionLabel="label" filter placeholder="Sélectionner des agents" class="gfoList">
                 <template #chip="slotProps">
                     <div>{{ slotProps.value.matricule }}</div>
                 </template>
@@ -357,7 +359,7 @@
             </div>
             <div class="twoColumns">
                 <div class="firstColumn">
-                    <div class="validationBtn" @click="automaticAffectation()"><span v-if="!loading">Affecter automatiquement</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+                    <div class="validationBtn" @click="automaticAffectation()"><span v-if="!loading">🪄 Affecter automatiquement</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
                     <div class="subsubtitle noBorder">
                         Agents de la caserne sur la manœuvre
                     </div>
@@ -396,6 +398,72 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+            <div id="returnBtnStep2" @click="step = 2">Retour</div>
+            <div class="validationBtn" id="validationBtn3" @click="step = 4" v-if="twentyPercentAffected">Passer à l'étape suivante</div>
+            <div id="layoutMargin"></div>
+        </div>
+        <div v-if="step == 4">
+            <div id="layoutMargin"></div>
+            <div class="subtitle">
+                Affectation des agents extérieurs
+            </div> 
+            <div class="blurBck" v-if="popupEnginExtCond"></div>
+            <div class="popupAffectation" v-if="popupEnginExtCond">
+                <div class="subtitle">
+                    Ajout d'un véhicule
+                </div>
+                <div class="subsubtitle">
+                    Véhicule
+                </div>
+                <div class="leftMargin">
+                    <Dropdown v-model="popupEnginExt" :options="enginsListAll" filter optionLabel="label" placeholder="Sélectionner un véhicule" class="w-full md:w-14rem" />
+                </div>
+                <div class="leftMargin">
+                    <InputText v-model="popupEnginNum" placeholder="Numéro de l'engin" />
+                </div>
+                <div class="subsubtitle">
+                    Caserne
+                </div>
+                <div class="leftMargin">
+                    <Dropdown v-model="popupCaserneExt" :options="caserneList" optionLabel="name" filter placeholder="Sélectionner une caserne" class="w-full md:w-14rem" />
+                </div>
+                <div class="validationBtn" @click="addCaserneEngin">Ajouter</div>
+            </div>
+            <div class="twoColumns">
+                <div class="firstColumn">
+                    <div class="validationBtn" @click="startAddEngin"><span v-if="!loading">Ajouter un engin</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+
+                </div>
+                <div class="secondColumn">
+                    <div v-if="enginsAffectedExt.length == 0">
+                        <div class="noAgent">Aucun véhicule extérieur ajouté.</div>
+                    </div>
+                    <div v-else v-for="vehicule of enginsAffectedExt" :key="vehicule.engin">
+                        <div class="vehicule">
+                            <div class="vehiculeName">
+                                <span class="vehiculeNameSpan">{{vehicule.engin}}</span>
+                                <span class="vehiculeCaserneSpan">{{ vehicule.caserne }}</span>
+                            </div>
+                            <div class="affectation">
+                                <div v-if="vehicule.affectation.length > 0">
+                                    <div v-for="agent in vehicule.affectation" :key="agent.matricule">
+                                        <div class="agent flexed">
+                                            <div class="roleAgent">{{ agent.emploi.split("_")[1].toUpperCase() }}</div>
+                                            <div class="part2">                                        
+                                                <div class="agentMatricule">{{agent.matricule}}</div>
+                                                <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else>
+                                    <div class="noAgent">Aucun agent affecté</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="layoutMargin"></div>
@@ -701,6 +769,15 @@ let maxConfigCollonges = computed(() => {
 
 const manuallyAddedGFO = ref([]);
 
+const twentyPercentAffected = () => {
+    for (const agent of toAffectAgents.value){
+        if (agent.emploi != '' && agent.engin != ''){
+            return true;
+        }
+    }
+    return false;
+}
+
 const getSinistreGFO = async () => {
     const possibleGFO = ["SAP", "PSSAP", "PSINC", "INC", "INFAMU", "CDG", "AQUA", "DIV", "DIVPRE"];
     if (selectedSinistre.value && selectedSinistre.value.listGfo) {
@@ -762,24 +839,31 @@ const getIconSrc = (enginName) => {
 
 const enginsAffected = ref([
     {engin : "VSAV-1",
+     caserne: "COLLONGE",
         affectation : []
     },
     {engin : "VSAV-2",
+    caserne: "COLLONGE",
         affectation : []
     },
     {engin : "FPTL-1",
+    caserne: "COLLONGE",
         affectation : []
     },
     {engin : "VTUTP-1",
+    caserne: "COLLONGE",
         affectation : []
     },
     {engin : "VLCDG-1",
+    caserne: "COLLONGE",
         affectation : []
     },
     {engin : "VFI-1",
+    caserne: "COLLONGE",
         affectation : []
     },
     {engin : "BPSM-1",
+    caserne: "COLLONGE",
         affectation : []
     }
 ]);
@@ -870,7 +954,7 @@ const automaticAffectation = async () => {
             if (agent.matricule) {
                 engin.affectation.push({
                 matricule: agent.matricule,
-                label: `${agent.grade} ${agent.nom} ${agent.prenom}`,
+                label: `${agent.grade.length <= 4 ? agent.grade : sqlStore.gradeAbbreviation(agent.grade)} ${agent.nom} ${agent.prenom}`,
                 emploi: agent.emploi,
                 engin: agent.engin,
                 grade: agent.grade
@@ -889,6 +973,35 @@ const automaticAffectation = async () => {
     loading.value = false;
 }
 
+const enginsAffectedExt = computed (() => {
+    return enginsAffected.value.filter(engin => engin.caserne != "COLLONGE");
+})
+const popupEnginExtCond = ref(false);
+const enginsListAll = ref([]);
+const caserneList = ref([]);
+const popupEnginExt = ref('');
+const popupCaserneExt = ref('');
+const popupEnginNum = ref('');
+const addCaserneEngin = () => {
+    loading.value = true;
+    enginsAffected.value.push({
+        engin: `${ popupEnginExt.value.code }-${ popupEnginNum.value }`,
+        caserne: popupCaserneExt.value.shortname,
+        affectation: []
+    });
+    popupEnginExt.value = '';
+    popupCaserneExt.value = '';
+    popupEnginNum.value = '';
+    popupEnginExtCond.value = false;
+    loading.value = false;
+}
+const startAddEngin = async () => {
+    loading.value = true;
+    await sqlStore.getVehiculesAndCasernesList();
+    enginsListAll.value = sqlStore.vehiculesList;
+    caserneList.value = sqlStore.casernesList;
+    popupEnginExtCond.value = true;
+}
 
 </script>
 
@@ -914,6 +1027,26 @@ const automaticAffectation = async () => {
 }
 .full {
     width: 100%;
+}
+#returnBtnStep2{
+    background-color: #f6f6f6;
+    color: #666666;
+    padding: 0.5rem;
+    border-radius: 30px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: absolute;
+    bottom: 1rem;
+    transition: all 0.3s ease;
+}
+#returnBtnStep2:hover{
+    background-color: #e0e0e0;
+}
+#validationBtn3{
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
 }
 .gfoList{
     margin-top: 1rem;
@@ -1138,6 +1271,10 @@ const automaticAffectation = async () => {
     color: #0078f3;
     font-weight: bold;
     font-size: 0.8rem;
+}
+.vehiculeCaserneSpan{
+    color: #666666;
+    margin-left: 1rem;
 }
 .formElement{
     margin-top: 1rem;

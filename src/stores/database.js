@@ -941,6 +941,31 @@ async function automaticAffectation(payload) {
   }
 }
 
+const vehiculesList = ref([]);
+const casernesList = ref([]);
+
+async function getVehiculesAndCasernesList() {
+  try {
+    const response = await fetch('https://api.cms-collonges.fr/getVehiculesAndCaserne', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+    );
+    const data = await response.json();
+    vehiculesList.value = data.vehicleTypes.map(item => ({
+      label: item.code + " - " + item.name,
+      ...item
+    }));
+    casernesList.value = data.fireunits.filter(fireunit => /^\d/.test(fireunit.code));
+    console.log('Vehicules:', vehiculesList.value);
+    console.log('Casernes:', casernesList.value);
+  } catch (error) {
+    console.error('Error fetching vehicules and casernes data:', error);
+  }
+}
+
   return {
     NextPeremptions,
     getNextPeremptions,
@@ -1019,6 +1044,10 @@ async function automaticAffectation(payload) {
     getAvailableEngins,
     availableEngins,
     automaticAffectation,
-    automaticAffectationRes
+    automaticAffectationRes,
+    gradeAbbreviation,
+    vehiculesList,
+    casernesList,
+    getVehiculesAndCasernesList
   };
 });
