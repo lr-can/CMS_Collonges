@@ -526,7 +526,121 @@
                 </div>
             </div>
             <div id="returnBtnStep2" @click="step = 3">Retour</div>
-            <div class="validationBtn" id="validationBtn3" @click="step = 5">Passer à l'étape suivante</div>
+            <div class="validationBtn" id="validationBtn3" @click="prepareStep5()">Passer à l'étape suivante</div>
+            <div id="layoutMargin"></div>
+        </div>
+        <div v-if="step == 5" class="autoOverflow step5">
+            <div id="layoutMargin"></div>
+            <div class="subtitle">
+                Observation
+            </div>
+            <p class="greyText">
+                Cette observation générale sera présente pour tous les engins.
+            </p>
+            <div>
+                <Textarea v-model="observationGenerale" autoResize rows="8" cols="50" :placeholder="placeholderObs" />
+            </div>
+            <div class="subtitle">
+                Consigne
+            </div>
+            <p class="greyText">
+                Cette consigne générale sera présente pour tous les engins.
+            </p>
+            <div>
+                <Textarea v-model="consigneGenerale" autoResize rows="4" cols="50" placeholder="Exemple: EPI SUAP Niv. 2" />
+            </div>
+            <div class="subtitle">
+                Ordres de départs et personnalisation
+            </div>
+            <div class=" twoColumns2">
+            <div class="colonne1">
+            <div>
+                <p class="greyText">Appuyez sur un engin pour en personnaliser les caractéristiques (observation personnalisée, affectation PRV, etc.)</p>
+                <div v-for="OD of enginsAvecOrdreDepart" :key="OD.ordreDepart">
+                    <div class="subsubtitle">
+                       Ordre départ n°{{OD.ordreDepart}}
+                    </div>
+                    <div class="ODEnginsFlex">
+                        <div v-for="engin of OD.engins" :key="engin.engin">
+                            <div class="vehicule vehiculeBtn" :class="isBeingPersonnalised(engin)" @click="ouvrirCaracteristiques(engin)">
+                                <div class="vehiculeName">
+                                    <span class="vehiculeNameSpan">{{engin.engin}}</span>
+                                    <span class="vehiculeCaserneSpan">{{ engin.caserne }}</span>
+                                </div>
+                                <div class="affectation">
+                                    <div v-if="engin.affectation.length > 0">
+                                        {{ engin.affectation.length }} agent{{ engin.affectation.length > 1 ? 's' : '' }} affecté{{ engin.affectation.length > 1 ? 's' : '' }}
+                                    </div>
+                                    <div v-else>
+                                        <div class="noAgent">Aucun agent affecté</div>
+                                    </div> 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="colonne2">
+            <div class="subtitle">
+                Personnalisation des engins
+            </div>
+            <div v-if="enginAPersonnaliser">
+                <div class="subsubtitle">
+                    {{ enginAPersonnaliser.engin }} ({{ enginAPersonnaliser.caserne }})
+                </div>
+                <div class="subsubtitle">
+                    GFO
+                </div>
+                <InputText v-model="enginAPersonnaliser.gfo" placeholder="Inscrire un GFO" class="w-full md:w-14rem" />
+                <div class="subsubtitle">
+                    Observation
+                </div>
+                <p class="greyText">
+                    Cette observation personnalisée sera présente pour cet engin uniquement.
+                    <br>
+                    Elle commencera par <b>**</b> sur l'ordre de départ.
+                </p>
+                <div>
+                    <Textarea v-model="enginAPersonnaliser.observation" autoResize rows="4" cols="50" placeholder="Ex : Pour renfort brancardage" />
+                </div>
+                <div class="subsubtitle">
+                    Consigne personnalisée
+                </div>
+                <p class="greyText">
+                    Cette consigne personnalisée sera présente pour cet engin uniquement.
+                </p>
+                <div>
+                    <Textarea v-model="enginAPersonnaliser.consigne" autoResize rows="4" cols="50" placeholder="Ex: prendre le mémento opérationnel..." />
+                </div>
+                <div class="subsubtitle">
+                    Affectation PRV / PRM / PRI
+                </div>
+                <div v-if="selectedAddressPRV">
+                    <Checkbox v-model="enginAPersonnaliser.affectationPRV" inputId="affectationPRV" name="affectationPRV" value="false" :disabled="enginAPersonnaliser.affectationPRI != '' || enginAPersonnaliser.affectationPRM != ''" />
+                    <label for="affectationPRV">Affecter cet engin au PRV</label>
+                </div>
+                <div v-if="selectedAddressPRM">
+                    <Checkbox v-model="enginAPersonnaliser.affectationPRM" inputId="affectationPRM" name="affectationPRM" value="false" :disabled="enginAPersonnaliser.affectationPRI != '' || enginAPersonnaliser.affectationPRV != ''" />
+                    <label for="affectationPRM">Affecter cet engin au PRM</label>
+                </div>
+                <div v-if="selectedAddressPRI">
+                    <Checkbox v-model="enginAPersonnaliser.affectationPRI" inputId="affectationPRI" name="affectationPRI" value="false" :disabled="enginAPersonnaliser.affectationPRV != '' || enginAPersonnaliser.affectationPRM != ''" />
+                    <label for="affectationPRI">Affecter cet engin au PRI</label>
+                </div>
+                <div>
+                    <div class="subsubtitle">
+                       Affectation Remorque / Lot
+                    </div>
+                    <Dropdown v-model="enginAPersonnaliser.remorque" :options="lotsRemorques" optionLabel="label" filter optionValue="code" placeholder="Sélectionner une remorque/lot"/>
+                </div>
+                <div class="validationBtn" @click="processEnginPersonnalise">Enregistrer & fermer</div>
+            </div>
+            <div v-else>
+                <div class="noAgent">Aucun engin sélectionné.</div>
+            </div>
+        </div>
+        </div>
             <div id="layoutMargin"></div>
         </div>
     </div>
@@ -539,6 +653,7 @@ import Calendar from 'primevue/calendar';
 import Dropdown from 'primevue/dropdown';
 import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
+import Textarea from 'primevue/textarea';
 import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
 import CascadeSelect from 'primevue/cascadeselect';
@@ -582,6 +697,7 @@ const popupRole = ref('');
 const loading = ref(false);
 const toAddGfo = ref();
 const moreAddress = ref({});
+const consigneGenerale = ref('');
 const mapSource = ref('https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=500&height=500&center=lonlat:4.84665,45.81745&zoom=15&marker=lonlat:4.84665,45.81745;type:circle;color:%23ff0000;size:small;icon:local_fire_department;icontype:material;iconsize:small;strokecolor:%23ff0000&scaleFactor=2&apiKey=75c6e5ac06e84d3a95473195e7af529d');
 
 const sqlStore = useSqlStore();
@@ -591,11 +707,18 @@ async function getSinistres(){
     sinistres.value = await sqlStore.listSinistres;
 }
 
+const observationGenerale = ref('');
+
 watch(selectedAddress, (newValue) => {
     if (newValue) {
         processAddress({ value: newValue });
     }
 });
+
+const placeholderObs = `Exemple:
+A la demande du SAMU
+Victime F 28 ans 
+ATCD 0...`
 
 async function processAddress(){
     if (!selectedAddress.value || typeof selectedAddress.value !== 'object') {
@@ -694,7 +817,8 @@ const enginsGfo = ref([]);
 const livres = ["Collonges",  "Fontaines", "Caluire","LYON RD", "Albigny", "Neuville", "Rillieux", "StDidier"];
 const erpList = ref([]);
 const etages = ["MI","VP", "-3", "-2", "-1", "RdC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"];
-
+const sinistresAqua = ["1186", "2310", "5120", "4140", "3563", "4153"];
+const sinistresSUAPNiv2 = ["1110", "1120"];
 
 const getMoreAddress = async () => {
     loading.value = true;
@@ -788,7 +912,7 @@ const loadRoles = async () => {
         availableRoles.value = sqlStore.availableRoles;
     }
 }
-
+const lotsRemorques = ref();
 let maxConfigCollonges = computed(() => {
     const max = {
     "SAP" : 2,
@@ -799,7 +923,8 @@ let maxConfigCollonges = computed(() => {
     "CDG": 2,
     "AQUA": 1,
     "DIV": 2,
-    "DIVPRE": 1
+    "DIVPRE": 1,
+    "BATO": 1
     }
     const result = [];
     for (const gfo of gfos.value){
@@ -859,7 +984,7 @@ const twentyPercentAffected = () => {
 }
 
 const getSinistreGFO = async () => {
-    const possibleGFO = ["SAP", "PSSAP", "PSINC", "INC", "INFAMU", "CDG", "AQUA", "DIV", "DIVPRE"];
+    const possibleGFO = ["SAP", "PSSAP", "PSINC", "INC", "INFAMU", "CDG", "AQUA", "DIV", "DIVPRE", "BATO"];
     if (selectedSinistre.value && selectedSinistre.value.listGfo) {
         gfos.value = selectedSinistre.value.listGfo.filter(gfo => possibleGFO.includes(gfo));
         gfosBase.value = selectedSinistre.value.listGfo.filter(gfo => possibleGFO.includes(gfo));
@@ -870,9 +995,15 @@ const getSinistreGFO = async () => {
                 manuallyAddedGFO.value.push("INC");
             }
         }
+        if (sinistresAqua.includes(selectedSinistre.value.code)) {
+            consigneGenerale.value = `Pour communiquer avec le CDG du SDMIS, veiller la SPE1 au Nord du pont de Givors, Pour communiquer avec le CDG du 38 (COS en aval du pk18), veiller la DIR624 au Sud du pont de Givors.
+Prendre Atlas fluvial Rhône / Saône`;
+        }
+        if (sinistresSUAPNiv2.includes(selectedSinistre.value.code)) {
+            consigneGenerale.value = `Port EPI SUAP niveau 2`;
+        }
     }
 }
-
 const gfoSuppression = computed(() => {
     if (!Array.isArray(gfosBase.value) || gfosBase.value.length == 0) {
         return [];
@@ -1075,11 +1206,16 @@ const addCaserneEngin = () => {
     popupEnginExtCond.value = false;
     loading.value = false;
 }
-const startAddEngin = async () => {
-    loading.value = true;
+async function getEnginsFromStore () {
     await sqlStore.getVehiculesAndCasernesList();
     enginsListAll.value = sqlStore.vehiculesList;
     caserneList.value = sqlStore.casernesList;
+    lotsRemorques.value = enginsListAll.value.filter(engin => engin.code.startsWith('L') || engin.name.toLowerCase().includes('remorque'))
+    .map(engin => ({ name: engin.name, code: engin.code, label: `${engin.code} - ${engin.name}` }));
+}
+getEnginsFromStore();
+const startAddEngin = async () => {
+    loading.value = true;
     popupEnginExtCond.value = true;
 }
 const groupedByCaserneEngins = computed(() => {
@@ -1177,7 +1313,76 @@ const removeAffectationExt = (agent) => {
 
 const toAffectAgentsExt = computed(() => {
     return toAffectAgents.value.filter(agent => agent.engin != '' && !/^V\d{5}$/.test(agent.matricule));
-})
+});
+
+const enginsAvecOrdreDepart = ref([]);
+const prepareStep5 = () => {
+    step.value = 5;
+    const enginsAffectedWithPpl = enginsAffected.value.filter(engin => engin.affectation.length > 0);
+    enginsAvecOrdreDepart.value = [
+        { ordreDepart : 1,
+            timeDate : timeDateInter.value,
+            engins : enginsAffectedWithPpl.map(engin => ({
+            ...engin,
+            gfo : engin.affectation.length > 0 ? engin.affectation[0].emploi.split('_')[0] : '',
+            observationParticuliere: '',
+            affectationPRM: '',
+            affectationPRI: '',
+            affectationPRV: '',
+            consigneParticuliere: '',
+            remorque: ''
+        }))
+        }
+    ]    
+}
+
+const enginAPersonnaliser = ref('');
+const ouvrirCaracteristiques = (engin) => {
+    if (enginAPersonnaliser.value != ''){
+        for (let OD of enginsAvecOrdreDepart.value){
+            for (let engin of OD.engins){
+                if (engin.engin == enginAPersonnaliser.value.engin && engin.caserne == enginAPersonnaliser.value.caserne){
+                    engin.observationParticuliere = enginAPersonnaliser.value.observationParticuliere;
+                    engin.gfo = enginAPersonnaliser.value.gfo;
+                    engin.affectationPRM = enginAPersonnaliser.value.affectationPRM;
+                    engin.affectationPRI = enginAPersonnaliser.value.affectationPRI;
+                    engin.affectationPRV = enginAPersonnaliser.value.affectationPRV;
+                    engin.consigneParticuliere = enginAPersonnaliser.value.consigneParticuliere;
+                    engin.remorque = enginAPersonnaliser.value.remorque;
+                }
+            }
+        }
+    }
+    enginAPersonnaliser.value = engin;
+} 
+const processEnginPersonnalise = () => {
+    for (let OD of enginsAvecOrdreDepart.value){
+        for (let engin of OD.engins){
+            if (engin.engin == enginAPersonnaliser.value.engin && engin.caserne == enginAPersonnaliser.value.caserne){
+                engin.observationParticuliere = enginAPersonnaliser.value.observationParticuliere;
+                engin.gfo = enginAPersonnaliser.value.gfo;
+                engin.affectationPRM = enginAPersonnaliser.value.affectationPRM;
+                engin.affectationPRI = enginAPersonnaliser.value.affectationPRI;
+                engin.affectationPRV = enginAPersonnaliser.value.affectationPRV;
+                engin.consigneParticuliere = enginAPersonnaliser.value.consigneParticuliere;
+                engin.remorque = enginAPersonnaliser.value.remorque;
+            }
+        }
+    }
+    enginAPersonnaliser.value = '';
+}
+
+const isBeingPersonnalised = (engin) => {
+    if (enginAPersonnaliser.value.engin == engin.engin && enginAPersonnaliser.value.caserne == engin.caserne) {
+        return "personnalizeEngin";
+    } else {
+        return '';
+    }
+}
+
+setTimeout(() => {
+    /*step.value = 5;*/
+}, 3000);
 
 </script>
 
@@ -1203,6 +1408,49 @@ const toAffectAgentsExt = computed(() => {
 }
 .full {
     width: 100%;
+}
+.personnalizeEngin{
+    background-color: #f4f6ff;
+    color: #0063cb;
+}
+.ODEnginsFlex{
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    flex-wrap: wrap;
+    max-width: 80%;
+}
+.vehiculeBtn{
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.vehiculeBtn:hover{
+    background-color: #e0e0e0;
+}
+.twoColumns2{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.colonne1{
+    margin-left: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    flex: 0.6;
+}
+.step5{
+    max-width: 95vw;
+}
+.colonne2{
+    padding: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    background-color: #f6f6f6;
+    border-radius: 30px;
+    flex: 0.4;
+    margin-right: 1rem;
 }
 #returnBtnStep2{
     background-color: #f6f6f6;
