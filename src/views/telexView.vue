@@ -555,6 +555,20 @@
             <div class=" twoColumns2">
             <div class="colonne1">
             <div>
+                <div class="validationBtn" style="width:5rem" @click="addODCond = true">Ajouter un ordre de départ</div>
+                <div class="vehicule" v-if="addODCond">
+                    <div class="greyBackground">
+                        <div class="subsubtitle">Ordre de départ n°{{ enginsAvecOrdreDepart.length + 1 }}</div>
+                        <div class="subsubtitle">Engins à affecter</div>
+                        <div>
+                            <MultiSelect v-model="enginsToAddOD" :options="enginsAffectedWithPeople" optionLabel="engin" filter placeholder="Sélectionner des engins" class="gfoList" />
+                        </div>
+                        <div class="subsubtitle">Temps écoulé</div>
+                        <p class="greyText">Indiquez le temps (en minutes) qui s'est écoulé entre l'ordre de départ précédent et celui-là.</p>
+                        <InputText v-model="tempsEcoule" placeholder="Temps écoulé en minutes" />
+                        <div class="validationBtn" v-if="enginsToAddOD.length > 0 && tempsEcoule != ''" @click="addOD">Ajouter</div>
+                    </div>
+                </div>
                 <p class="greyText">Appuyez sur un engin pour en personnaliser les caractéristiques (observation personnalisée, affectation PRV, etc.)</p>
                 <div v-for="OD of enginsAvecOrdreDepart" :key="OD.ordreDepart">
                     <div class="subsubtitle">
@@ -566,10 +580,28 @@
                                 <div class="vehiculeName">
                                     <span class="vehiculeNameSpan">{{engin.engin}}</span>
                                     <span class="vehiculeCaserneSpan">{{ engin.caserne }}</span>
+                                    <span class="vehiculegfo">{{ engin.gfo }}</span>
                                 </div>
                                 <div class="affectation">
-                                    <div v-if="engin.affectation.length > 0">
-                                        {{ engin.affectation.length }} agent{{ engin.affectation.length > 1 ? 's' : '' }} affecté{{ engin.affectation.length > 1 ? 's' : '' }}
+                                    <div v-if="engin.affectation.length > 0" class="flexxx">
+                                        <div>
+                                            <img class="imgClass opacityNinty" src="@/assets/icons/observation/firefighter.png" height="25px" width="auto">
+                                            <span class="floattingBubble">{{ engin.affectation.length }}</span>
+                                        </div>
+                                        <div :class="isAddressPersonnalisedClass(engin)">
+                                            <img class="imgClass" src="@/assets/icons/observation/adresse.png" height="25px" width="auto">
+                                            <span class="floattingBubble" v-if="isAddressPersonnalised(engin) != ''">{{ isAddressPersonnalised(engin) }}</span>
+                                        </div>
+                                        <div :class="isRemorquePersonnalisedClass(engin)">
+                                            <img class="imgClass" src="@/assets/icons/observation/trailer.png" height="25px" width="auto">
+                                            <span class="floattingBubble" v-if="isRemorquePersonnalised(engin) != ''">{{ isRemorquePersonnalised(engin) }}</span>
+                                        </div>
+                                        <div :class="isObservationPersonnalisedClass(engin)">
+                                            <img class="imgClass" src="@/assets/icons/observation/font.png" height="25px" width="auto">
+                                        </div>
+                                        <div :class="isConsignePersonnalisedClass(engin)">
+                                            <img class="imgClass" src="@/assets/icons/observation/consigne.png" height="25px" width="auto">
+                                        </div>
                                     </div>
                                     <div v-else>
                                         <div class="noAgent">Aucun agent affecté</div>
@@ -602,7 +634,7 @@
                     Elle commencera par <b>**</b> sur l'ordre de départ.
                 </p>
                 <div>
-                    <Textarea v-model="enginAPersonnaliser.observation" autoResize rows="4" cols="50" placeholder="Ex : Pour renfort brancardage" />
+                    <Textarea v-model="enginAPersonnaliser.observationParticuliere" autoResize rows="4" cols="50" placeholder="Ex : Pour renfort brancardage" />
                 </div>
                 <div class="subsubtitle">
                     Consigne personnalisée
@@ -611,7 +643,7 @@
                     Cette consigne personnalisée sera présente pour cet engin uniquement.
                 </p>
                 <div>
-                    <Textarea v-model="enginAPersonnaliser.consigne" autoResize rows="4" cols="50" placeholder="Ex: prendre le mémento opérationnel..." />
+                    <Textarea v-model="enginAPersonnaliser.consigneParticuliere" autoResize rows="4" cols="50" placeholder="Ex: prendre le mémento opérationnel..." />
                 </div>
                 <div class="subsubtitle">
                     Affectation PRV / PRM / PRI
@@ -628,7 +660,8 @@
                     <Checkbox v-model="enginAPersonnaliser.affectationPRI" inputId="affectationPRI" name="affectationPRI" value="false" :disabled="enginAPersonnaliser.affectationPRV != '' || enginAPersonnaliser.affectationPRM != ''" />
                     <label for="affectationPRI">Affecter cet engin au PRI</label>
                 </div>
-                <div>
+                <div v-if="!selectedAddressPRV && !selectedAddressPRM && !selectedAddressPRI">
+                    <div class="noAgent">Aucun PRV, PRM ou PRI n'a été ajouté.</div>
                     <div class="subsubtitle">
                        Affectation Remorque / Lot
                     </div>
@@ -731,7 +764,7 @@ async function processAddress(){
 }
 
 const search = async (event) => {
-    if (event.query.length <= 4) {
+    if (event.query.length <= 1) {
         return;
     }
     await sqlStore.searchAddress(event.query);
@@ -1314,11 +1347,13 @@ const removeAffectationExt = (agent) => {
 const toAffectAgentsExt = computed(() => {
     return toAffectAgents.value.filter(agent => agent.engin != '' && !/^V\d{5}$/.test(agent.matricule));
 });
+const enginsAffectedWithPeople = ref([]);
 
 const enginsAvecOrdreDepart = ref([]);
 const prepareStep5 = () => {
     step.value = 5;
     const enginsAffectedWithPpl = enginsAffected.value.filter(engin => engin.affectation.length > 0);
+    enginsAffectedWithPeople.value = enginsAffectedWithPpl;
     enginsAvecOrdreDepart.value = [
         { ordreDepart : 1,
             timeDate : timeDateInter.value,
@@ -1380,6 +1415,82 @@ const isBeingPersonnalised = (engin) => {
     }
 }
 
+const isAddressPersonnalised = (engin) => {
+    if (engin.affectationPRM != '' || engin.affectationPRI != '' || engin.affectationPRV != '') {
+        return (engin.affectationPRM != '' ? 'PRM' : '') + (engin.affectationPRI != '' ? 'PRI' : '') + (engin.affectationPRV != '' ? 'PRV' : '');
+    } else {
+        return '';
+    }
+}
+
+const isAddressPersonnalisedClass = (engin) => {
+    if (engin.affectationPRM != '' || engin.affectationPRI != '' || engin.affectationPRV != '') {
+        return "opacityNinty";
+    } else {
+        return 'opacityFifty';
+    }
+}
+
+const isRemorquePersonnalisedClass = (engin) => {
+    if (engin.remorque != '') {
+        return 'opacityNinty';
+    } else {
+        return 'opacityFifty';
+    }
+}
+const isRemorquePersonnalised = (engin) => {
+    if (engin.remorque != '') {
+        return engin.remorque;
+    } else {
+        return '';
+    }
+}
+
+const isObservationPersonnalisedClass = (engin) => {
+    if (engin.observationParticuliere != '') {
+        return 'opacityNinty';
+    } else {
+        return 'opacityFifty';
+    }
+}
+
+const isConsignePersonnalisedClass = (engin) => {
+    console.log(engin);
+    if (engin.consigneParticuliere != '') {
+        return 'opacityNinty';
+    } else {
+        return 'opacityFifty';
+    }
+}
+
+const enginsToAddOD = ref([]);
+const tempsEcoule = ref("");
+const addODCond = ref(false);
+
+const addOD = () => {
+    let enginstoAddList = [];
+    console.log(enginsToAddOD.value);
+    for (let OD of enginsAvecOrdreDepart.value){
+        for (let engin of OD.engins){
+            if (enginsToAddOD.value.some(e => e.engin === engin.engin && e.caserne === engin.caserne)){
+                enginstoAddList.push(engin);
+                OD.engins = OD.engins.filter(e => e.engin != engin.engin && e.caserne != engin.caserne);
+            }
+        }
+    }
+    enginsAvecOrdreDepart.value.push({
+        ordreDepart: enginsAvecOrdreDepart.value.length + 1,
+        timeDate: timeDateInter.value,
+        engins: enginstoAddList
+    });
+    enginsToAddOD.value = [];
+    tempsEcoule.value = "";
+    addODCond.value = false;
+}
+
+
+
+
 setTimeout(() => {
     /*step.value = 5;*/
 }, 3000);
@@ -1409,10 +1520,7 @@ setTimeout(() => {
 .full {
     width: 100%;
 }
-.personnalizeEngin{
-    background-color: #f4f6ff;
-    color: #0063cb;
-}
+
 .ODEnginsFlex{
     display: flex;
     flex-direction: row;
@@ -1433,6 +1541,11 @@ setTimeout(() => {
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
+}
+.greyBackground{
+    background-color: #f6f6f6;
+    border-radius: 30px;
+    padding: 1rem;
 }
 .colonne1{
     margin-left: 1rem;
@@ -1733,5 +1846,48 @@ setTimeout(() => {
 }
 .noBorder{
     border-top: none;
+}
+.personnalizeEngin{
+    background-color: #f4f6ff;
+    color: #0063cb;
+}
+.vehiculegfo{
+    text-align: right;
+    margin-left: 2rem;
+    background-color:white;
+    padding: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-radius: 10px;
+    }
+.imgClass{
+    width: 30px;
+    height: 30px;
+    border-radius: 200px;
+    overflow: hidden;
+}
+.floattingBubble{
+    position: relative;
+    top: -1rem;
+    left: -0.5rem;
+    font-size: 0.8rem;
+    background-color: #85a9ff;
+    color: white;
+    padding: 0.2rem;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+    border-radius: 200px;
+}
+.flexxx{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+.opacityNinty{
+    opacity: 0.75;
+}
+.opacityFifty{
+    opacity: 0.3;
 }
 </style>
