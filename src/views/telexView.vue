@@ -554,6 +554,35 @@
                 <Textarea v-model="consigneGenerale" autoResize rows="4" cols="50" placeholder="Exemple: EPI SUAP Niv. 2" />
             </div>
             </div>
+            <div class="autoOverflow2">
+                <div class="subtitle">
+                    Récapitulatif rapide
+                </div>
+                <div class="subsubtitle">
+                    Heure du premier départ
+                </div>
+                <div class="leftMargin">
+                    {{ timeDateInter.toLocaleString() }}
+                </div>
+                <div class="subsubtitle">
+                    Sinistre
+                </div>
+                <div class="leftMargin">
+                    {{ selectedSinistre.label }}
+                </div>
+                <div class="subsubtitle">
+                    Localisation
+                </div>
+                <div class="leftMargin">
+                    {{ addressVoie }} <br>à {{ addressCommune }}
+                </div>
+                <div class="subsubtitle">
+                    Engins et ordres de départs
+                </div>
+                <div class="leftMargin">
+                    {{ enginsAffectedWithPeople.length }} engin{{ enginsAffectedWithPeople.length > 1 ? 's' : '' }} réparti{{ enginsAffectedWithPeople.length > 1 ? 's' : '' }} <br>sur {{ enginsAvecOrdreDepart.length }} ordre{{ enginsAvecOrdreDepart.length > 1 ? 's' : '' }} de départ
+                </div>
+            </div>
             </div>
             <div class="subtitle">
                 Ordres de départs et personnalisation
@@ -771,7 +800,6 @@ async function processAddress(){
     if (!selectedAddress.value || typeof selectedAddress.value !== 'object') {
         return;
     }
-    console.log(selectedAddress.value);
     let lon = selectedAddress.value.lon;
     let lat = selectedAddress.value.lat;
     mapSource.value = `https://maps.geoapify.com/v1/staticmap?style=osm-liberty&width=500&height=500&center=lonlat:${lon},${lat}&zoom=17.1&pitch=60&marker=lonlat:${lon},${lat};type:material;color:red;icon:emergency_share&scaleFactor=2&apiKey=75c6e5ac06e84d3a95473195e7af529d`;
@@ -957,7 +985,6 @@ const loadRoles = async () => {
     if (popupGFO.value){
         await sqlStore.getAvailableEngins(popupGFO.value);
         enginsGfo.value = sqlStore.availableEngins;
-        console.log(enginsGfo.value);
         await sqlStore.getAvailableRoles(popupGFO.value);
         availableRoles.value = sqlStore.availableRoles;
     }
@@ -1130,7 +1157,6 @@ const enginsAffected = ref([
 ]);
 
 const affectAgentManually = (agent) => {
-    console.log(agent);
     popupTitle.value = agent.label;
     showPopup.value = true;
 }
@@ -1303,10 +1329,8 @@ const addAgentPopup = () => {
         emploi: gfoPopupAgent.value.toUpperCase() + '_' + rolePopupAgent.value.toLowerCase(),
         engin: affectationPopupAgent.value.name
     }
-    console.log("agent", agent);
     toAffectAgents.value.push(agent);
     const engin = enginsAffected.value.find(e => e.engin === affectationPopupAgent.value.name && e.caserne === affectationPopupAgent.value.caserne);
-    console.log("engin", engin);
     if (engin) {
         engin.affectation.push({
             matricule: agent.matricule,
@@ -1492,7 +1516,6 @@ const isObservationPersonnalisedClass = (engin) => {
 }
 
 const isConsignePersonnalisedClass = (engin) => {
-    console.log(engin);
     if (engin.consigneParticuliere != '') {
         return 'opacityNinty';
     } else {
@@ -1506,7 +1529,6 @@ const addODCond = ref(false);
 
 const addOD = () => {
     let enginstoAddList = [];
-    console.log(enginsToAddOD.value);
     for (let OD of enginsAvecOrdreDepart.value){
         for (let engin of OD.engins){
             if (enginsToAddOD.value.some(e => e.engin === engin.engin && e.caserne === engin.caserne)){
@@ -1682,6 +1704,7 @@ const processAllData = async () => {
     flex-wrap: wrap;
     padding: 1rem;
     margin-bottom: 2rem;
+    width: 90vw;
 }
 
 .colonne2{
@@ -1725,6 +1748,10 @@ const processAllData = async () => {
 .autoOverflow{
     overflow: auto;
     max-height: 80vh;
+}
+.autoOverflow2 {
+    overflow: auto;
+    max-height: 30vh;
 }
 .secondItem{
     margin-top: 1rem;
