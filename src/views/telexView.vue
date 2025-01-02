@@ -531,6 +531,8 @@
         </div>
         <div v-if="step == 5" class="autoOverflow step5">
             <div id="layoutMargin"></div>
+            <div class="middle">
+            <div>
             <div class="subtitle">
                 Observation
             </div>
@@ -540,6 +542,8 @@
             <div>
                 <Textarea v-model="observationGenerale" autoResize rows="8" cols="50" :placeholder="placeholderObs" />
             </div>
+            </div>
+            <div>
             <div class="subtitle">
                 Consigne
             </div>
@@ -548,6 +552,8 @@
             </p>
             <div>
                 <Textarea v-model="consigneGenerale" autoResize rows="4" cols="50" placeholder="Exemple: EPI SUAP Niv. 2" />
+            </div>
+            </div>
             </div>
             <div class="subtitle">
                 Ordres de départs et personnalisation
@@ -602,6 +608,9 @@
                                         <div :class="isConsignePersonnalisedClass(engin)">
                                             <img class="imgClass" src="@/assets/icons/observation/consigne.png" height="25px" width="auto">
                                         </div>
+                                        <div :class="isCodeAppairageClass(engin)">
+                                            <img class="imgClass" src="@/assets/icons/observation/secure-password.png" height="25px" width="auto">
+                                        </div>
                                     </div>
                                     <div v-else>
                                         <div class="noAgent">Aucun agent affecté</div>
@@ -625,6 +634,10 @@
                     GFO
                 </div>
                 <InputText v-model="enginAPersonnaliser.gfo" placeholder="Inscrire un GFO" class="w-full md:w-14rem" />
+                <div class="subsubtitle">
+                    Code appairage
+                </div>
+                <InputText v-model="enginAPersonnaliser.codeAppairage" placeholder="Inscrire un code d'appairage" class="w-full md:w-14rem" />
                 <div class="subsubtitle">
                     Observation
                 </div>
@@ -662,17 +675,18 @@
                 </div>
                 <div v-if="!selectedAddressPRV && !selectedAddressPRM && !selectedAddressPRI">
                     <div class="noAgent">Aucun PRV, PRM ou PRI n'a été ajouté.</div>
-                    <div class="subsubtitle">
-                       Affectation Remorque / Lot
-                    </div>
-                    <Dropdown v-model="enginAPersonnaliser.remorque" :options="lotsRemorques" optionLabel="label" filter optionValue="code" placeholder="Sélectionner une remorque/lot"/>
                 </div>
+                <div class="subsubtitle">
+                       Affectation Remorque / Lot
+                </div>
+                    <Dropdown v-model="enginAPersonnaliser.remorque" :options="lotsRemorques" optionLabel="label" filter optionValue="code" placeholder="Sélectionner une remorque/lot"/>
                 <div class="validationBtn" @click="processEnginPersonnalise">Enregistrer & fermer</div>
             </div>
             <div v-else>
                 <div class="noAgent">Aucun engin sélectionné.</div>
             </div>
         </div>
+        <div class="validationBtn" id="validationBtn3" @click="processAllData"><span v-if="loading"><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span><span v-else>Valider l'ordre de départ</span></div>
         </div>
             <div id="layoutMargin"></div>
         </div>
@@ -853,6 +867,8 @@ const etages = ["MI","VP", "-3", "-2", "-1", "RdC", "1", "2", "3", "4", "5", "6"
 const sinistresAqua = ["1186", "2310", "5120", "4140", "3563", "4153"];
 const sinistresSUAPNiv2 = ["1110", "1120"];
 
+const hydrants = ref([]);
+
 const getMoreAddress = async () => {
     loading.value = true;
     await sqlStore.getMoreAddress(selectedAddress.value.lon, selectedAddress.value.lat);
@@ -863,6 +879,7 @@ const getMoreAddress = async () => {
     addressCommune.value = selectedAddress.value.city.toUpperCase();
     coordonnees.value = moreAddress.value.mapCoordinates == "inconnu" ? "" : moreAddress.value.mapCoordinates;
     erpList.value.push(" ");
+    hydrants.value = moreAddress.value.fireHydrants;
     for (const erp of moreAddress.value.erp){
         erpList.value.push(erp.feature.toUpperCase().replace(/GROUPEMENT/g, 'GT').replace(/ETABLISSEMENT/g, 'ETB'));	
     }
@@ -1201,7 +1218,7 @@ const automaticAffectation = async () => {
                 label: `${agent.grade.length <= 4 ? agent.grade : sqlStore.gradeAbbreviation(agent.grade)} ${agent.nom} ${agent.prenom}`,
                 emploi: agent.emploi,
                 engin: agent.engin,
-                grade: agent.grade
+                grade: agent.grade.length <= 4 ? agent.grade : sqlStore.gradeAbbreviation(agent.grade)
                 });
                 const agentToModify = toAffectAgents.value.find(a => a.matricule === agent.matricule);
                 agentToModify.emploi = agent.emploi;
@@ -1218,7 +1235,7 @@ const automaticAffectation = async () => {
 }
 
 const enginsAffectedExt = computed (() => {
-    return enginsAffected.value.filter(engin => engin.caserne != "COLLONGE");
+    return enginsAffected.value.filter(engin => engin.caserne != "COLLONGE" || engin.affectation.some(agent => !/^V\d{5}$/.test(agent.matricule)));
 })
 const popupEnginExtCond = ref(false);
 const enginsListAll = ref([]);
@@ -1259,7 +1276,7 @@ const groupedByCaserneEngins = computed(() => {
             caserneGroup = { caserne: engin.caserne, vehicules: [] };
             grouped.push(caserneGroup);
         }
-        caserneGroup.vehicules.push({ name: engin.engin, affectation: engin.affectation });
+        caserneGroup.vehicules.push({ name: engin.engin, caserne: engin.caserne, affectation: engin.affectation });
     }
     return grouped;
 })
@@ -1288,7 +1305,8 @@ const addAgentPopup = () => {
     }
     console.log("agent", agent);
     toAffectAgents.value.push(agent);
-    const engin = enginsAffected.value.find(e => e.engin === affectationPopupAgent.value.name);
+    const engin = enginsAffected.value.find(e => e.engin === affectationPopupAgent.value.name && e.caserne === affectationPopupAgent.value.caserne);
+    console.log("engin", engin);
     if (engin) {
         engin.affectation.push({
             matricule: agent.matricule,
@@ -1354,9 +1372,17 @@ const prepareStep5 = () => {
     step.value = 5;
     const enginsAffectedWithPpl = enginsAffected.value.filter(engin => engin.affectation.length > 0);
     enginsAffectedWithPeople.value = enginsAffectedWithPpl;
+    let newDate = new Date(timeDateInter.value);
+    let day = newDate.getDate().toString().padStart(2, '0');
+    let month = (newDate.getMonth() + 1).toString().padStart(2, '0');
+    let year = newDate.getFullYear();
+    let hours = newDate.getHours().toString().padStart(2, '0');
+    let minutes = newDate.getMinutes().toString().padStart(2, '0');
+    let seconds = newDate.getSeconds().toString().padStart(2, '0');
+    let dateString = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
     enginsAvecOrdreDepart.value = [
         { ordreDepart : 1,
-            timeDate : timeDateInter.value,
+            timeDate : dateString,
             engins : enginsAffectedWithPpl.map(engin => ({
             ...engin,
             gfo : engin.affectation.length > 0 ? engin.affectation[0].emploi.split('_')[0] : '',
@@ -1365,7 +1391,8 @@ const prepareStep5 = () => {
             affectationPRI: '',
             affectationPRV: '',
             consigneParticuliere: '',
-            remorque: ''
+            remorque: '',
+            codeAppairage: '',
         }))
         }
     ]    
@@ -1379,6 +1406,7 @@ const ouvrirCaracteristiques = (engin) => {
                 if (engin.engin == enginAPersonnaliser.value.engin && engin.caserne == enginAPersonnaliser.value.caserne){
                     engin.observationParticuliere = enginAPersonnaliser.value.observationParticuliere;
                     engin.gfo = enginAPersonnaliser.value.gfo;
+                    engin.codeAppairage = enginAPersonnaliser.value.codeAppairage;
                     engin.affectationPRM = enginAPersonnaliser.value.affectationPRM;
                     engin.affectationPRI = enginAPersonnaliser.value.affectationPRI;
                     engin.affectationPRV = enginAPersonnaliser.value.affectationPRV;
@@ -1396,6 +1424,7 @@ const processEnginPersonnalise = () => {
             if (engin.engin == enginAPersonnaliser.value.engin && engin.caserne == enginAPersonnaliser.value.caserne){
                 engin.observationParticuliere = enginAPersonnaliser.value.observationParticuliere;
                 engin.gfo = enginAPersonnaliser.value.gfo;
+                engin.codeAppairage = enginAPersonnaliser.value.codeAppairage;
                 engin.affectationPRM = enginAPersonnaliser.value.affectationPRM;
                 engin.affectationPRI = enginAPersonnaliser.value.affectationPRI;
                 engin.affectationPRV = enginAPersonnaliser.value.affectationPRV;
@@ -1438,6 +1467,14 @@ const isRemorquePersonnalisedClass = (engin) => {
         return 'opacityFifty';
     }
 }
+const isCodeAppairageClass = (engin) => {
+    if (engin.codeAppairage != '') {
+        return 'opacityNinty';
+    } else {
+        return 'opacityFifty';
+    }
+}
+
 const isRemorquePersonnalised = (engin) => {
     if (engin.remorque != '') {
         return engin.remorque;
@@ -1474,13 +1511,20 @@ const addOD = () => {
         for (let engin of OD.engins){
             if (enginsToAddOD.value.some(e => e.engin === engin.engin && e.caserne === engin.caserne)){
                 enginstoAddList.push(engin);
-                OD.engins = OD.engins.filter(e => e.engin != engin.engin && e.caserne != engin.caserne);
+                OD.engins = OD.engins.filter(e => e.engin != engin.engin || e.caserne != engin.caserne);
             }
         }
     }
+    let newDate = new Date(timeDateInter.value.getTime() + parseInt(tempsEcoule.value) * 60000);
+    let day = newDate.getDate().toString().padStart(2, '0');
+    let month = (newDate.getMonth() + 1).toString().padStart(2, '0');
+    let year = newDate.getFullYear();
+    let hours = newDate.getHours().toString().padStart(2, '0');
+    let minutes = newDate.getMinutes().toString().padStart(2, '0');
+    let dateString = `${day}/${month}/${year} ${hours}:${minutes}`;
     enginsAvecOrdreDepart.value.push({
         ordreDepart: enginsAvecOrdreDepart.value.length + 1,
-        timeDate: timeDateInter.value,
+        timeDate: dateString,
         engins: enginstoAddList
     });
     enginsToAddOD.value = [];
@@ -1488,12 +1532,85 @@ const addOD = () => {
     addODCond.value = false;
 }
 
+const processAllData = async () => {
+    loading.value = true;
+    const payload = {
+        "sinistre" : {
+            "code" : selectedSinistre.value.code,
+            "libelle" : selectedSinistre.value.label,
+            "libelleComplet": selectedSinistre.value.labelComplet,
+        },
+        "adresses" : {
+            "adresseCommune" : {
+                "voie" : addressVoie.value,
+                "commune" : addressCommune.value,
+                "coordonnees" : coordonnees.value,
+                "erp" : erp.value.startsWith("CT") || erp.value == '' ? erp.value : "ERP_" + erp.value,
+                "batiment" : addressBatiment.value,
+                "etage" : addressEtage.value,
+                "livre" : addressLivre.value
+            },
+            "adressePRM" : {
+                "voie" : addressVoiePRM.value,
+                "commune" : addressCommunePRM.value,
+                "coordonnees" : coordonneesPRM.value,
+                "erp" : erpPRM.value.startsWith("CT") || erpPRM.value == '' ? erpPRM.value : "ERP_" + erpPRM.value,
+                "batiment" : addressBatimentPRM.value,
+                "etage" : addressEtagePRM.value,
+                "livre" : addressLivrePRM.value
+            },
+            "adressePRI" : {
+                "voie" : addressVoiePRI.value,
+                "commune" : addressCommunePRI.value,
+                "coordonnees" : coordonneesPRI.value,
+                "erp" : erpPRI.value.startsWith("CT") || erpPRI.value == '' ? erpPRI.value : "ERP_" + erpPRI.value,
+                "batiment" : addressBatimentPRI.value,
+                "etage" : addressEtagePRI.value,
+                "livre" : addressLivrePRI.value
+            },
+            "adressePRV" : {
+                "voie" : addressVoiePRV.value,
+                "commune" : addressCommunePRV.value,
+                "coordonnees" : coordonneesPRV.value,
+                "erp" : erpPRV.value.startsWith("CT") || erpPRV.value == '' ? erpPRV.value : "ERP_" + erpPRV.value,
+                "batiment" : addressBatimentPRV.value,
+                "etage" : addressEtagePRV.value,
+                "livre" : addressLivrePRV.value
+            },
+            "hydrants": hydrants.value
+        },
+        "observation" : observationGenerale.value,
+        "consigneGenerale" : consigneGenerale.value,
+        "ordresDeparts" : enginsAvecOrdreDepart.value
+    }
+    await sqlStore.generateTelex(payload);
+    loading.value = false;
+    let htmlContent = sqlStore.telex;
+        // Calculer la largeur et la hauteur de l'écran
+    const screenWidth = screen.width * 0.9;
+    const screenHeight = screen.height * 0.9;
 
+    // Ouvrir une nouvelle fenêtre (popup) avec la taille de l'écran
+    const popup = window.open("", "_blank", `width=${screenWidth},height=${screenHeight},left=0,top=0`);
 
+    // Insérer le contenu HTML dans la popup
+    if (popup) {
+        popup.document.open(); // Ouvrir le document
+        popup.document.write(htmlContent); // Écrire le contenu HTML
+        popup.document.close(); // Fermer le flux d'écriture
+        popup.focus(); // Assure que la popup est en avant-plan
+    } else {
+        const link = document.createElement('a');
+        link.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+        link.download = `telex_${new Date().toISOString().split('T')[0]}.html`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.error("Impossible d'ouvrir la popup. Vérifiez si les popups sont bloquées par le navigateur.");
+    }
 
-setTimeout(() => {
-    /*step.value = 5;*/
-}, 3000);
+}
 
 </script>
 
@@ -1556,6 +1673,16 @@ setTimeout(() => {
 .step5{
     max-width: 95vw;
 }
+.middle{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
 .colonne2{
     padding: 1rem;
     padding-left: 2rem;
@@ -1564,6 +1691,8 @@ setTimeout(() => {
     border-radius: 30px;
     flex: 0.4;
     margin-right: 1rem;
+    overflow: auto;
+    max-height: 60vh;
 }
 #returnBtnStep2{
     background-color: #f6f6f6;
@@ -1871,7 +2000,9 @@ setTimeout(() => {
     top: -1rem;
     left: -0.5rem;
     font-size: 0.8rem;
-    background-color: #85a9ff;
+    background-image: linear-gradient(to right bottom, #0078f3 5%, #18753c 100%);
+        background-size: 140% 140%;
+			animation: gradient 2s ease infinite;
     color: white;
     padding: 0.2rem;
     padding-left: 0.4rem;
