@@ -1521,7 +1521,8 @@ const addOD = () => {
     let year = newDate.getFullYear();
     let hours = newDate.getHours().toString().padStart(2, '0');
     let minutes = newDate.getMinutes().toString().padStart(2, '0');
-    let dateString = `${day}/${month}/${year} ${hours}:${minutes}`;
+    let seconds = newDate.getSeconds().toString().padStart(2, '0');
+    let dateString = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
     enginsAvecOrdreDepart.value.push({
         ordreDepart: enginsAvecOrdreDepart.value.length + 1,
         timeDate: dateString,
