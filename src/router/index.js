@@ -14,6 +14,7 @@ import replaceAsup from '@/views/replaceAsup.vue'
 import formationSearch from '@/views/formationSearch.vue'
 import formationSearchAgent from '@/views/formationSearchAgent.vue'
 import telexView from '@/views/telexView.vue'
+import peremptions from '@/views/peremptionView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -82,6 +83,11 @@ const router = createRouter({
       path: '/telex',
       name: 'telex',
       component: telexView
+    },
+    {
+      path: '/peremptions',
+      name: 'peremptions',
+      component : peremptions
     }
   ]
 })

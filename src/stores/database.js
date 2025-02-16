@@ -988,6 +988,21 @@ async function generateTelex(payload) {
   }
 }
 
+async function getPeremptionAndCount(){
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://api.cms-collonges.fr/getPeremptionAndCount`, requestOptions);
+    const result = await response.json();
+    const data = result;
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
   return {
     NextPeremptions,
@@ -1073,6 +1088,7 @@ async function generateTelex(payload) {
     casernesList,
     getVehiculesAndCasernesList,
     generateTelex,
-    telex
+    telex,
+    getPeremptionAndCount
   };
 });

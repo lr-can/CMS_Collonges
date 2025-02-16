@@ -124,6 +124,7 @@ initialise();
   <div class="wrapper">
     <nav>
       <RouterLink to="/"><img alt="Profile" src="@/assets/icons/home.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/peremptions" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Peremption" src="@/assets/icons/peremptions.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/reception" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Reception" src="@/assets/icons/reception.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/disposition" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/search" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>

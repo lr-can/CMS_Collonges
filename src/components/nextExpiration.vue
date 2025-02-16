@@ -11,7 +11,7 @@
       </div>
       <Transition>
         <div class="Expiration" v-show="showExpiration">
-            <div v-if="NextPeremptions.length > 0">
+            <div v-if="NextPeremptions.length > 0" @click="props.profile == 'pharmacie' ? $router.push('/peremptions') : ''" :style="props.profile == 'pharmacie' ? {cursor:'pointer'} : {cursor: 'not-allowed'}">
         <div v-for="row in NextPeremptions" :key="row.numeroLot" class="prochain-peremption">
             <div class="expirant" :class="giveClass(row.datePeremption)" @click="getSummary(row.numLot)">
                 <div class="materiel">{{ row.nomMateriel }}</div>
