@@ -174,6 +174,8 @@ nav {
   width: 100%;
   font-size: 12px;
   text-align: center;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 nav a.router-link-exact-active {
