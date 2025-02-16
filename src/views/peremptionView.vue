@@ -12,7 +12,7 @@
       <table class="peremption-table">
         <thead>
           <tr>
-            <th>Nombre</th>
+            <th>Qté</th>
             <th>Matériel</th>
             <th>Statut</th>
             <th>Numéro de Lot</th>
