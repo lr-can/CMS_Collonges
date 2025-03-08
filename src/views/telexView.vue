@@ -364,7 +364,7 @@
                         Agents de la caserne sur la manœuvre
                     </div>
                     <div v-for="agent in toAffectAgents" :key="agent.matricule">
-                        <div class="agent">
+                        <div class="agent" v-on:dragover.prevent draggable="true" v-on:dragstart="dragStart($event, agent)">
                             <div class="agentMatricule">{{agent.matricule}}</div>
                             <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
                             <div v-if="agent.engin != ''" class="agentGFO greenText">{{ agent.engin }} ({{ agent.emploi }}) <span class="redCross" @click="removeAffectation(agent)">X</span></div>
@@ -374,7 +374,7 @@
                 </div>
                 <div class="secondColumn">
                     <div v-for="vehicule of enginsAffected" :key="vehicule.engin">
-                        <div class="vehicule">
+                        <div class="vehicule" v-on:dragover.prevent @drop="drop($event, vehicule)" @dragover.prevent>
                             <div class="vehiculeName">
                                 <img :src="getIconSrc(vehicule.engin)" height="40px" width="auto">
                                 <span class="vehiculeNameSpan">{{vehicule.engin}}</span>
@@ -1633,6 +1633,23 @@ const processAllData = async () => {
         console.error("Impossible d'ouvrir la popup. Vérifiez si les popups sont bloquées par le navigateur.");
     }
 
+}
+const dragStart = (event, agent) => {
+    event.dataTransfer.setData('text', JSON.stringify(agent)); // Ajout du type 'text'
+}
+
+const drop = (event, engin) => {
+    event.preventDefault();
+    try {
+        const agent = JSON.parse(event.dataTransfer.getData('text'));
+        popupTitle.value = agent.label;
+        popupGFO.value = engin.affectation.length > 0 ? engin.affectation[0].emploi.split('_')[0] : '';
+        popupEngin.value = engin.engin;
+        popupRole.value = null;
+        showPopup.value = true;
+    } catch (error) {
+        console.error("Erreur lors du parsing des données de transfert :", error);
+    }
 }
 
 </script>
