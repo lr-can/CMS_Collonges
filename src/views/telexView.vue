@@ -771,7 +771,7 @@ const loading = ref(false);
 const toAddGfo = ref();
 const moreAddress = ref({});
 const consigneGenerale = ref('');
-const mapSource = ref('https://www.openstreetmap.org/export/embed.html?bbox=4.84536498785019%2C45.81678043065213%2C4.84785407781601%2C45.8180572020597&amp;layer=mapnik&amp&amp;zoom=13.5');
+const mapSource = ref('https://www.openstreetmap.org/export/embed.html?bbox=4.84536498785019%2C45.81678043065213%2C4.84785407781601%2C45.8180572020597&amp;layer=mapnik&amp;zoom=12');
 
 const sqlStore = useSqlStore();
 
@@ -2041,6 +2041,11 @@ const drop = (event, engin) => {
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: all 0.3s ease;
+}
+#mapid:hover{
+    transform: translateX(30%) scale(1.3);
+    z-index: 1000;
 }
 .subsubtitle{
     padding-top: 1rem;
