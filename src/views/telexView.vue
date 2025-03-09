@@ -39,8 +39,7 @@
             <img src="@/assets/logoTitle.png" width="200px" height="auto" >
         </div>
         <div id="mapid" v-if="step == 1 || step == 2">
-                <img :src="mapSource"
-                width="300px" height="300px"/>
+            <iframe width="500" height="500" :src="mapSource" style="scale: 1.2;"></iframe><br/><small><a href="https://www.openstreetmap.org/?mlat=45.817419&amp;mlon=4.846610#map=19/45.817419/4.846610">Afficher une carte plus grande</a></small>
         </div>
         <div v-if="step == 1" id="appStep1">
             <div id="layoutMargin"></div>
@@ -284,7 +283,7 @@
             <div v-if="step2Possible" class="validationBtn" @click="step = 2">Passer à l'étape suivante</div>
             <div id="layoutMargin"></div>
         </div>
-        <div v-if="step == 2">
+        <div v-if="step == 2" style="overflow: auto; padding-right: 30%; transform: translateX(30%);">
             <div id="layoutMargin"></div>
             <div>
                 <div>
@@ -307,15 +306,10 @@
                 Sélection des agents de la caserne
             </div>
             <div>
-                <MultiSelect v-model="selectedAgents" display="chip" :options="agents" optionLabel="label" filter placeholder="Sélectionner des agents" class="gfoList">
-                <template #chip="slotProps">
-                    <div>{{ slotProps.value.matricule }}</div>
-                </template>
-                <template #footer>
-                    <button @click="selectedAgents = agents">Ajouter tous</button>
-                    <button @click="selectedAgents = []">Supprimer tous</button>
-                </template>
-                </MultiSelect>
+                <Listbox v-model="selectedAgents" multiple :options="agents" filter striped  optionLabel="label" class="gfoList" 
+                :virtualScrollerOptions="{ itemSize: 38 }" listStyle="height:250px" />
+                <button @click="selectedAgents = agents">Ajouter tous</button>
+                <button @click="selectedAgents = []">Supprimer tous</button>
             </div>
             <div class="marginTop">
                 <p v-if="manuallyAddedAgent != '' && !isAnAgent">😕 Le matricule {{ manuallyAddedAgent }} n'est pas reconnu</p> <p v-if="manuallyAddedAgent != '' && isAnAgent">👌 Appuyez sur la touche Entrer pour ajouter ce matricule.</p>
@@ -327,12 +321,13 @@
             <div v-if="selectedAgents.length >= 2" class="validationBtn" @click="step3function">Passer à l'étape suivante</div>
             <div id="layoutMargin"></div>
         </div>
+        <div class="returnButton" v-if="step == 2" @click="step = 1">Retour</div>
         <div v-if="step == 3">
             <div id="layoutMargin"></div>
             <div class="subtitle">
                 Affectation des agents de la caserne
             </div>
-            <div class="blurBck" v-if="showPopup"></div>
+            <div class="blurBck" v-if="showPopup" @click="showPopup = !showPopup"></div>
             <div class="popupAffectation" v-if="showPopup">
                 <div class="subtitle">
                     Affectation manuelle
@@ -346,7 +341,7 @@
                 <div class="subsubtitle">
                     GFO
                 </div>
-                <Dropdown v-model="popupGFO" :options="gfos" placeholder="Sélectionner un GFO" @change="loadRoles()" class="w-full md:w-14rem" />
+                <Dropdown v-model="popupGFO" :options="gfos" placeholder="Sélectionner un GFO" editable @change="loadRoles()" class="w-full md:w-14rem" />
                 <div class="subsubtitle">
                     Engin
                 </div>
@@ -354,7 +349,7 @@
                 <div class="subsubtitle">
                     Rôle
                 </div>
-                <Dropdown v-model="popupRole" :options="availableRoles" placeholder="Sélectionner un rôle" class="w-full md:w-14rem" />
+                <Dropdown v-model="popupRole" :options="availableRoles" placeholder="Sélectionner un rôle" editable class="w-full md:w-14rem" />
                 <div class="validationBtn" @click="affectAgent">Affecter</div>
             </div>
             <div class="twoColumns">
@@ -364,7 +359,7 @@
                         Agents de la caserne sur la manœuvre
                     </div>
                     <div v-for="agent in toAffectAgents" :key="agent.matricule">
-                        <div class="agent" v-on:dragover.prevent draggable="true" v-on:dragstart="dragStart($event, agent)">
+                        <div class="agent" :class="isBeingDragged ? 'opacityFifty' : ''" v-on:dragover.prevent draggable="true" v-on:dragstart="dragStart($event, agent)">
                             <div class="agentMatricule">{{agent.matricule}}</div>
                             <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
                             <div v-if="agent.engin != ''" class="agentGFO greenText">{{ agent.engin }} ({{ agent.emploi }}) <span class="redCross" @click="removeAffectation(agent)">X</span></div>
@@ -374,7 +369,7 @@
                 </div>
                 <div class="secondColumn">
                     <div v-for="vehicule of enginsAffected" :key="vehicule.engin">
-                        <div class="vehicule" v-on:dragover.prevent @drop="drop($event, vehicule)" @dragover.prevent>
+                        <div class="vehicule" :class="isBeingDragged ? 'blueShadow':''" v-on:dragover.prevent @drop="drop($event, vehicule)" @dragover.prevent>
                             <div class="vehiculeName">
                                 <img :src="getIconSrc(vehicule.engin)" height="40px" width="auto">
                                 <span class="vehiculeNameSpan">{{vehicule.engin}}</span>
@@ -716,7 +711,8 @@
             </div>
         </div>
         <div class="validationBtn" id="validationBtn3" @click="processAllData"><span v-if="loading"><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span><span v-else>Valider l'ordre de départ</span></div>
-        </div>
+        <div class="returnButton" @click="step = 4">Retour</div>    
+    </div>
             <div id="layoutMargin"></div>
         </div>
     </div>
@@ -732,6 +728,7 @@ import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
+import Listbox from 'primevue/listbox';
 import CascadeSelect from 'primevue/cascadeselect';
 import Chips from 'primevue/chips';
 import { ref, watch, computed } from "vue";
@@ -774,7 +771,7 @@ const loading = ref(false);
 const toAddGfo = ref();
 const moreAddress = ref({});
 const consigneGenerale = ref('');
-const mapSource = ref('https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=500&height=500&center=lonlat:4.84665,45.81745&zoom=15&marker=lonlat:4.84665,45.81745;type:circle;color:%23ff0000;size:small;icon:local_fire_department;icontype:material;iconsize:small;strokecolor:%23ff0000&scaleFactor=2&apiKey=75c6e5ac06e84d3a95473195e7af529d');
+const mapSource = ref('https://www.openstreetmap.org/export/embed.html?bbox=4.84536498785019%2C45.81678043065213%2C4.84785407781601%2C45.8180572020597&amp;layer=mapnik&amp&amp;zoom=13.5');
 
 const sqlStore = useSqlStore();
 
@@ -802,7 +799,8 @@ async function processAddress(){
     }
     let lon = selectedAddress.value.lon;
     let lat = selectedAddress.value.lat;
-    mapSource.value = `https://maps.geoapify.com/v1/staticmap?style=osm-liberty&width=500&height=500&center=lonlat:${lon},${lat}&zoom=17.1&pitch=60&marker=lonlat:${lon},${lat};type:material;color:red;icon:emergency_share&scaleFactor=2&apiKey=75c6e5ac06e84d3a95473195e7af529d`;
+    const box = `${lon - 0.001},${lat - 0.001},${lon + 0.001},${lat + 0.001}`.replace(/,/g, '%2C');
+    mapSource.value = `https://www.openstreetmap.org/export/embed.html?bbox=${box}&amp;layer=mapnik&amp;marker=${lon}%2C${lat}&amp;zoom=13&amp`;
 }
 
 const search = async (event) => {
@@ -1634,12 +1632,18 @@ const processAllData = async () => {
     }
 
 }
+const isBeingDragged = ref(false);
 const dragStart = (event, agent) => {
     event.dataTransfer.setData('text', JSON.stringify(agent)); // Ajout du type 'text'
+    isBeingDragged.value = true;
+    setTimeout(() => {
+        isBeingDragged.value = false;
+    }, 10000);
 }
 
 const drop = (event, engin) => {
     event.preventDefault();
+    isBeingDragged.value = false;
     try {
         const agent = JSON.parse(event.dataTransfer.getData('text'));
         popupTitle.value = agent.label;
@@ -1713,6 +1717,15 @@ const drop = (event, engin) => {
 .step5{
     max-width: 95vw;
 }
+.opacityFifty{
+    opacity: 0.5;
+}
+.blueShadow{
+    box-shadow: 0 0 10px 0 rgba(0,120,243,0.5);
+}
+.blueShadow:hover{
+    background-color: rgba(0,120,243,0.3);
+}
 .middle{
     display: flex;
     flex-direction: row;
@@ -1735,7 +1748,7 @@ const drop = (event, engin) => {
     overflow: auto;
     max-height: 60vh;
 }
-#returnBtnStep2{
+#returnBtnStep2, .returnButton{
     background-color: #f6f6f6;
     color: #666666;
     padding: 0.5rem;
@@ -1747,8 +1760,13 @@ const drop = (event, engin) => {
     bottom: 1rem;
     transition: all 0.3s ease;
 }
-#returnBtnStep2:hover{
+#returnBtnStep2:hover, .returnButton:hover{
     background-color: #e0e0e0;
+}
+.returnButton{
+    position: fixed;
+    bottom: 1.5rem;
+    left: 3rem;
 }
 #validationBtn3{
     position: absolute;
@@ -1761,6 +1779,12 @@ const drop = (event, engin) => {
 }
 .agent{
     margin-top: 0.5rem;
+    transition: all 0.3s ease;
+}
+.agent:hover{
+    background-color: #e0e0e0;
+    cursor: grab;
+    border-radius: 5px;
 }
 .autoOverflow{
     overflow: auto;
@@ -1914,6 +1938,7 @@ const drop = (event, engin) => {
     padding: 1rem;
     width: 20rem;
     margin-bottom: 1rem;
+    transition: all 0.3s ease;
 }
 .vehiculeName{
     border-bottom: 1px solid #919191;
@@ -2013,6 +2038,9 @@ const drop = (event, engin) => {
     scale: 1.5;
     width: 300px;
     height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .subsubtitle{
     padding-top: 1rem;
