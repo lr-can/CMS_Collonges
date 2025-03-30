@@ -213,6 +213,12 @@
     const nbSalbuta25mg25ml1 = ref(0);
     const nbSalbuta25mg25ml2 = ref(0);
 
+    const nbnebuMaskPed1 = ref(0);
+    const nbnebuMaskPed2 = ref(0);
+
+    const nbnebuMaskAdu1 = ref(0);
+    const nbnebuMaskAdu2 = ref(0);
+
     const nbIpra025mgml1 = ref(0);
     const nbIpra025mgml2 = ref(0);
     const isLoaded = ref(false);
@@ -240,6 +246,9 @@
 
     const nbDoli5001 = ref(0);
     const nbDoli5002 = ref(0);
+
+    const nbNaCl1 = ref(0);
+    const nbNaCl2 = ref(0);
 
     const nomCorrespondant1 = ref('');
     const nomCorrespondant2 = ref('');
