@@ -215,9 +215,13 @@
 
     const nbnebuMaskPed1 = ref(0);
     const nbnebuMaskPed2 = ref(0);
+    console.log("nbnebuMaskPed1", nbnebuMaskPed1.value);
+    console.log("nbnebuMaskPed2", nbnebuMaskPed2.value);
 
     const nbnebuMaskAdu1 = ref(0);
     const nbnebuMaskAdu2 = ref(0);
+    console.log("nbnebuMaskAdu1", nbnebuMaskAdu1.value);
+    console.log("nbnebuMaskAdu2", nbnebuMaskAdu2.value);
 
     const nbIpra025mgml1 = ref(0);
     const nbIpra025mgml2 = ref(0);
@@ -250,6 +254,9 @@
     const nbNaCl1 = ref(0);
     const nbNaCl2 = ref(0);
 
+    console.log("nbNaCl1", nbNaCl1.value);
+    console.log("nbNaCl2", nbNaCl2.value);
+    
     const nomCorrespondant1 = ref('');
     const nomCorrespondant2 = ref('');
     const email = ref('');
