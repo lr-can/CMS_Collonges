@@ -65,17 +65,17 @@
                 </p>
                 <div v-if="asupData.rows4.length != 0" class="utilisationsASUP-content">
                     <div class="utilisationsASUP-header">
-                        <div class="utilisationsASUP-header-item">Agent</div>
                         <div class="utilisationsASUP-header-item">Date</div>
                         <div class="utilisationsASUP-header-item">Inter</div>
+                        <div class="utilisationsASUP-header-item">Agent</div>
                         <div class="utilisationsASUP-header-item">ASUP</div>
                         <div class="utilisationsASUP-header-item">Méd. Utilisés</div>
                         <div class="utilisationsASUP-header-item">Prescripteur</div>
                     </div>
                     <div class="utilisationsASUP-content-items" v-for="item in asupData.rows4" :key="item.id" @click="showDetail(item.numIntervention)">
-                        <div class="utilisationsASUP-content-item agentInfo"><img :src="image_grade(item.agent.grade)" width="25px" height="auto"><span>{{ item.agent.nomAgent }} {{ item.agent.prenomAgent }}</span></div>
                         <div class="utilisationsASUP-content-item">{{ new Date(item.dateActe).toLocaleDateString() }}</div>
                         <div class="utilisationsASUP-content-item">{{ item.numIntervention }}</div>
+                        <div class="utilisationsASUP-content-item agentInfo"><img :src="image_grade(item.agent.grade)" width="25px" height="auto"><span>{{ item.agent.nomAgent }} {{ item.agent.prenomAgent }}</span></div>
                         <div class="utilisationsASUP-content-item">{{ item.acteSoin }}</div>
                         <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList ? item.idMedicamentsList.length() : "Aucun" }}</div>
                         <div class="utilisationsASUP-content-item">Dr {{ item.medecinPrescripteur.nomExercice }}</div>
