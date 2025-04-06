@@ -867,7 +867,8 @@ async function getAgentsList() {
     let result = await response.json();
     result = result.map(item => ({
       ...item,
-      label: `${item.matricule} - ${gradeAbbreviation(item.grade)} ${item.nomAgent} ${item.prenomAgent}`
+      label: `${item.matricule} - ${gradeAbbreviation(item.grade)} ${item.nomAgent} ${item.prenomAgent}`,
+      label_short: `${gradeAbbreviation(item.grade)} ${item.nomAgent} ${item.prenomAgent}`,
     }));
     agentsList.value = result;
   }
@@ -1003,6 +1004,27 @@ async function getPeremptionAndCount(){
   }
 }
 
+async function getVehiculesRI(isPromptSecours){
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%204`, requestOptions);
+    const result = await response.json();
+    const data = result;
+    let data_filtered = null;
+    if (isPromptSecours){
+      data_filtered = data.filter(item => item.engLib.includes("VSAV") || item.engLib.includes("VTU"));
+    } else {
+      data_filtered = data.filter(item => item.engLib.includes("VSAV"));
+    }
+    return data_filtered.map(item => item.engLib);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
   return {
     NextPeremptions,
@@ -1089,6 +1111,7 @@ async function getPeremptionAndCount(){
     getVehiculesAndCasernesList,
     generateTelex,
     telex,
-    getPeremptionAndCount
+    getPeremptionAndCount,
+    getVehiculesRI,
   };
 });

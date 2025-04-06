@@ -73,7 +73,9 @@ localStorage.setItem('currentProfile', '');
 
 const currentProfile = ref(localStorage.getItem('currentProfile'));
 
-router.push('/');
+if (!window.location.pathname.includes('/RIGrandPublic')) {
+  router.push('/');
+}
 
 let profileCheck = setInterval(() => {
   currentProfile.value = localStorage.getItem('currentProfile');
