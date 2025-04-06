@@ -174,6 +174,30 @@ const auth0 = useAuth0();
 const matriculeProfile = ref(null);
 let utilisateur = null;
 
+let attempts = 0;
+
+const tryAuth0User = async () => {
+    if (auth0.user.value && auth0.user.value.profile && auth0.user.value.profile[0]) {
+        utilisateur = auth0.user.value;
+        console.log('Utilisateur:', utilisateur);
+        matriculeProfile.value = utilisateur.profile[0] ? utilisateur.profile[0] : null;
+        console.log('Matricule:', matriculeProfile.value);
+        if (matriculeProfile.value) {
+            matricule.value = matriculeProfile.value;
+            getAgentInfo();
+        }
+    } else if (attempts < 10) {
+        attempts++;
+        console.log(`Attempt ${attempts}: Retrying in 1 second...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        tryAuth0User();
+    } else {
+        console.error('Failed to retrieve user after 3 attempts.');
+    }
+};
+
+tryAuth0User();
+
 const matricule = ref('')
 const agentInfo = ref('')
 const agentGrade = ref(null)
@@ -405,10 +429,6 @@ const getAgentsList = async () => {
   }
 }
 
-if (matriculeProfile.value) {
-  matricule.value = matriculeProfile.value;
-  getAgentInfo();
-}
 
 const image_grade = () => {
   if (agentGrade.value === null) {
@@ -426,14 +446,6 @@ const updateDataAgent = (result) => {
   agentMail.value = result.email;
 }
 
-
-
-if (auth0.user.value){
-  utilisateur = auth0.user.value;
-  console.log('Utilisateur:', utilisateur);
-  matriculeProfile.value = utilisateur.profile[0];
-  console.log('Matricule:', matriculeProfile.value);
-}
 
 </script>
 <style scoped>
