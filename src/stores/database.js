@@ -1025,6 +1025,25 @@ async function getVehiculesRI(isPromptSecours){
   }
 }
 
+async function sendRIResult(payload){
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const raw = JSON.stringify(payload);
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch("https://api.cms-collonges.fr/sendRIResult", requestOptions);
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
   return {
     NextPeremptions,
@@ -1113,5 +1132,6 @@ async function getVehiculesRI(isPromptSecours){
     telex,
     getPeremptionAndCount,
     getVehiculesRI,
+    sendRIResult,
   };
 });
