@@ -1036,7 +1036,7 @@ async function sendRIResult(payload){
     redirect: "follow"
   };
   try {
-    const response = await fetch("https://api.cms-collonges.fr/sendRIResult", requestOptions);
+    const response = await fetch("https://api.cms-collonges.fr/sendRIResults", requestOptions);
     const result = await response.json();
     console.log(result);
   } catch (error) {
