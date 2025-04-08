@@ -130,10 +130,6 @@
                 <div class="input">
                     <Listbox v-model="listKits" :options="Object.keys(materiels_list.Kits)" :multiple="true" :showClear="true" :appendTo="'self'" :disabled="!showButton2" :class="{ 'p-invalid': responseError }"/>
                 </div>
-                <p>Autres matériels</p>
-                <div class="input">
-                    <Textarea v-model="materiel_manual" :rows="5" :cols="30" :showClear="true" :appendTo="'self'" :class="{ 'p-invalid': responseError }"/>
-                </div>
             </div>
             <div v-if="step5 && showButton2" class="input">
                 <div @click="step6 = true; autoScrolltoBottom(); showButton2 = false; autoChangeNettoyage()" class="validationBtn" :disabled="!showButton2">
@@ -516,7 +512,7 @@ const sendResult = async () =>{
     interLon: selectedInter.value?.notificationLon || '',
     interLat: selectedInter.value?.notificationLat || '',
     CAGrade: selected_chef_agres.value?.grade || '',
-    CANom: `${selected_chef_agres.value?.prenom || ''} ${selected_chef_agres.value?.nom || ''}`.trim(),
+    CANom: `${selected_chef_agres.value?.prenomAgent|| ''} ${selected_chef_agres.value?.nomAgent || ''}`.trim(),
     CALib: selected_chef_agres.value?.label_short || '',
     CAMail: selected_chef_agres.value?.email || '',
     EQGrade: agentGrade.value || '',
