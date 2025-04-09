@@ -21,8 +21,12 @@
         <a href="mailto:lorcan@brenders.fr">Demander un accès</a>
     </div>
     <div class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
-        <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
-        <div>Accès agents ASUP</div>
+          <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
+          <div>Accès agents ASUP</div>
+        </div>
+    <div class="asupButton" id="RI" @click="$router.push({ path: 'RIGrandPublic' })">
+          <div><img src="@/assets/icons/report.svg" width="45" height="auto" ></div>
+          <div>Retour d'Intervention</div>
         </div>
 </div>
     <div class="mentionsLegales">
@@ -66,6 +70,9 @@ const redirect = () => {
 }
 .asupButton div img{
     opacity: 0.7;
+}
+#RI{
+    margin-top: 1rem;
 }
 .mentionsLegales{
     margin: auto;

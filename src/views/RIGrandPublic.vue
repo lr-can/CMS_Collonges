@@ -197,7 +197,6 @@ const functionMessage = ref('')
 const desinfection_type = ref("Désinfection du matériel et de la cellule")
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
-import MultiSelect from 'primevue/multiselect';
 import Listbox from 'primevue/listbox';
 import InputSwitch from 'primevue/inputswitch';
 import Textarea from 'primevue/textarea';
@@ -206,7 +205,6 @@ const materielUtilise = ref(false);
 const onlySimpleMateriel = ref(false);
 const usedOxygene = ref(false);
 const bouteilleRemplacement = ref(false);
-const materiel_manual = ref('');
 
 
 import { useAuth0 } from '@auth0/auth0-vue';

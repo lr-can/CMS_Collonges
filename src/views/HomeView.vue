@@ -19,9 +19,15 @@
       <div class="validationBtn" @click="profileSelection" v-if="profilesList.length > 0">
         Valider
       </div>
-      <div v-else class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
-        <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
-        <div>Accès agents ASUP</div>
+      <div>
+        <div class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
+          <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
+          <div>Accès agents ASUP</div>
+        </div>
+        <div class="asupButton" id="RI" @click="$router.push({ path: 'RIGrandPublic' })">
+          <div><img src="@/assets/icons/report.svg" width="50" height="auto" ></div>
+          <div>Retour d'Intervention</div>
+        </div>
       </div>
     </div>
     <div v-if="isAuthenticated && currentProfile !== ''">
