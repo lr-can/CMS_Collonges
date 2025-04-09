@@ -155,3 +155,15 @@ a,
 .filter-white{
   filter: invert(97%) sepia(53%) saturate(74%) hue-rotate(78deg) brightness(114%) contrast(101%);
 }
+
+.modifiedBtn{
+  background-color: #0078f3;
+  color : white;
+  transition: all 0.3s ease-in-out;
+}
+.modifiedBtn:hover{
+  background-color: #005bb5;
+  color : white;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}

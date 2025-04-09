@@ -16,16 +16,16 @@
       <div class="card flex justify-center">
         <Listbox v-model="selectedProfile" :options="profilesList" optionLabel="label" class="w-full md:w-56" :disabled="profilesList.length <= 1" />
       </div>
-      <div class="validationBtn" @click="profileSelection" v-if="profilesList.length > 0">
+      <div class="validationBtn modifiedBtn" @click="profileSelection" v-if="profilesList.length > 0">
         Valider
       </div>
-      <div>
+      <div style="display: flex; justify-content: center; align-items: center; margin-top: 2rem; gap: 0.3rem;">
         <div class="asupButton" @click="$router.push({ path: 'asupGrandPublic' })">
           <div><img src="@/assets/icons/asup.svg" width="50" height="auto" ></div>
           <div>Accès agents ASUP</div>
         </div>
-        <div class="asupButton" id="RI" @click="$router.push({ path: 'RIGrandPublic' })">
-          <div><img src="@/assets/icons/report.svg" width="50" height="auto" ></div>
+        <div class="asupButton" id="RI"  style="margin-top: 0;" @click="$router.push({ path: 'RIGrandPublic' })">
+          <div><img src="@/assets/icons/report.svg" width="30" style="filter: invert(21%) sepia(39%) saturate(7109%) hue-rotate(353deg) brightness(87%) contrast(125%);" height="auto" ></div>
           <div>Retour d'Intervention</div>
         </div>
       </div>
@@ -279,5 +279,6 @@ const getProfile = () => {
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
 
 </style>
