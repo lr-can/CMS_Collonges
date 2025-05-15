@@ -148,6 +148,8 @@ const optionsMatNotCounted = ref([
 },
     {shortname: 'Piles plates', fullname: {quantity: 1, nomCommande: 'Boîte de piles plates', idMateriel: 'pilePlate'}
 },
+{shortname: 'Plombs', fullname: {quantity: 1, nomCommande: 'Lot de plombs pour TCHESE', idMateriel: 'plombs'}
+},
     {shortname: 'Cartons DASRI', fullname: {quantity: 5, nomCommande: 'Cartons DASRI', idMateriel: 'DASRIc'}
 },
     {shortname: 'Collecteurs d\'aiguilles', fullname: {quantity: 4, nomCommande: 'Collecteurs d\'aiguilles DASRI', idMateriel: 'DASRIa'}
