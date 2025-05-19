@@ -375,6 +375,7 @@ const loadLastInters = async () => {
         label: `N°${inter.numeroInter} - ${inter.notificationTitre.slice(0,25)}${inter.notificationTitre.length > 25 ? '...' : ''}`,
         code: inter.numeroInter
     }));
+    console.log(lastNotifsArray.value)
   } catch (error) {
     console.error('Erreur lors de la récupération des dernières interventions:', error);
   }
