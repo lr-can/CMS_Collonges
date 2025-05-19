@@ -392,7 +392,8 @@ const loadLastInters = async () => {
       notificationTitre: "Autre intervention",
       notificationVille: "",
       numeroInter: "00000"
-    }
+    };
+    lastNotifsArray.value.push(autreInter);
     console.log(lastNotifsArray.value)
   } catch (error) {
     console.error('Erreur lors de la récupération des dernières interventions:', error);
