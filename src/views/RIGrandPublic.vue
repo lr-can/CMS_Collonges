@@ -52,7 +52,7 @@
                     <Dropdown v-model="selectedInter" @change="step4 = true; autoScrolltoBottom()" :options="lastNotifsArray" optionLabel="label" :filter="true" filterBy="label" :showClear="true" :appendTo="'self'" :class="{ 'p-invalid': responseError }" style="width: 90%" placeholder="Sélectionnez une des interventions" />
                 </div>
             </div>
-            <div id="interInfo" v-if="selectedInter">
+            <div id="interInfo" v-if="selectedInter && selectedInter.code != '00000'">
                 <div>
                     <span style="font-style: italic; color: grey; font-size: 0.8rem;">Numéro d'intervention : </span><br><span style="font-weight: normal; font-size: 1rem;">{{ selectedInter.numeroInter }}</span>
                 </div>
@@ -65,6 +65,12 @@
                 <div>
                     <span style="font-style: italic; color: grey; font-size: 0.8rem;">Adresse : </span><br><span style="font-weight: normal; font-size: 1rem;">{{ selectedInter.notificationAdresse.replace(`${selectedInter.notificationVille} `, '') + " " + selectedInter.notificationVille }}</span>
                 </div>
+            </div>
+            <div id="interInfo2" v-if="selectedInter && selectedInter.code == '00000'">
+              <div>
+                Vous n'avez pas sélectionné une intervention issue des dernières notifications smartemis.
+                <br><b>Merci de remplir la section commentaire en y indiquant les informations de l'intervention.</b>
+              </div>
             </div>
         
             <div v-if="step4" class="step">
@@ -375,6 +381,18 @@ const loadLastInters = async () => {
         label: `N°${inter.numeroInter} - ${inter.notificationTitre.slice(0,25)}${inter.notificationTitre.length > 25 ? '...' : ''}`,
         code: inter.numeroInter
     }));
+    const autreInter = {
+      code: "00000",
+      label: "Autre intervention",
+      notificationAdresse: "",
+      notificationDate: new Date().toLocaleDateString('fr-FR'),
+      notificationHeure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      notificationLat: 45.81727412833648,
+      notificationLon: 4.847322733861175,
+      notificationTitre: "Autre intervention",
+      notificationVille: "",
+      numeroInter: "00000"
+    }
     console.log(lastNotifsArray.value)
   } catch (error) {
     console.error('Erreur lors de la récupération des dernières interventions:', error);
@@ -751,6 +769,20 @@ p{
   padding: 1rem;
   border-radius: 5px;
   background-color: #f8f7f7;
+  display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: left;
+    flex-direction: column;
+    
+}
+#interInfo2{
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  padding: 1rem;
+  border-radius: 5px;
+  background-color: #fff4f4;
+  color: #f60700;
   display: flex;
     align-items: center;
     justify-content: center;
