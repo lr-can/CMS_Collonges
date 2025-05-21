@@ -1019,7 +1019,7 @@ async function getVehiculesRI(isPromptSecours){
     } else {
       data_filtered = data.filter(item => item.engLib.includes("VSAV"));
     }
-    return data_filtered.map(item => item.engLib.replace("+", ""));
+    return data_filtered.map(item => item.engLib);
   } catch (error) {
     console.error(error);
   }
