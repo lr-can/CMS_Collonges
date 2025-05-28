@@ -58,10 +58,17 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useAuth0 } from '@auth0/auth0-vue';
 import ToggleButton from 'primevue/togglebutton';
 import { useSqlStore } from "@/stores/database.js";
 import  qrCodePharma  from "../components/qrCodePharma.vue";
 import qrCodeReserve from '../components/qrCodeReserve.vue';
+
+const auth0 = useAuth0();
+
+let utilisateur = auth0.user.value;
+
+const matricule = ref(utilisateur.profile[0]);
 
 const introduction = ref(true);
 const PartialOrComplete = ref(true);
@@ -122,6 +129,8 @@ const progress = async () => {
     }else{
         listLoaded.value = false;
         await sqlStore.reinitialiserRetourIntervention();
+        let type = PartialOrComplete.value ? "complet" : "partiel";
+        await sqlStore.resetRICount(type, matricule.value);
         finished.value = true;
     }
 

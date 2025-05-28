@@ -1060,6 +1060,21 @@ async function RI_checked(idMateriel) {
   }
 }
 
+async function resetRICount(type, matricule){
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://api.cms-collonges.fr/resetRICount/${type}/${matricule}`, requestOptions);
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
 
 
   return {
@@ -1151,5 +1166,6 @@ async function RI_checked(idMateriel) {
     getVehiculesRI,
     sendRIResult,
     RI_checked,
+    resetRICount
   };
 });
