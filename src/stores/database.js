@@ -1044,6 +1044,22 @@ async function sendRIResult(payload){
     console.error(error);
   }
 }
+async function RI_checked(idMateriel) {
+  const requestOptions = {
+    method: "GET",
+    redirect: "follow"
+  };
+  try {
+    const response = await fetch(`https://api.cms-collonges.fr/RI_checked/${idMateriel}`, requestOptions);
+    const result = await response.json();
+    return result.data;
+  }
+  catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
 
 
   return {
@@ -1134,5 +1150,6 @@ async function sendRIResult(payload){
     getPeremptionAndCount,
     getVehiculesRI,
     sendRIResult,
+    RI_checked,
   };
 });

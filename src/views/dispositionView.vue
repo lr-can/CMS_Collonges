@@ -100,6 +100,7 @@ const submitForm = async () => {
     console.log(materielsToCheck.value)
     listLoaded.value = true;
     introduction.value = false;
+    currentIdMateriel.value !== "" ? await sqlStore.RI_checked(currentIdMateriel.value) : null;
     progress();
     isLoading.value = false;
 }
