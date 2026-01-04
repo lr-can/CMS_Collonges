@@ -38,7 +38,7 @@
         <div class="logoApp">
             <img src="@/assets/logoTitle.png" width="200px" height="auto" >
         </div>
-        <div id="mapid" v-if="step == 1 || step == 2">
+        <div id="mapid" v-if="step == 1">
             <iframe width="500" height="500" :src="mapSource" style="scale: 1.2;"></iframe><br/><small><a href="https://www.openstreetmap.org/?mlat=45.817419&amp;mlon=4.846610#map=19/45.817419/4.846610">Afficher une carte plus grande</a></small>
         </div>
         <div v-if="step == 1" id="appStep1">
@@ -283,7 +283,7 @@
             <div v-if="step2Possible" class="validationBtn" @click="step = 2">Passer à l'étape suivante</div>
             <div id="layoutMargin"></div>
         </div>
-        <div v-if="step == 2" style="overflow: auto; padding-right: 30%; transform: translateX(30%);">
+        <div v-if="step == 2" style="overflow: auto;">
             <div id="layoutMargin"></div>
             <div>
                 <div>
@@ -305,19 +305,64 @@
             <div class="subtitle">
                 Sélection des agents de la caserne
             </div>
-            <div>
-                <Listbox v-model="selectedAgents" multiple :options="agents" filter striped  optionLabel="label" class="gfoList" 
-                :virtualScrollerOptions="{ itemSize: 38 }" listStyle="height:250px" />
-                <button @click="selectedAgents = agents">Ajouter tous</button>
-                <button @click="selectedAgents = []">Supprimer tous</button>
+            <div class="blurBck" v-if="showAddAgentPopup" @click="showAddAgentPopup = false"></div>
+            <div class="popupAffectation" v-if="showAddAgentPopup">
+                <div class="subtitle">
+                    Ajouter un agent
+                </div>
+                <div class="subsubtitle">
+                    Grade
+                </div>
+                <div class="leftMargin">
+                    <Dropdown v-model="newAgentGrade" :options="grades" placeholder="Sélectionner un grade" class="w-full md:w-14rem" />
+                </div>
+                <div class="subsubtitle">
+                    Nom
+                </div>
+                <div class="leftMargin">
+                    <InputText v-model="newAgentNom" placeholder="Nom de famille" />
+                </div>
+                <div class="subsubtitle">
+                    Prénom
+                </div>
+                <div class="leftMargin">
+                    <InputText v-model="newAgentPrenom" placeholder="Prénom" />
+                </div>
+                <div class="validationBtn" v-if="newAgentNom && newAgentPrenom && newAgentGrade" @click="addManualAgent">Ajouter</div>
             </div>
             <div class="marginTop">
-                <p v-if="manuallyAddedAgent != '' && !isAnAgent">😕 Le matricule {{ manuallyAddedAgent }} n'est pas reconnu</p> <p v-if="manuallyAddedAgent != '' && isAnAgent">👌 Appuyez sur la touche Entrer pour ajouter ce matricule.</p>
-                <InputText v-model="manuallyAddedAgent" placeholder="Ajouter un agent par son matricule" @keydown.enter="addManually" :invalid="manuallyAddedAgent != '' && !isAnAgent" />
+                <button @click="selectedAgents = agents" class="actionBtn">Ajouter tous</button>
+                <button @click="selectedAgents = []" class="actionBtn">Supprimer tous</button>
+                <button @click="showAddAgentPopup = true" class="actionBtn">Ajouter un agent</button>
             </div>
-            <p v-if="selectedAgents.length != 0" class="greyText">
+            <p v-if="selectedAgents.length != 0" class="greyText" style="max-width: 70%; margin: 0 auto; margin-top: 1rem;">
                 Vous avez sélectionné {{selectedAgents.length}} agent{{selectedAgents.length == 1 ? "": "s"}}.
             </p>
+            <p v-else style="max-width: 70%; margin: 0 auto; color: #7F7F7F; margin-top: 1rem;">
+                Vous n'avez sélectionné aucun agent.
+                Vous pouvez ajouter des agents manuellement ou cliquer sur des agents dans la liste ci-dessous.
+            </p>
+            <div class="agentsFlexContainer">
+                <div v-for="group in agentsGroupedByStatus" :key="group.statusOrder" class="agentGroup" :style="{ borderColor: group.color }">
+                    <div class="agentGroupTitle" :style="{ color: group.color, borderColor: group.color }">
+                        {{ group.label }}
+                    </div>
+                    <div class="agentGroupContent">
+                        <div v-for="agent in group.agents" :key="agent.matricule" 
+                             :class="['agentCard', selectedAgents.some(a => a.matricule === agent.matricule) ? 'selected' : '']"
+                             @click="toggleAgent(agent)">
+                            <img v-if="image_grade(agent.grade)" :src="image_grade(agent.grade)" class="agentGradeImg" />
+                            <div class="agentInfo">
+                                <div class="agentNameSmall">
+                                    <span class="statusDot" :style="{ backgroundColor: '#' + agent.statusColor }"></span>
+                                    {{ agent.nomAgent }} {{ agent.prenomAgent }}
+                                </div>
+                                <div class="agentMatriculeSmall">{{ agent.matricule }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div v-if="selectedAgents.length >= 2" class="validationBtn" @click="step3function">Passer à l'étape suivante</div>
             <div id="layoutMargin"></div>
         </div>
@@ -325,9 +370,23 @@
         <div v-if="step == 3">
             <div id="layoutMargin"></div>
             <div class="subtitle">
-                Affectation des agents de la caserne
+                Affectation des agents
             </div>
-            <div class="blurBck" v-if="showPopup" @click="showPopup = !showPopup"></div>
+            <div class="blurBck" v-if="showEnginsList" @click="showEnginsList = false"></div>
+            <div class="popupAffectation" v-if="showEnginsList">
+                <div class="subtitle">
+                    Engins de Collonges disponibles
+                </div>
+                <div class="enginsListPopup">
+                    <div v-for="engin in availableEnginsCollonges" :key="engin.engin" 
+                         class="enginListItem" 
+                         @click="addEnginFromList(engin)">
+                        <img :src="getIconSrc(engin.engin)" height="30px" width="auto">
+                        <span>{{engin.engin}}</span>
+                    </div>
+                </div>
+            </div> 
+            <div class="blurBck" v-if="showPopup || popupEnginExtCond || popupAgentExtCond" @click="showPopup = false; popupEnginExtCond = false; popupAgentExtCond = false"></div>
             <div class="popupAffectation" v-if="showPopup">
                 <div class="subtitle">
                     Affectation manuelle
@@ -341,70 +400,35 @@
                 <div class="subsubtitle">
                     GFO
                 </div>
-                <Dropdown v-model="popupGFO" :options="gfos" placeholder="Sélectionner un GFO" editable @change="loadRoles()" class="w-full md:w-14rem" />
+                <div class="chipsContainer">
+                    <div v-for="gfo in gfos" :key="gfo" 
+                         :class="['chip', popupGFO === gfo ? 'chipSelected' : '']"
+                         @click="popupGFO = gfo; loadRoles()">
+                        {{ gfo }}
+                    </div>
+                </div>
                 <div class="subsubtitle">
                     Engin
                 </div>
-                <Dropdown v-model="popupEngin" :options="enginsGfo" placeholder="Sélectionner un engin" class="w-full md:w-14rem" />
+                <div class="chipsContainer">
+                    <div v-for="engin in availableEnginsForPopup" :key="engin" 
+                         :class="['chip', popupEngin === engin ? 'chipSelected' : '']"
+                         @click="popupEngin = engin">
+                        {{ engin }}
+                    </div>
+                </div>
                 <div class="subsubtitle">
                     Rôle
                 </div>
-                <Dropdown v-model="popupRole" :options="availableRoles" placeholder="Sélectionner un rôle" editable class="w-full md:w-14rem" />
-                <div class="validationBtn" @click="affectAgent">Affecter</div>
-            </div>
-            <div class="twoColumns">
-                <div class="firstColumn">
-                    <div class="validationBtn" @click="automaticAffectation()"><span v-if="!loading">🪄 Affecter automatiquement</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
-                    <div class="subsubtitle noBorder">
-                        Agents de la caserne sur la manœuvre
-                    </div>
-                    <div v-for="agent in toAffectAgents" :key="agent.matricule">
-                        <div class="agent" :class="isBeingDragged ? 'opacityFifty' : ''" v-on:dragover.prevent draggable="true" v-on:dragstart="dragStart($event, agent)">
-                            <div class="agentMatricule">{{agent.matricule}}</div>
-                            <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
-                            <div v-if="agent.engin != ''" class="agentGFO greenText">{{ agent.engin }} ({{ agent.emploi }}) <span class="redCross" @click="removeAffectation(agent)">X</span></div>
-                            <div v-else class="affectAgentLink" @click="affectAgentManually(agent)">Affecter manuellement</div>
-                        </div>
+                <div class="chipsContainer">
+                    <div v-for="role in availableRoles" :key="role" 
+                         :class="['chip', popupRole === role ? 'chipSelected' : '']"
+                         @click="popupRole = role">
+                        {{ role.split('_')[1]?.toUpperCase() || role }}
                     </div>
                 </div>
-                <div class="secondColumn">
-                    <div v-for="vehicule of enginsAffected" :key="vehicule.engin">
-                        <div class="vehicule" :class="isBeingDragged ? 'blueShadow':''" v-on:dragover.prevent @drop="drop($event, vehicule)" @dragover.prevent>
-                            <div class="vehiculeName">
-                                <img :src="getIconSrc(vehicule.engin)" height="40px" width="auto">
-                                <span class="vehiculeNameSpan">{{vehicule.engin}}</span>
-                            </div>
-                            <div class="affectation">
-                                <div v-if="vehicule.affectation.length > 0">
-                                    <div v-for="agent in vehicule.affectation" :key="agent.matricule">
-                                        <div class="agent flexed">
-                                            <div class="roleAgent">{{ agent.emploi.split("_")[1].toUpperCase() }}</div>
-                                            <div class="part2">                                        
-                                                <div class="agentMatricule">{{agent.matricule}}</div>
-                                                <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div v-else>
-                                    <div class="noAgent">Aucun agent affecté</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+                <div class="validationBtn" v-if="popupGFO && popupEngin && popupRole" @click="affectAgent">Affecter</div>
             </div>
-            <div id="returnBtnStep2" @click="step = 2">Retour</div>
-            <div class="validationBtn" id="validationBtn3" @click="step = 4" v-if="twentyPercentAffected">Passer à l'étape suivante</div>
-            <div id="layoutMargin"></div>
-        </div>
-        <div v-if="step == 4">
-            <div id="layoutMargin"></div>
-            <div class="subtitle">
-                Affectation des agents extérieurs
-            </div> 
-            <div class="blurBck" v-if="popupEnginExtCond || popupAgentExtCond"></div>
             <div class="popupAffectation" v-if="popupEnginExtCond">
                 <div class="subtitle">
                     Ajout d'un véhicule
@@ -473,8 +497,21 @@
             </div>
             <div class="twoColumns">
                 <div class="firstColumn">
-                    <div class="validationBtn" @click="startAddEngin"><span v-if="!loading">Ajouter un engin</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
-                    <div class="validationBtn" @click="startAddAgent"><span v-if="!loading">Ajouter un agent</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+                    <div class="validationBtn" @click="automaticAffectation()"><span v-if="!loading">🪄 Affecter automatiquement</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+                    <div class="validationBtn" @click="showEnginsList = true"><span v-if="!loading">Ajouter un engin de Collonges</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+                    <div class="validationBtn" @click="startAddEngin"><span v-if="!loading">Ajouter un engin extérieur</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+                    <div class="validationBtn" @click="startAddAgent"><span v-if="!loading">Ajouter un agent extérieur</span><span v-else><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span></div>
+                    <div class="subsubtitle noBorder">
+                        Agents sur la manœuvre
+                    </div>
+                    <div v-for="agent in toAffectAgents" :key="agent.matricule">
+                        <div class="agent" :class="isBeingDragged ? 'opacityFifty' : ''" v-on:dragover.prevent draggable="true" v-on:dragstart="dragStart($event, agent)">
+                            <div class="agentMatricule">{{agent.matricule}}</div>
+                            <div class="agentName">{{ agent.label.replace(`${agent.matricule} - `, '')}}</div>
+                            <div v-if="agent.engin != ''" class="agentGFO greenText">{{ agent.engin }} ({{ agent.emploi }}) <span class="redCross" @click="removeAffectation(agent)">X</span></div>
+                            <div v-else class="affectAgentLink" @click="affectAgentManually(agent)">Affecter manuellement</div>
+                        </div>
+                    </div>
                     <div class="subsubtitle noBorder">
                         Agents extérieurs sur la manœuvre
                     </div>
@@ -491,14 +528,15 @@
                     </div>
                 </div>
                 <div class="secondColumn">
-                    <div v-if="enginsAffectedExt.length == 0">
-                        <div class="noAgent">Aucun véhicule extérieur ajouté.</div>
+                    <div v-if="enginsToDisplay.length == 0">
+                        <div class="noAgent">Aucun véhicule ajouté.</div>
                     </div>
-                    <div v-else v-for="vehicule of enginsAffectedExt" :key="vehicule.engin">
-                        <div class="vehicule">
+                    <div v-for="vehicule of enginsToDisplay" :key="vehicule.engin + vehicule.caserne">
+                        <div class="vehicule" :class="isBeingDragged ? 'blueShadow':''" v-on:dragover.prevent @drop="drop($event, vehicule)" @dragover.prevent>
                             <div class="vehiculeName">
+                                <img v-if="vehicule.caserne === 'COLLONGE'" :src="getIconSrc(vehicule.engin)" height="40px" width="auto">
                                 <span class="vehiculeNameSpan">{{vehicule.engin}}</span>
-                                <span class="vehiculeCaserneSpan">{{ vehicule.caserne }}</span>
+                                <span v-if="vehicule.caserne !== 'COLLONGE'" class="vehiculeCaserneSpan">{{ vehicule.caserne }}</span>
                             </div>
                             <div class="affectation">
                                 <div v-if="vehicule.affectation.length > 0">
@@ -520,11 +558,11 @@
                     </div>
                 </div>
             </div>
-            <div id="returnBtnStep2" @click="step = 3">Retour</div>
-            <div class="validationBtn" id="validationBtn3" @click="prepareStep5()">Passer à l'étape suivante</div>
+            <div id="returnBtnStep2" @click="step = 2">Retour</div>
+            <div class="validationBtn" id="validationBtn3" @click="prepareStep4()">Passer à l'étape suivante</div>
             <div id="layoutMargin"></div>
         </div>
-        <div v-if="step == 5" class="autoOverflow step5">
+        <div v-if="step == 4" class="autoOverflow step5">
             <div id="layoutMargin"></div>
             <div class="middle">
             <div>
@@ -710,8 +748,17 @@
                 <div class="noAgent">Aucun engin sélectionné.</div>
             </div>
         </div>
-        <div class="validationBtn" id="validationBtn3" @click="processAllData"><span v-if="loading"><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span><span v-else>Valider l'ordre de départ</span></div>
-        <div class="returnButton" @click="step = 4">Retour</div>    
+        <div class="validationButtonsContainer">
+            <div class="validationBtn secondaryBtn" @click="processAllData(false)">
+                <span v-if="loading"><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span>
+                <span v-else>Valider l'ordre de départ</span>
+            </div>
+            <div class="validationBtn primaryBtn" @click="processAllData(true)">
+                <span v-if="loading"><img src="@/assets/loading2.gif" alt="" width="20px" height="auto"></span>
+                <span v-else>Valider l'ordre de départ et lancer l'application</span>
+            </div>
+        </div>
+        <div class="returnButton" @click="step = 3">Retour</div>    
     </div>
             <div id="layoutMargin"></div>
         </div>
@@ -728,7 +775,6 @@ import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
-import Listbox from 'primevue/listbox';
 import CascadeSelect from 'primevue/cascadeselect';
 import Chips from 'primevue/chips';
 import { ref, watch, computed } from "vue";
@@ -740,6 +786,40 @@ import FPTL from '../assets/icons/engins/Dl-FPTL.png';
 import VLCDG from '../assets/icons/engins/Dl-VLCDG.png';
 import VFI from '../assets/icons/engins/Dl-VFI.png';
 import VTUTP from '../assets/icons/engins/Dl-VTUTP.png';
+
+import Sap2CL from '../assets/grades/Sap 2CL.png';
+import Sap1CL from '../assets/grades/Sap 1CL.png';
+import Caporal from '../assets/grades/Caporal.png';
+import CaporalChef from '../assets/grades/Caporal-Chef.png';
+import Sergent from '../assets/grades/Sergent.png';
+import SergentChef from '../assets/grades/Sergent-Chef.png';
+import Adjudant from '../assets/grades/Adjudant.png';
+import AdjudantChef from '../assets/grades/Adjudant-Chef.png';
+import Lieutenant from '../assets/grades/Lieutenant.png';
+import Capitaine from '../assets/grades/Capitaine.png';
+import Commandant from '../assets/grades/Commandant.png';
+import Professeur from '../assets/grades/Professeur.png';
+import Infirmiere from '../assets/grades/Infirmière.png';
+
+const dict_grades = {
+  'Sap 2CL': Sap2CL,
+  'Sap 1CL': Sap1CL,
+  'Caporal': Caporal,
+  'Caporal-Chef': CaporalChef,
+  'Sergent': Sergent,
+  'Sergent-Chef': SergentChef,
+  'Adjudant': Adjudant,
+  'Adjudant-Chef': AdjudantChef,
+  'Lieutenant': Lieutenant,
+  'Capitaine': Capitaine,
+  'Commandant': Commandant,
+  'Infirmière': Infirmiere,
+  'Professeur': Professeur
+};
+
+const image_grade = (current_grade) => {
+  return dict_grades[current_grade] || null;
+};
 
 const engIcons = {
     'BPSM': BPSM,
@@ -817,21 +897,19 @@ const search = async (event) => {
 getSinistres();
 
 const grades = ref([
-    "SAP",
-    "CAP",
-    "CCH",
-    "SGT",
-    "SCH",
-    "ADJ",
-    "ADC",
-    "LTN",
-    "CNE",
-    "CDT",
-    "LCL",
-    "COL",
-    "CGL",
-    "INF",
-    "EXP"
+    "Sap 2CL",
+    "Sap 1CL",
+    "Caporal",
+    "Caporal-Chef",
+    "Sergent",
+    "Sergent-Chef",
+    "Adjudant",
+    "Adjudant-Chef",
+    "Lieutenant",
+    "Capitaine",
+    "Commandant",
+    "Infirmière",
+    "Professeur"
 ])
 
 let timeDateInterInterval = setInterval(() => {
@@ -1049,15 +1127,6 @@ let maxConfigCollonges = computed(() => {
 
 const manuallyAddedGFO = ref([]);
 
-const twentyPercentAffected = () => {
-    for (const agent of toAffectAgents.value){
-        if (agent.emploi != '' && agent.engin != ''){
-            return true;
-        }
-    }
-    return false;
-}
-
 const getSinistreGFO = async () => {
     const possibleGFO = ["SAP", "PSSAP", "PSINC", "INC", "INFAMU", "CDG", "AQUA", "DIV", "DIVPRE", "BATO"];
     if (selectedSinistre.value && selectedSinistre.value.listGfo) {
@@ -1105,93 +1174,217 @@ const addGfo = () => {
 const step2Possible = computed(() => {
     return selectedAddress.value && selectedSinistre.value && gfos.value.length > 0;
 })
+
+const agentsGroupedByStatus = computed(() => {
+    const groups = {};
+    
+    agents.value.forEach(agent => {
+        const statusOrder = agent.statusOrder || 5;
+        if (!groups[statusOrder]) {
+            let label = '';
+            let color = '#000000';
+            let sortOrder = statusOrder;
+            
+            if (statusOrder === 6 || agent.status === 'MANUAL') {
+                label = 'Agents ajoutés manuellement';
+                color = '#0078f3';
+                sortOrder = 0; // Mettre en premier
+            } else if (statusOrder === 1) {
+                label = 'Disponibilité Programmée';
+                // Prendre la couleur du premier agent de ce groupe
+                const firstAgent = agents.value.find(a => (a.status === 'DIP' || a.status === 'DP'));
+                color = firstAgent ? '#' + firstAgent.statusColor : '#9CFF9C';
+                sortOrder = 1;
+            } else if (statusOrder === 2) {
+                label = 'Alertable en Complément';
+                const firstAgent = agents.value.find(a => a.status === 'AEC');
+                color = firstAgent ? '#' + firstAgent.statusColor : '#FFCC00';
+                sortOrder = 2;
+            } else if (statusOrder === 3) {
+                label = 'Alertable en complément orange';
+                const firstAgent = agents.value.find(a => a.status === 'AOR');
+                color = firstAgent ? '#' + firstAgent.statusColor : '#FFA500';
+                sortOrder = 3;
+            } else if (statusOrder === 4) {
+                label = 'Indisponible';
+                const firstAgent = agents.value.find(a => a.status === 'IN' || a.status === 'IND');
+                color = firstAgent ? '#' + firstAgent.statusColor : '#7F7F7F';
+                sortOrder = 4;
+            } else {
+                label = 'Inactif sur Artemis du CT';
+                color = '#000000';
+                sortOrder = 5;
+            }
+            
+            groups[statusOrder] = {
+                statusOrder: statusOrder,
+                sortOrder: sortOrder,
+                label: label,
+                color: color,
+                agents: []
+            };
+        }
+        groups[statusOrder].agents.push(agent);
+    });
+    
+    // Retourner les groupes triés par sortOrder (0 pour manuel en premier)
+    return Object.values(groups).sort((a, b) => a.sortOrder - b.sortOrder);
+})
 const selectedAgents = ref([]);
 const toAffectAgents = ref([]);
 const step3function = () => {
     step.value = 3;
     toAffectAgents.value = selectedAgents.value.map(agent => ({ ...agent, emploi: "", engin: "" }));
+    // Initialiser les engins de Collonges dans une liste séparée (tous disponibles au début)
+    availableEnginsCollonges.value = [
+        {engin: "VSAV-1", caserne: "COLLONGE", affectation: []},
+        {engin: "VSAV-2", caserne: "COLLONGE", affectation: []},
+        {engin: "FPTL-1", caserne: "COLLONGE", affectation: []},
+        {engin: "VTUTP-1", caserne: "COLLONGE", affectation: []},
+        {engin: "VLCDG-1", caserne: "COLLONGE", affectation: []},
+        {engin: "VFI-1", caserne: "COLLONGE", affectation: []},
+        {engin: "BPSM-1", caserne: "COLLONGE", affectation: []}
+    ];
+    // Réinitialiser enginsAffected
+    enginsAffected.value = [];
 }
+const availableEnginsCollonges = ref([]);
+const showEnginsList = ref(false);
+
+const addEnginFromList = (engin) => {
+    if (!enginsAffected.value.find(e => e.engin === engin.engin && e.caserne === engin.caserne)) {
+        enginsAffected.value.push({ ...engin, affectation: [] });
+        availableEnginsCollonges.value = availableEnginsCollonges.value.filter(e => e.engin !== engin.engin);
+    }
+    showEnginsList.value = false;
+};
 const agents = ref([]);
+const agentsFromSheet = ref([]);
+const showAddAgentPopup = ref(false);
+const newAgentNom = ref('');
+const newAgentPrenom = ref('');
+const newAgentGrade = ref('');
 
 const getAgentsList = async () => {
     await sqlStore.getAgentsList();
-    agents.value = await sqlStore.agentsList;
+    const agentsFromDB = await sqlStore.agentsList;
+    
+    // Récupérer les agents depuis le nouveau lien
+    try {
+        const response = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%2012');
+        agentsFromSheet.value = await response.json();
+    } catch (error) {
+        console.error("Erreur lors de la récupération des agents depuis le sheet:", error);
+        agentsFromSheet.value = [];
+    }
+    
+    // Merger et classer les agents par disponibilité
+    const agentsWithStatus = agentsFromDB.map(agent => {
+        const sheetAgent = agentsFromSheet.value.find(a => a.matricule === agent.matricule);
+        const status = sheetAgent ? sheetAgent.status : 'OTHER';
+        const statusOrder = {
+            'DIP': 1,
+            'DP': 1,
+            'AEC': 2,
+            'AOR': 3,
+            'IN': 4,
+            'IND': 4,
+            'OTHER': 5
+        };
+        return {
+            ...agent,
+            status: status,
+            statusOrder: statusOrder[status] || 5,
+            statusColor: sheetAgent ? sheetAgent.statusColor : '#7F7F7F'
+        };
+    });
+    
+    // Trier par ordre de disponibilité puis par nom
+    agents.value = agentsWithStatus.sort((a, b) => {
+        if (a.statusOrder !== b.statusOrder) {
+            return a.statusOrder - b.statusOrder;
+        }
+        return a.nomAgent.localeCompare(b.nomAgent);
+    });
 }
 getAgentsList();
+
+const addManualAgent = () => {
+    if (newAgentNom.value && newAgentPrenom.value && newAgentGrade.value) {
+        const matricule = `${newAgentNom.value.toUpperCase().substring(0, 3)}${newAgentPrenom.value.toUpperCase().substring(0, 3)}`;
+        const newAgent = {
+            matricule: matricule,
+            nomAgent: newAgentNom.value.toUpperCase(),
+            prenomAgent: newAgentPrenom.value,
+            grade: newAgentGrade.value,
+            label: `${matricule} - ${sqlStore.gradeAbbreviation(newAgentGrade.value)} ${newAgentNom.value.toUpperCase()} ${newAgentPrenom.value}`,
+            status: 'MANUAL',
+            statusOrder: 6,
+            statusColor: '#7F7F7F'
+        };
+        agents.value.push(newAgent);
+        selectedAgents.value.push(newAgent);
+        newAgentNom.value = '';
+        newAgentPrenom.value = '';
+        newAgentGrade.value = '';
+        showAddAgentPopup.value = false;
+    }
+};
 
 const getIconSrc = (enginName) => {
     return engIcons[enginName.split('-')[0]];
 }
 
-const enginsAffected = ref([
-    {engin : "VSAV-1",
-     caserne: "COLLONGE",
-        affectation : []
-    },
-    {engin : "VSAV-2",
-    caserne: "COLLONGE",
-        affectation : []
-    },
-    {engin : "FPTL-1",
-    caserne: "COLLONGE",
-        affectation : []
-    },
-    {engin : "VTUTP-1",
-    caserne: "COLLONGE",
-        affectation : []
-    },
-    {engin : "VLCDG-1",
-    caserne: "COLLONGE",
-        affectation : []
-    },
-    {engin : "VFI-1",
-    caserne: "COLLONGE",
-        affectation : []
-    },
-    {engin : "BPSM-1",
-    caserne: "COLLONGE",
-        affectation : []
-    }
-]);
+const enginsAffected = ref([]);
 
 const affectAgentManually = (agent) => {
     popupTitle.value = agent.label;
     showPopup.value = true;
 }
 
-const manuallyAddedAgent = ref('');
-const addManually = () => {
-    const agent = agents.value.find(agent => agent.matricule == manuallyAddedAgent.value);
-    if (agent && !selectedAgents.value.includes(agent)){
+const toggleAgent = (agent) => {
+    const index = selectedAgents.value.findIndex(a => a.matricule === agent.matricule);
+    if (index > -1) {
+        selectedAgents.value.splice(index, 1);
+    } else {
         selectedAgents.value.push(agent);
-        manuallyAddedAgent.value = '';
     }
 }
-const isAnAgent = computed(() => {
-    const agent = agents.value.find(agent => agent.matricule == manuallyAddedAgent.value);
-    if (agent){
-        return true;
-    }
-    return false;
-})
 
 const affectAgent = () => {
     const agent = toAffectAgents.value.find(agent => agent.label == popupTitle.value);
-    const engin = enginsAffected.value.find(engin => engin.engin == popupEngin.value);
-    const role = availableRoles.value.find(role => role == popupRole.value);
-    if (agent && engin && role){
-        engin.affectation.push({ ...agent, emploi: role, engin: popupEngin.value });
-        affectationPersonnalises.value.push({ ...agent, emploi: role, engin: popupEngin.value });
-        agent.emploi = role;
-        agent.engin = popupEngin.value;
-        showPopup.value = false;
-        popupGFO.value = '';
-        popupEngin.value = '';
-        popupRole.value = '';
-        engin.affectation.sort((a, b) => {
+    if (!agent || !popupGFO.value || !popupRole.value || !popupEngin.value) return;
+    
+    let engin = enginsAffected.value.find(engin => engin.engin == popupEngin.value);
+    // Si l'engin n'existe pas, le créer
+    if (!engin) {
+        // Déterminer la caserne (COLLONGE par défaut si l'engin est dans enginsGfo ou availableEnginsCollonges)
+        const isCollonges = enginsGfo.value.includes(popupEngin.value) || 
+                           availableEnginsCollonges.value.some(e => e.engin === popupEngin.value);
+        engin = {
+            engin: popupEngin.value,
+            caserne: isCollonges ? "COLLONGE" : "",
+            affectation: []
+        };
+        enginsAffected.value.push(engin);
+        // Retirer de la liste des engins disponibles si c'est un engin de Collonges
+        if (isCollonges) {
+            availableEnginsCollonges.value = availableEnginsCollonges.value.filter(e => e.engin !== engin.engin);
+        }
+    }
+    
+    const emploi = `${popupGFO.value}_${popupRole.value}`;
+    engin.affectation.push({ ...agent, emploi: emploi, engin: popupEngin.value });
+    affectationPersonnalises.value.push({ ...agent, emploi: emploi, engin: popupEngin.value });
+    agent.emploi = emploi;
+    agent.engin = popupEngin.value;
+    showPopup.value = false;
+    popupGFO.value = '';
+    popupEngin.value = '';
+    popupRole.value = '';
+    engin.affectation.sort((a, b) => {
         return roleOrder[a.emploi.split("_")[1]] - roleOrder[b.emploi.split("_")[1]];
     });
-    }
     enginsAffected.value.sort((a, b) => b.affectation.length - a.affectation.length);
 }
 
@@ -1232,10 +1425,22 @@ const automaticAffectation = async () => {
     await sqlStore.automaticAffectation(payload);
     const automaticAffectations = sqlStore.automaticAffectationRes.affectation;
     for (const vehicule of automaticAffectations) {
-        const engin = enginsAffected.value.find(e => e.engin === vehicule.engin);
-        if (engin) {
-            engin.affectation = [];
-            vehicule.affectation.forEach(agent => {
+        let engin = enginsAffected.value.find(e => e.engin === vehicule.engin && e.caserne === (vehicule.caserne || "COLLONGE"));
+        if (!engin) {
+            // Ajouter l'engin s'il n'existe pas
+            engin = {
+                engin: vehicule.engin,
+                caserne: vehicule.caserne || "COLLONGE",
+                affectation: []
+            };
+            enginsAffected.value.push(engin);
+            // Retirer de la liste des engins disponibles si c'est un engin de Collonges
+            if (engin.caserne === "COLLONGE") {
+                availableEnginsCollonges.value = availableEnginsCollonges.value.filter(e => e.engin !== engin.engin);
+            }
+        }
+        engin.affectation = [];
+        vehicule.affectation.forEach(agent => {
             if (agent.matricule) {
                 engin.affectation.push({
                 matricule: agent.matricule,
@@ -1251,16 +1456,12 @@ const automaticAffectation = async () => {
                     return roleOrder[a.emploi.split("_")[1]] - roleOrder[b.emploi.split("_")[1]];
                 });
             }
-            });
-        }
+        });
     }
     enginsAffected.value.sort((a, b) => b.affectation.length - a.affectation.length);
     loading.value = false;
 }
 
-const enginsAffectedExt = computed (() => {
-    return enginsAffected.value.filter(engin => engin.caserne != "COLLONGE" || engin.affectation.some(agent => !/^V\d{5}$/.test(agent.matricule)));
-})
 const popupEnginExtCond = ref(false);
 const enginsListAll = ref([]);
 const caserneList = ref([]);
@@ -1305,6 +1506,31 @@ const groupedByCaserneEngins = computed(() => {
     return grouped;
 })
 
+// Engins disponibles dans les chips de la popup (sans doublons)
+const availableEnginsForPopup = computed(() => {
+    const enginsSet = new Set();
+    // Ajouter les engins du GFO sélectionné
+    if (enginsGfo.value) {
+        enginsGfo.value.forEach(engin => enginsSet.add(engin));
+    }
+    // Ajouter les engins déjà affectés (de Collonges et extérieurs)
+    enginsAffected.value.forEach(engin => enginsSet.add(engin.engin));
+    return Array.from(enginsSet).sort();
+})
+
+// Engins à afficher dans la colonne de droite (seulement ceux avec affectations, ajoutés manuellement, ou extérieurs)
+const enginsToDisplay = computed(() => {
+    return enginsAffected.value.filter(engin => {
+        // Afficher si l'engin a des affectations
+        if (engin.affectation.length > 0) return true;
+        // Afficher si c'est un engin extérieur
+        if (engin.caserne !== "COLLONGE") return true;
+        // Afficher si l'engin a été ajouté manuellement (n'est plus dans availableEnginsCollonges)
+        const isInAvailable = availableEnginsCollonges.value.some(e => e.engin === engin.engin);
+        return !isInAvailable;
+    });
+})
+
 const startAddAgent = () => {
     loading.value = true;
     popupAgentExtCond.value = true;
@@ -1318,12 +1544,13 @@ const rolePopupAgent = ref('');
 const affectationPopupAgent = ref('');
 
 const addAgentPopup = () => {
+    const gradeAbbrev = gradePopupAgent.value.length <= 4 ? gradePopupAgent.value : sqlStore.gradeAbbreviation(gradePopupAgent.value);
     const agent = {
         matricule: `${nomPopupAgent.value.toUpperCase().substring(0, 3)}${prenomPopupAgent.value.toUpperCase().substring(0, 3)}`,
-        grade: gradePopupAgent.value,
+        grade: gradeAbbrev,
         nom: nomPopupAgent.value.toUpperCase(),
         prenom: prenomPopupAgent.value,
-        label: `${gradePopupAgent.value} ${nomPopupAgent.value.toUpperCase()} ${prenomPopupAgent.value}`,
+        label: `${gradeAbbrev} ${nomPopupAgent.value.toUpperCase()} ${prenomPopupAgent.value}`,
         emploi: gfoPopupAgent.value.toUpperCase() + '_' + rolePopupAgent.value.toLowerCase(),
         engin: affectationPopupAgent.value.name
     }
@@ -1390,8 +1617,8 @@ const toAffectAgentsExt = computed(() => {
 const enginsAffectedWithPeople = ref([]);
 
 const enginsAvecOrdreDepart = ref([]);
-const prepareStep5 = () => {
-    step.value = 5;
+const prepareStep4 = () => {
+    step.value = 4;
     const enginsAffectedWithPpl = enginsAffected.value.filter(engin => engin.affectation.length > 0);
     enginsAffectedWithPeople.value = enginsAffectedWithPpl;
     let newDate = new Date(timeDateInter.value);
@@ -1553,9 +1780,10 @@ const addOD = () => {
     addODCond.value = false;
 }
 
-const processAllData = async () => {
+const processAllData = async (launchApp = false) => {
     loading.value = true;
     const payload = {
+        "launchApp": launchApp,
         "sinistre" : {
             "code" : selectedSinistre.value.code,
             "libelle" : selectedSinistre.value.label,
@@ -1813,6 +2041,7 @@ const drop = (event, engin) => {
 }
 .marginTop{
     margin-top: 1rem;
+    text-align: center;
 }
 
 .fullView {
@@ -2098,5 +2327,188 @@ const drop = (event, engin) => {
 }
 .opacityFifty{
     opacity: 0.3;
+}
+.agentsFlexContainer{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1rem auto;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 30px;
+    max-width: 70%;
+}
+.agentGroup{
+    position: relative;
+    margin-bottom: 0;
+    padding: 1rem;
+    padding-top: 1.5rem;
+    background-color: #f6f6f6;
+    border: 2px solid;
+    border-radius: 15px;
+}
+.agentGroupTitle{
+    position: absolute;
+    top: -0.75rem;
+    left: 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    background-color: white;
+    border-radius: 8px;
+    border: 2px solid;
+}
+.agentGroupContent{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.agentCard{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    background-color: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    min-width: 180px;
+    max-width: 180px;
+}
+.agentCard:hover{
+    background-color: #e0e0e0;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.agentCard.selected{
+    border-color: #0078f3;
+    background-color: #e8f2ff;
+}
+.agentGradeImg{
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    object-fit: contain;
+}
+.agentInfo{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+.agentNameSmall{
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.statusDot{
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.agentMatriculeSmall{
+    font-size: 0.6rem;
+    color: #666666;
+}
+.actionBtn{
+    background-color: #0078f3;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+}
+.actionBtn:hover{
+    background-color: #6196ff;
+}
+.enginsListPopup{
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+.enginListItem{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f6f6f6;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.enginListItem:hover{
+    background-color: #e0e0e0;
+}
+.chipsContainer{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+.chip{
+    padding: 0.5rem 1rem;
+    background-color: #f6f6f6;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    font-size: 0.9rem;
+}
+.chip:hover{
+    background-color: #e0e0e0;
+}
+.chipSelected{
+    background-color: #0078f3;
+    color: white;
+    border-color: #0078f3;
+}
+.chipSelected:hover{
+    background-color: #6196ff;
+}
+.validationButtonsContainer{
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    flex-wrap: wrap;
+}
+.secondaryBtn{
+    background-color: #f6f6f6;
+    color: #0078f3;
+    border: 2px solid #0078f3;
+    min-width: 200px;
+}
+.secondaryBtn:hover{
+    background-color: #e8f2ff;
+}
+.primaryBtn{
+    background-color: #0078f3;
+    color: white;
+    border: 2px solid #0078f3;
+    min-width: 200px;
+}
+.primaryBtn:hover{
+    background-color: #6196ff;
 }
 </style>
