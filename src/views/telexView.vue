@@ -1545,13 +1545,15 @@ const affectationPopupAgent = ref('');
 
 const addAgentPopup = () => {
     const gradeAbbrev = gradePopupAgent.value.length <= 4 ? gradePopupAgent.value : sqlStore.gradeAbbreviation(gradePopupAgent.value);
+    // Nettoyer le rôle pour ne garder que la partie après le dernier underscore (au cas où l'utilisateur aurait entré "GFO_role")
+    const roleClean = rolePopupAgent.value.includes('_') ? rolePopupAgent.value.split('_').slice(-1)[0] : rolePopupAgent.value;
     const agent = {
         matricule: `${nomPopupAgent.value.toUpperCase().substring(0, 3)}${prenomPopupAgent.value.toUpperCase().substring(0, 3)}`,
         grade: gradeAbbrev,
         nom: nomPopupAgent.value.toUpperCase(),
         prenom: prenomPopupAgent.value,
         label: `${gradeAbbrev} ${nomPopupAgent.value.toUpperCase()} ${prenomPopupAgent.value}`,
-        emploi: gfoPopupAgent.value.toUpperCase() + '_' + rolePopupAgent.value.toLowerCase(),
+        emploi: gfoPopupAgent.value.toUpperCase() + '_' + roleClean.toLowerCase(),
         engin: affectationPopupAgent.value.name
     }
     toAffectAgents.value.push(agent);
@@ -1588,8 +1590,9 @@ const affectAgentManuallyExt = (agent) => {
     gradePopupAgent.value = agent.grade;
     nomPopupAgent.value = agent.nom;
     prenomPopupAgent.value = agent.prenom;
-    gfoPopupAgent.value = agent.emploi.split('_')[0];
-    rolePopupAgent.value = agent.emploi.split('_')[1];
+    const emploiParts = agent.emploi.split('_');
+    gfoPopupAgent.value = emploiParts[0];
+    rolePopupAgent.value = emploiParts.slice(1).join('_'); // Prendre tout après le premier underscore
     affectationPopupAgent.value = "";
     popupAgentExtCond.value = true;
     
@@ -1604,8 +1607,9 @@ const removeAffectationExt = (agent) => {
     gradePopupAgent.value = agent.grade;
     nomPopupAgent.value = agent.nom;
     prenomPopupAgent.value = agent.prenom;
-    gfoPopupAgent.value = agent.emploi.split('_')[0];
-    rolePopupAgent.value = agent.emploi.split('_')[1];
+    const emploiParts = agent.emploi.split('_');
+    gfoPopupAgent.value = emploiParts[0];
+    rolePopupAgent.value = emploiParts.slice(1).join('_'); // Prendre tout après le premier underscore
     affectationPopupAgent.value = "";
     popupAgentExtCond.value = true;
     
@@ -1848,6 +1852,7 @@ const processAllData = async (launchApp = false) => {
         popup.document.write(htmlContent); // Écrire le contenu HTML
         popup.document.close(); // Fermer le flux d'écriture
         popup.focus(); // Assure que la popup est en avant-plan
+        
     } else {
         const link = document.createElement('a');
         link.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
@@ -1857,6 +1862,9 @@ const processAllData = async (launchApp = false) => {
         link.click();
         document.body.removeChild(link);
         console.error("Impossible d'ouvrir la popup. Vérifiez si les popups sont bloquées par le navigateur.");
+    }
+    if (launchApp) {
+            window.open('https://api.cms-collonges.fr/manoeuvreAdmin', '_blank');
     }
 
 }
