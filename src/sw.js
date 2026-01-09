@@ -1,5 +1,5 @@
-// Service Worker pour CMS Collonges - Manœuvre
-// Ce fichier sera utilisé avec la stratégie injectManifest de vite-plugin-pwa
+// Service Worker pour CMS Collonges - Manoeuvre
+// Ce fichier sera utilise avec la strategie injectManifest de vite-plugin-pwa
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
@@ -20,7 +20,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Nettoyer les anciens caches
 cleanupOutdatedCaches();
 
-// Prendre le contrôle immédiatement
+// Prendre le controle immediatement
 self.skipWaiting();
 clientsClaim();
 
@@ -98,19 +98,15 @@ registerRoute(
 );
 
 // =============================================================================
-// GESTION DES NOTIFICATIONS PUSH AVEC BOUCLE (TÉLÉPHONE VERROUILLÉ)
+// GESTION DES NOTIFICATIONS PUSH AVEC BOUCLE (TELEPHONE VERROUILLE)
 // =============================================================================
 
-/**
- * Réception d'une notification push personnalisée pour l'agent
- * Fonctionne même quand le téléphone est verrouillé
- */
 self.addEventListener('push', (event) => {
-  console.log('[Service Worker] 📨 Push notification reçue');
+  console.log('[Service Worker] Push notification recue');
   
-  // Données par défaut
+  // Donnees par defaut
   let notificationData = {
-    title: '🚨 ALERTE MANŒUVRE',
+    title: 'ALERTE MANOEUVRE',
     body: 'Nouvelle alerte',
     icon: '/favicon.ico',
     badge: '/favicon.ico',
@@ -125,33 +121,33 @@ self.addEventListener('push', (event) => {
     },
   };
 
-  // Parser les données personnalisées du push
+  // Parser les donnees personnalisees du push
   if (event.data) {
     try {
       const pushData = event.data.json();
       
-      // Construction du titre personnalisé : VSAV-CA-SAP
+      // Construction du titre personnalise : VSAV-CA-SAP
       const vehicule = (pushData.engLib || '').toUpperCase().replace('-', '');
       const role = (pushData.role || '').toUpperCase();
       const gfo = (pushData.gfo || '').toUpperCase();
-      const title = `🚨 ${vehicule}-${role}-${gfo}`;
+      const title = vehicule + '-' + role + '-' + gfo;
       
       // Construction du body avec toutes les infos
       const numManoeuvre = pushData.numManoeuvre || '?';
       const od = pushData.od || '?';
       const dateHeure = pushData.dateHeure || '';
-      const libelleManoeuvre = pushData.libelleManoeuvre || 'Manœuvre';
+      const libelleManoeuvre = pushData.libelleManoeuvre || 'Manoeuvre';
       const adresse = pushData.adresseManoeuvre || 'Adresse non disponible';
       const nombreEngins = pushData.nombreEngins || 0;
       
-      const body = `🚧 N°${numManoeuvre}/${od} - ${dateHeure}\n${libelleManoeuvre}\n${adresse}\n${nombreEngins} Engins`;
+      const body = 'N ' + numManoeuvre + '/' + od + ' - ' + dateHeure + '\n' + libelleManoeuvre + '\n' + adresse + '\n' + nombreEngins + ' Engins';
       
       notificationData = {
         title: title,
         body: body,
         icon: '/favicon.ico',
         badge: '/favicon.ico',
-        tag: `manoeuvre-${pushData.matricule}-${Date.now()}`,
+        tag: 'manoeuvre-' + pushData.matricule + '-' + Date.now(),
         requireInteraction: true,
         vibrate: VIBRATION_PATTERN,
         silent: false,
@@ -165,23 +161,22 @@ self.addEventListener('push', (event) => {
           engLib: pushData.engLib,
           role: pushData.role,
           gfo: pushData.gfo,
-          ...pushData,
         },
         actions: [
           {
             action: 'open',
-            title: '🚒 Ouvrir',
+            title: 'Ouvrir',
             icon: '/favicon.ico'
           },
           {
             action: 'acknowledge',
-            title: '✅ Départ',
+            title: 'Depart',
             icon: '/favicon.ico'
           },
         ],
       };
       
-      console.log('[Service Worker] Notification préparée pour:', pushData.matricule);
+      console.log('[Service Worker] Notification preparee pour:', pushData.matricule);
     } catch (e) {
       console.error('[Service Worker] Erreur parsing push data:', e);
       notificationData.body = event.data.text();
@@ -193,13 +188,13 @@ self.addEventListener('push', (event) => {
       // Afficher la notification
       self.registration.showNotification(notificationData.title, notificationData),
       
-      // Envoyer message aux clients ouverts pour démarrer sonnerie/vibration EN BOUCLE
+      // Envoyer message aux clients ouverts pour demarrer sonnerie/vibration EN BOUCLE
       self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
         .then(clients => {
-          console.log(`[Service Worker] ${clients.length} client(s) ouvert(s)`);
+          console.log('[Service Worker]', clients.length, 'client(s) ouvert(s)');
           clients.forEach(client => {
             client.postMessage({
-              type: 'START_ALERT_LOOP', // ⭐ Démarrer la boucle
+              type: 'START_ALERT_LOOP',
               pattern: VIBRATION_PATTERN,
               data: notificationData.data,
             });
@@ -207,20 +202,16 @@ self.addEventListener('push', (event) => {
         })
     ])
     .then(() => {
-      console.log('[Service Worker] ✅ Notification affichée + alerte en boucle démarrée');
+      console.log('[Service Worker] Notification affichee + alerte en boucle demarree');
     })
     .catch(error => {
-      console.error('[Service Worker] ❌ Erreur affichage notification:', error);
+      console.error('[Service Worker] Erreur affichage notification:', error);
     })
   );
 });
 
-/**
- * Clic sur une notification
- * Arrête la sonnerie/vibration en boucle
- */
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] 👆 Clic sur notification');
+  console.log('[Service Worker] Clic sur notification');
   console.log('[Service Worker] Action:', event.action);
   
   event.notification.close();
@@ -229,20 +220,20 @@ self.addEventListener('notificationclick', (event) => {
   const notificationData = event.notification.data || {};
   const urlToOpen = notificationData.url || '/';
 
-  // ⭐ ARRÊTER LA BOUCLE DE SONNERIE/VIBRATION
+  // ARRETER LA BOUCLE DE SONNERIE/VIBRATION
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
-        // Envoyer message pour arrêter la boucle
+        // Envoyer message pour arreter la boucle
         clients.forEach(client => {
           client.postMessage({
             type: 'STOP_ALERT_LOOP',
           });
         });
 
-        // Action : Acquitter / Départ
+        // Action : Acquitter / Depart
         if (action === 'acknowledge') {
-          console.log('[Service Worker] Action ACKNOWLEDGE demandée');
+          console.log('[Service Worker] Action ACKNOWLEDGE demandee');
           
           clients.forEach(client => {
             client.postMessage({
@@ -259,7 +250,7 @@ self.addEventListener('notificationclick', (event) => {
             }
           }
         } else {
-          // Action par défaut : Ouvrir
+          // Action par defaut : Ouvrir
           if (clients.length > 0) {
             for (const client of clients) {
               const clientUrl = new URL(client.url);
@@ -285,14 +276,10 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-/**
- * Fermeture d'une notification (swipe)
- * Arrête également la sonnerie/vibration
- */
 self.addEventListener('notificationclose', (event) => {
-  console.log('[Service Worker] 🔕 Notification fermée (swipe)');
+  console.log('[Service Worker] Notification fermee (swipe)');
   
-  // ⭐ ARRÊTER LA BOUCLE
+  // ARRETER LA BOUCLE
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
@@ -315,7 +302,7 @@ self.addEventListener('notificationclose', (event) => {
 // =============================================================================
 
 self.addEventListener('message', (event) => {
-  console.log('[Service Worker] 📬 Message reçu:', event.data);
+  console.log('[Service Worker] Message recu:', event.data);
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -338,27 +325,12 @@ self.addEventListener('message', (event) => {
 // =============================================================================
 
 self.addEventListener('error', (event) => {
-  console.error('[Service Worker] ❌ Erreur:', event.error);
+  console.error('[Service Worker] Erreur:', event.error);
 });
 
 self.addEventListener('unhandledrejection', (event) => {
-  console.error('[Service Worker] ❌ Promise rejetée:', event.reason);
+  console.error('[Service Worker] Promise rejetee:', event.reason);
 });
 
-console.log('[Service Worker] ✅ Service Worker chargé avec Workbox');
+console.log('[Service Worker] Service Worker charge avec Workbox');
 console.log('[Service Worker] Pattern de vibration:', VIBRATION_PATTERN);
-```
-
-## Structure des fichiers :
-```
-ton-projet/
-├── src/
-│   ├── sw.js                    ← Ce fichier (avec Workbox)
-│   ├── components/
-│   │   └── AgentBip.vue         ← Ton composant avec la boucle
-│   └── firebase/
-│       └── config.js
-├── public/
-│   ├── sonnerie.mp3             ← Ta sonnerie
-│   └── favicon.ico
-└── vite.config.js               ← Config Workbox
