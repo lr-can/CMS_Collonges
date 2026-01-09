@@ -27,6 +27,7 @@
       <div v-if="!showButton" id="agentInfo">
           <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
           {{ nomAgent }} {{ prenomAgent }} <span id="nivASUP"> {{ niveauASUP }}</span>
+          <a href="#" @click.prevent="resetAgent" class="not-you-link">Ce n'est pas vous ?</a>
         </div>
     </div>
 
@@ -233,7 +234,7 @@ import InputSwitch from 'primevue/inputswitch';
 import Textarea from 'primevue/textarea';
 
 
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 const matricule = ref('Vxxxxx');
@@ -393,6 +394,10 @@ const getAgentInfo = async () => {
       } else {
           step1.value = true;
           validation.play();
+          // Sauvegarder dans le cache après récupération réussie
+          localStorage.setItem('cms_matricule', matricule.value);
+          localStorage.setItem('cms_agent_info', JSON.stringify(result));
+          console.log('Informations agent sauvegardées dans le cache');
       }
       updateDataAgent(result);
       clearInterval(intervalId);
@@ -403,10 +408,42 @@ const getAgentInfo = async () => {
   }
 }
 
-if (matriculeProfile.value) {
-  matricule.value = matriculeProfile.value;
-  getAgentInfo();
+const tryLoadFromCache = async () => {
+    // D'abord, vérifier le cache localStorage
+    const cachedMatricule = localStorage.getItem('cms_matricule');
+    if (cachedMatricule) {
+        console.log('Matricule trouvé dans le cache:', cachedMatricule);
+        matricule.value = cachedMatricule;
+        // Vérifier aussi les infos agent en cache pour affichage immédiat
+        const cachedAgentInfo = localStorage.getItem('cms_agent_info');
+        if (cachedAgentInfo) {
+            try {
+                const agentInfo = JSON.parse(cachedAgentInfo);
+                updateDataAgent(agentInfo);
+                showButton.value = false;
+                step1.value = true;
+                console.log('Infos agent récupérées depuis le cache (affichage immédiat)');
+            } catch (error) {
+                console.error('Erreur lors de la lecture du cache agent:', error);
+            }
+        }
+        // Toujours appeler getAgentInfo pour mettre à jour le cache et vérifier les données
+        console.log('Mise à jour des informations agent depuis le serveur...');
+        await getAgentInfo();
+        return;
+    }
+    
+    // Si pas de cache, essayer Auth0
+    if (matriculeProfile.value) {
+        matricule.value = matriculeProfile.value;
+        getAgentInfo();
+    }
 }
+
+// Charger depuis le cache au montage du composant
+onMounted(() => {
+    tryLoadFromCache();
+});
 
 const image_grade = () => {
   if (agentGrade.value === null) {
@@ -429,6 +466,36 @@ const updateDataAgent = (result) => {
   } else {
     niveauASUP.value = '❌ Non formé(e)'
   }
+}
+
+const resetAgent = () => {
+  // Réinitialiser le formulaire
+  showButton.value = true;
+  showButton2.value = true;
+  showButton3.value = true;
+  showButton4.value = true;
+  matricule.value = 'Vxxxxx';
+  step1.value = false;
+  step2.value = false;
+  step3.value = false;
+  step4.value = false;
+  step5.value = false;
+  step6.value = false;
+  agentGrade.value = null;
+  prenomAgent.value = '';
+  nomAgent.value = '';
+  agentMail.value = '';
+  agentInfo.value = null;
+  niveauASUP.value = '❌';
+  rppsNumber.value = '10xxxxxxxxxx';
+  nomMedecin.value = '';
+  prenomMedecin.value = '';
+  errorMessage.value = '';
+  responseError.value = false;
+  buttonLabel.value = 'Rechercher';
+  // Vider le cache localStorage
+  localStorage.removeItem('cms_matricule');
+  localStorage.removeItem('cms_agent_info');
 }
 
 const updateDoctorData = (result) => {
@@ -779,6 +846,19 @@ const sendDeclaration = async () => {
   justify-content: flex-start;
   text-align: left;
   margin-top: 1rem;
+  gap: 0.5rem;
+}
+
+.not-you-link {
+  font-size: 0.85rem;
+  color: #0078f3;
+  text-decoration: underline;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.not-you-link:hover {
+  color: #0056b3;
 }
 .errorMessage {
   color: red;

@@ -27,6 +27,7 @@
       <div v-if="!showButton" id="agentInfo">
           <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
           {{ nomAgent }} {{ prenomAgent }}
+          <a href="#" @click.prevent="resetAgent" class="not-you-link">Ce n'est pas vous ?</a>
         </div>
     </div>
 
@@ -183,7 +184,7 @@
         </div>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 const step1 = ref(false)
 const step2 = ref(false)
 const step3 = ref(false)
@@ -220,7 +221,43 @@ let utilisateur = null;
 
 let attempts = 0;
 
+// Déclarer matricule et autres variables avant tryAuth0User
+const matricule = ref('')
+const agentInfo = ref('')
+const agentGrade = ref(null)
+const prenomAgent = ref('')
+const nomAgent = ref('')
+const agentMail = ref('')
+const responseError = ref(false)
+const lastNotifsArray = ref([])
+
 const tryAuth0User = async () => {
+    // D'abord, vérifier le cache localStorage
+    const cachedMatricule = localStorage.getItem('cms_matricule');
+    if (cachedMatricule) {
+        console.log('Matricule trouvé dans le cache:', cachedMatricule);
+        matricule.value = cachedMatricule;
+        // Vérifier aussi les infos agent en cache pour affichage immédiat
+        const cachedAgentInfo = localStorage.getItem('cms_agent_info');
+        if (cachedAgentInfo) {
+            try {
+                const agentInfo = JSON.parse(cachedAgentInfo);
+                updateDataAgent(agentInfo);
+                showButton.value = false;
+                step1.value = true;
+                step2.value = true;
+                console.log('Infos agent récupérées depuis le cache (affichage immédiat)');
+            } catch (error) {
+                console.error('Erreur lors de la lecture du cache agent:', error);
+            }
+        }
+        // Toujours appeler getAgentInfo pour mettre à jour le cache et vérifier les données
+        console.log('Mise à jour des informations agent depuis le serveur...');
+        await getAgentInfo();
+        return;
+    }
+    
+    // Si pas de cache, essayer Auth0
     if (auth0.user.value && auth0.user.value.profile && auth0.user.value.profile[0]) {
         utilisateur = auth0.user.value;
         console.log('Utilisateur:', utilisateur);
@@ -236,20 +273,14 @@ const tryAuth0User = async () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
         tryAuth0User();
     } else {
-        console.error('Failed to retrieve user after 3 attempts.');
+        console.error('Failed to retrieve user after 10 attempts.');
     }
 };
 
-tryAuth0User();
-
-const matricule = ref('')
-const agentInfo = ref('')
-const agentGrade = ref(null)
-const prenomAgent = ref('')
-const nomAgent = ref('')
-const agentMail = ref('')
-const responseError = ref(false)
-const lastNotifsArray = ref([])
+// Appeler tryAuth0User après que toutes les fonctions soient déclarées
+onMounted(() => {
+  tryAuth0User();
+});
 import { useSqlStore } from "@/stores/database.js";
 const sqlStore = useSqlStore()
 const list_chef_agress = ref([])
@@ -462,6 +493,10 @@ const getAgentInfo = async () => {
       } else {
           step1.value = true;
           validation.play();
+          // Sauvegarder dans le cache après récupération réussie
+          localStorage.setItem('cms_matricule', matricule.value);
+          localStorage.setItem('cms_agent_info', JSON.stringify(result));
+          console.log('Informations agent sauvegardées dans le cache');
       }
       updateDataAgent(result);
       clearInterval(intervalId);
@@ -507,6 +542,29 @@ const updateDataAgent = (result) => {
   prenomAgent.value = result.prenomAgent;
   nomAgent.value = result.nomAgent;
   agentMail.value = result.email;
+}
+
+const resetAgent = () => {
+  // Réinitialiser le formulaire
+  showButton.value = true;
+  matricule.value = '';
+  step1.value = false;
+  step2.value = false;
+  step3.value = false;
+  step4.value = false;
+  step5.value = false;
+  step6.value = false;
+  agentGrade.value = null;
+  prenomAgent.value = '';
+  nomAgent.value = '';
+  agentMail.value = '';
+  agentInfo.value = '';
+  errorMessage.value = '';
+  responseError.value = false;
+  buttonLabel.value = 'Rechercher';
+  // Vider le cache localStorage
+  localStorage.removeItem('cms_matricule');
+  localStorage.removeItem('cms_agent_info');
 }
 
 const checkIfCanBeShocking = () => {
@@ -698,6 +756,19 @@ const sendResult = async () =>{
   justify-content: flex-start;
   text-align: left;
   margin-top: 1rem;
+  gap: 0.5rem;
+}
+
+.not-you-link {
+  font-size: 0.85rem;
+  color: #0078f3;
+  text-decoration: underline;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.not-you-link:hover {
+  color: #0056b3;
 }
 .errorMessage {
   color: red;

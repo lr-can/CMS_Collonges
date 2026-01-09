@@ -1,24 +1,26 @@
 import { fileURLToPath, URL } from 'node:url'
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
-      devOptions: {
-        enabled: true,
-      },
       injectRegister: 'auto',
+      
       manifest: {
-        name: 'CMS Collonges',
+        name: 'CMS Collonges - Manœuvre',
         short_name: 'CMS Collonges',
-        theme_color: '#ffffff',
+        description: 'Application de gestion des manœuvres CMS Collonges',
+        theme_color: '#0078f3',
         background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
         icons: [
           {
             src: 'https://github.com/lr-can/CMS_Collonges/blob/main/public/img/icons/android-chrome-512x512.png?raw=true',
@@ -32,6 +34,20 @@ export default defineConfig({
           },
         ],
       },
+      
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,wav}'],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+      },
+      
+      workbox: {
+        sourcemap: true,
+      },
+      
+      // ⭐ DÉSACTIVER EN DEV
+      devOptions: {
+        enabled: false, // Changé de true à false
+      },
     }),
   ],
   resolve: {
@@ -40,4 +56,13 @@ export default defineConfig({
     }
   },
   
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.cms-collonges.fr',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })

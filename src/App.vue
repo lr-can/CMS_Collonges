@@ -6,7 +6,6 @@ import { ref, watch} from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 import Bing from '@/assets/sounds/Bing.mp3';
-import router from './router';
 const UpdateAudio = new Audio(Bing);
 
 const sqlStore = useSqlStore();
@@ -58,22 +57,29 @@ const initialise = async () => {
   } catch (error) {
     console.error('Error during authentication check', error);
   } finally {
-      isAuthenticated.value = auth0.isAuthenticated;
-      if (isAuthenticated.value) {
-        console.log('Authentication successful');
-      } else {
-        console.log('Authentication required');
-      }
+    isAuthenticated.value = auth0.isAuthenticated;
+    if (isAuthenticated.value) {
+      console.log('Authentication successful');
+      // Stocker un flag dans localStorage pour que le router puisse le vérifier
+      localStorage.setItem('auth0_authenticated', 'true');
+    } else {
+      console.log('Authentication required');
+      localStorage.removeItem('auth0_authenticated');
+    }
   }
   await new Promise(r => setTimeout(r, 1500));
   appLoading.value = false;  // End the loading state here
 };
 
-localStorage.setItem('currentProfile', '');
+// Ne réinitialiser le profil que s'il n'existe pas déjà
+if (!localStorage.getItem('currentProfile')) {
+  localStorage.setItem('currentProfile', '');
+}
 
 const currentProfile = ref(localStorage.getItem('currentProfile'));
 
-router.push('/');
+// Ne plus forcer la redirection vers home - laisser le router gérer la navigation naturellement
+// La redirection initiale vers '/' se fera automatiquement si nécessaire
 
 
 let profileCheck = setInterval(() => {
@@ -100,8 +106,10 @@ initialise();
 <template>
   <transition>
     <div v-if="appLoading" class="blank">
-      <img src="@/assets/loadingApp.gif" alt="Loading" width="200px" height="auto">
-      <div class="versionNum">Version 2.2.0-{{commitBackend}}.{{commitFrontend}}</div>
+      <div class="loading-content">
+        <img src="@/assets/loadingApp.gif" alt="Loading" width="200px" height="auto">
+        <div class="versionNum">Version 2.2.0-{{commitBackend}}.{{commitFrontend}}</div>
+      </div>
     </div>
   </transition>
   <header>
@@ -227,13 +235,31 @@ nav a:first-of-type {
   }
 }
 
+.blank {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 .versionNum {
   font-size: 1.2rem;
   text-align: center;
   margin-top: 0.5rem;
-  position: absolute;
-  bottom: 2rem;
-  width: 100%;
 }
 
 .update {
