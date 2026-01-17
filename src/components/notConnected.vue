@@ -9,13 +9,15 @@
     <div class="subsubtitle">
         Bienvenue sur CMS Collonges.
     </div>
-    <div class="paragraph">
-        Cellule pharmacie, Correspondant ASUP
+    
+    <!-- Formulaire de connexion pour les responsables -->
+    <div class="login-section">
+        <div class="paragraph">
+            Cellule pharmacie, Correspondant ASUP
+        </div>
+        <LoginForm />
     </div>
-    <div class="asupButton" id="respo" @click="redirect">
-        <div><img src="@/assets/icons/profile.svg" width="50" height="auto"></div>
-        <div>Accès responsable</div>
-    </div>
+    
     <div class="paragraph">
         Equipier SSUAP et ASUP
     </div>
@@ -36,15 +38,7 @@
     </div>
 </template>
 <script setup>
-import { useAuth0 } from '@auth0/auth0-vue';
-
-const auth0 = useAuth0();
-
-const redirect = () => {
-    auth0.loginWithRedirect();
-
-}
-
+import LoginForm from './LoginForm.vue';
 </script>
 
 <style>
@@ -90,24 +84,15 @@ const redirect = () => {
     color : #ff3634;
     cursor: pointer;
 }
+
 #RIimg{
     filter: invert(21%) sepia(39%) saturate(7109%) hue-rotate(353deg) brightness(87%) contrast(125%);
     display: block;
 }
-#respo{
-    background-color: #f4f6ff;
-    color : #0078f3;
-    transition: all 0.3s ease-in-out;
-    margin-top: 0;
-}
-#respo:hover{
-    background-color: #d6deff;
-    color : #6196ff;
-    cursor: pointer;
-}
-#respo > div > img{
-    filter: invert(36%) sepia(77%) saturate(5554%) hue-rotate(198deg) brightness(102%) contrast(101%);
-    display: block;
+
+.login-section {
+    margin: 2rem auto;
+    max-width: 400px;
 }
 
 .mentionsLegales{
@@ -127,7 +112,8 @@ const redirect = () => {
     margin: auto;
     margin-top: 2rem;
     font-size: 1rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
 }
 
 
