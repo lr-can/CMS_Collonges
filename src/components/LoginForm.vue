@@ -14,7 +14,7 @@
             v-model="email" 
             type="email" 
             class="form-item" 
-            placeholder="votre.email@exemple.fr" 
+            placeholder="prenom.nom@sdmis.fr" 
             :disabled="loading"
             required
           />
@@ -24,7 +24,7 @@
             id="matricule" 
             v-model="matricule" 
             class="form-item" 
-            placeholder="Votre matricule" 
+            placeholder="V00000" 
             :disabled="loading"
             required
           />
@@ -124,6 +124,11 @@ label {
   margin-top: 1.5rem;
   margin-bottom: 1.2rem;
   display: block;
+  text-align: left;
+}
+
+label:first-of-type {
+  margin-top: 0;
 }
 
 .login-button {

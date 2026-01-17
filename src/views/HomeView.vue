@@ -3,13 +3,16 @@
     Chargement...
   </div>
   <div v-else>
-    <div v-if="!isAuthenticated">
-      <notConnected/>
-    </div>
-    <div v-else-if="isAuthenticated && currentProfile == ''">
-      <div class="subtitle">
+    <div class="header-section">
+      <div v-if="isAuthenticated" class="subtitle">
         Bonjour, {{ nomAgent }} !
       </div>
+      <div v-else class="login-header">
+        <LoginForm />
+      </div>
+    </div>
+    
+    <div v-if="isAuthenticated && currentProfile == ''">
       <div class="subsubtitle">
         Choisissez une option ci-dessous
       </div>
@@ -40,7 +43,7 @@
         </div>
 
         <!-- Section Pharmacie -->
-        <div v-if="hasProfileAccess('pharmacie')" class="profile-section">
+        <div class="profile-section">
           <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.pharmacie.background, color: PROFILE_COLORS.pharmacie.primary }">
             <h3>Gestion Pharmacie</h3>
           </div>
@@ -63,12 +66,15 @@
                 <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
               </div>
               <span>{{ route.name }}</span>
+              <div v-if="!isRouteAccessible(route) && !isAuthenticated" class="lock-message">
+                Connectez-vous pour y accéder
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Section ASUP -->
-        <div v-if="hasProfileAccess('asup')" class="profile-section">
+        <div class="profile-section">
           <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.asup.background, color: PROFILE_COLORS.asup.primary }">
             <h3>Gestion ASUP</h3>
           </div>
@@ -91,12 +97,15 @@
                 <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
               </div>
               <span>{{ route.name }}</span>
+              <div v-if="!isRouteAccessible(route) && !isAuthenticated" class="lock-message">
+                Connectez-vous pour y accéder
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Section Formation -->
-        <div v-if="hasProfileAccess('formation')" class="profile-section">
+        <div class="profile-section">
           <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.formation.background, color: PROFILE_COLORS.formation.primary }">
             <h3>Gestion Formation</h3>
           </div>
@@ -119,6 +128,126 @@
                 <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
               </div>
               <span>{{ route.name }}</span>
+              <div v-if="!isRouteAccessible(route) && !isAuthenticated" class="lock-message">
+                Connectez-vous pour y accéder
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Afficher aussi les tuiles si non authentifié -->
+    <div v-if="!isAuthenticated" class="menu-container">
+      <div class="subsubtitle" style="margin-top: 1rem;">
+        Choisissez une option ci-dessous
+      </div>
+      
+      <!-- Section Publique (en haut) -->
+      <div class="profile-section">
+        <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.public.background, color: PROFILE_COLORS.public.primary }">
+          <h3>Accès Public</h3>
+        </div>
+        <div class="routes-grid">
+          <div 
+            v-for="route in routesByProfile.public" 
+            :key="route.path"
+            class="route-card"
+            :style="{ 
+              backgroundColor: PROFILE_COLORS.public.background,
+              color: PROFILE_COLORS.public.primary,
+              borderColor: PROFILE_COLORS.public.primary
+            }"
+            @click="navigateToRoute(route)"
+          >
+            <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+            <span>{{ route.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Pharmacie -->
+      <div class="profile-section">
+        <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.pharmacie.background, color: PROFILE_COLORS.pharmacie.primary }">
+          <h3>Gestion Pharmacie</h3>
+        </div>
+        <div class="routes-grid">
+          <div 
+            v-for="route in getAllRoutesForProfile('pharmacie')" 
+            :key="route.path"
+            class="route-card locked"
+            :style="{ 
+              backgroundColor: '#f0f0f0',
+              color: '#999999',
+              borderColor: '#cccccc',
+              opacity: 0.6
+            }"
+          >
+            <div class="icon-container">
+              <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+              <img :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
+            </div>
+            <span>{{ route.name }}</span>
+            <div class="lock-message">
+              Connectez-vous pour y accéder
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section ASUP -->
+      <div class="profile-section">
+        <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.asup.background, color: PROFILE_COLORS.asup.primary }">
+          <h3>Gestion ASUP</h3>
+        </div>
+        <div class="routes-grid">
+          <div 
+            v-for="route in getAllRoutesForProfile('asup')" 
+            :key="route.path"
+            class="route-card locked"
+            :style="{ 
+              backgroundColor: '#f0f0f0',
+              color: '#999999',
+              borderColor: '#cccccc',
+              opacity: 0.6
+            }"
+          >
+            <div class="icon-container">
+              <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+              <img :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
+            </div>
+            <span>{{ route.name }}</span>
+            <div class="lock-message">
+              Connectez-vous pour y accéder
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Formation -->
+      <div class="profile-section">
+        <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.formation.background, color: PROFILE_COLORS.formation.primary }">
+          <h3>Gestion Formation</h3>
+        </div>
+        <div class="routes-grid">
+          <div 
+            v-for="route in getAllRoutesForProfile('formation')" 
+            :key="route.path"
+            class="route-card locked"
+            :style="{ 
+              backgroundColor: '#f0f0f0',
+              color: '#999999',
+              borderColor: '#cccccc',
+              opacity: 0.6
+            }"
+          >
+            <div class="icon-container">
+              <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+              <img :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
+            </div>
+            <span>{{ route.name }}</span>
+            <div class="lock-message">
+              Connectez-vous pour y accéder
             </div>
           </div>
         </div>
@@ -258,9 +387,9 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useAuth } from '@/composables/useAuth.js';
 import { useRouter } from 'vue-router';
-import notConnected from '../components/notConnected.vue';
 import DashboardView from './DashboardView.vue';
 import pwaInstallPrompt from '../components/pwaInstallPrompt.vue';
+import LoginForm from '../components/LoginForm.vue';
 import { useRoutes, PROFILE_COLORS, ROUTES_CONFIG } from '@/composables/useRoutes.js';
 
 const { user: authUser } = useAuth();
@@ -513,6 +642,22 @@ onMounted(async () => {
   border-width: 2px;
 }
 
+.lock-message {
+  font-size: 0.7rem;
+  color: #999999;
+  margin-top: 0.3rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.header-section {
+  margin-bottom: 1.5rem;
+}
+
+.login-header {
+  margin-bottom: 1rem;
+}
+
 .dashboard-link {
   margin: 1.5rem 0;
   cursor: pointer;
@@ -564,4 +709,5 @@ onMounted(async () => {
   }
 }
 </style>
+
 

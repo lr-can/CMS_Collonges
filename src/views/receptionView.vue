@@ -18,12 +18,12 @@
                 <InputText id="numLot" v-model="numLot" class="form-item" placeholder="Indiquez le numéro de lot" required/>
             </label>
             <label for="nbProduits">Nombre de produits<span class="mandatory">*</span>
-                <InputNumber id="nbProduits" v-model="nbProduits" :min="1" :max="100" class="form-item" placeholder="Nombre de produits" required />
+                <InputNumber id="nbProduits" v-model="nbProduits" :min="1" :max="100" class="form-item form-item-large" placeholder="Nombre de produits" required />
             </label>
             <div class="first-id-section">
                 <label for="firstId">Premier ID disponible
                     <div class="first-id-input-group">
-                        <InputNumber id="firstId" v-model="firstId" :min="1" class="form-item first-id-input" placeholder="Premier ID" :disabled="loadingIds" />
+                        <InputNumber id="firstId" v-model="firstId" :min="1" class="form-item form-item-large first-id-input" placeholder="Premier ID" :disabled="loadingIds" />
                         <button type="button" class="fetch-ids-btn" @click="fetchIds" :disabled="!nbProduits || nbProduits < 1 || loadingIds">
                             <span v-if="loadingIds">Chargement...</span>
                             <span v-else>Récupérer automatiquement</span>
@@ -262,6 +262,14 @@ const reinitialiser = () => {
 }
 .form-item > input{
     border-radius: 30px;
+}
+.form-item-large {
+    font-size: 1.2rem;
+    padding: 1rem;
+}
+.form-item-large > input {
+    font-size: 1.2rem;
+    padding: 1rem;
 }
 .form-item input[disabled] {
     background-color: #f0f0f0;
