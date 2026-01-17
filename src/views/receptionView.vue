@@ -18,11 +18,25 @@
                 <InputText id="numLot" v-model="numLot" class="form-item" placeholder="Indiquez le numéro de lot" required/>
             </label>
             <label for="nbProduits">Nombre de produits<span class="mandatory">*</span>
-                <InputNumber id="nbProduits" v-model="nbProduits" :min="1" :max="100" class="form-item" placeholder="Nombre de produits" required @update:modelValue="onNbProduitsChange" />
+                <InputNumber id="nbProduits" v-model="nbProduits" :min="1" :max="100" class="form-item" placeholder="Nombre de produits" required />
             </label>
-            <label for="firstId">Premier ID disponible
-                <InputNumber id="firstId" v-model="firstId" :min="1" class="form-item" placeholder="Premier ID" />
-            </label>
+            <div class="first-id-section">
+                <label for="firstId">Premier ID disponible
+                    <div class="first-id-input-group">
+                        <InputNumber id="firstId" v-model="firstId" :min="1" class="form-item first-id-input" placeholder="Premier ID" :disabled="loadingIds" />
+                        <button type="button" class="fetch-ids-btn" @click="fetchIds" :disabled="!nbProduits || nbProduits < 1 || loadingIds">
+                            <span v-if="loadingIds">Chargement...</span>
+                            <span v-else>Récupérer automatiquement</span>
+                        </button>
+                    </div>
+                </label>
+                <div v-if="retrievedIds.length > 0" class="retrieved-ids-display">
+                    <p class="ids-label">IDs récupérés ({{ retrievedIds.length }}):</p>
+                    <div class="ids-list">
+                        <span v-for="(id, index) in retrievedIds" :key="index" class="id-badge">{{ id }}</span>
+                    </div>
+                </div>
+            </div>
             <span class="mandatory">*</span> Champs obligatoires
             <div class="validationBtn" @click="submitForm" :class="{ 'disabled': loading || loadingIds }">
                 <span v-if="loading || loadingIds">Chargement...</span>
@@ -67,6 +81,7 @@ const peremptionDate = ref();
 const numLot = ref();
 const nbProduits = ref(null);
 const firstId = ref(null);
+const retrievedIds = ref([]);
 const reset = ref(false);
 const loading = ref(false);
 const loadingIds = ref(false);
@@ -83,9 +98,10 @@ onMounted(() => {
     getMateriels();
 });
 
-// Récupérer le premier ID disponible automatiquement
+// Récupérer les IDs disponibles automatiquement
 async function getNextAvailableIds(count) {
     loadingIds.value = true;
+    retrievedIds.value = [];
     try {
         const requestOptions = {
             method: "GET",
@@ -95,6 +111,7 @@ async function getNextAvailableIds(count) {
         const result = await response.json();
         if (result.nextIds && result.nextIds.length > 0) {
             firstId.value = result.nextIds[0];
+            retrievedIds.value = result.nextIds;
             return result.nextIds;
         }
         return [];
@@ -108,13 +125,14 @@ async function getNextAvailableIds(count) {
     }
 }
 
-// Lorsque le nombre de produits change, récupérer automatiquement le premier ID
-async function onNbProduitsChange() {
-    if (nbProduits.value && nbProduits.value > 0) {
-        await getNextAvailableIds(nbProduits.value);
-    } else {
-        firstId.value = null;
+// Fonction pour récupérer les IDs manuellement (via le bouton)
+async function fetchIds() {
+    if (!nbProduits.value || nbProduits.value < 1) {
+        errorSound.play();
+        alert('Veuillez d\'abord indiquer le nombre de produits.');
+        return;
     }
+    await getNextAvailableIds(nbProduits.value);
 }
 
 async function submitForm() {
@@ -210,6 +228,7 @@ const reinitialiser = () => {
     numLot.value = null;
     nbProduits.value = null;
     firstId.value = null;
+    retrievedIds.value = [];
     labels.value = [];
     reset.value = true;
     warningSound.play();
@@ -297,5 +316,65 @@ label{
 .label-content strong {
     color: #333;
     font-weight: 600;
+}
+.first-id-section {
+    margin-top: 1.5rem;
+}
+.first-id-input-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+.first-id-input {
+    flex: 1;
+}
+.fetch-ids-btn {
+    background-color: #0078f3;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 0.75rem 1.5rem;
+    font-family: 'Marianne';
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    white-space: nowrap;
+    min-width: 180px;
+}
+.fetch-ids-btn:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+.fetch-ids-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #cccccc;
+}
+.retrieved-ids-display {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f4f6ff;
+    border-radius: 10px;
+    border: 1px solid #d6deff;
+}
+.ids-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 0.75rem;
+}
+.ids-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.id-badge {
+    background-color: #0078f3;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
 }
 </style>
