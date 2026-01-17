@@ -98,6 +98,7 @@ export const useSqlStore = defineStore('database', () => {
     try {
       console.log(requestOptions.body)
       const response = await fetch("https://api.cms-collonges.fr/createDB", requestOptions);
+      //const response = "OK";
       const result = await response.json();
       responseCreation.value = result;
       console.log(result);

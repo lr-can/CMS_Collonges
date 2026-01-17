@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="reception-container">
         <div class="subtitle">
             Réception d'une commande
         </div>
@@ -40,7 +40,7 @@
             <span class="mandatory">*</span> Champs obligatoires
             <div class="validationBtn" @click="submitForm" :class="{ 'disabled': loading || loadingIds }">
                 <span v-if="loading || loadingIds">Chargement...</span>
-                <span v-else>Générer les étiquettes</span>
+                <span v-else>Envoyer vers la base de données</span>
             </div>
         </form>
         
@@ -69,7 +69,7 @@ import Warning from '../assets/sounds/Deleted.mp3';
 import InputError from '../assets/sounds/InputError.mp3';
 import { useAuth } from '@/composables/useAuth.js';
 
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 const { user: authUser } = useAuth();
@@ -182,9 +182,10 @@ async function submitForm() {
         const currentDate = new Date();
         labels.value = [];
         
-        for (let i = 0; i < ids.length; i++) {
-            const idStock = parseInt(ids[i]);
-            const request = {
+        // Construire un tableau de données à envoyer à l'API en une seule requête
+        const dataList = ids.map(id => {
+            const idStock = parseInt(id);
+            return {
                 'idStock': idStock,
                 'idMateriel': selectedMateriel.value.idMateriel,
                 'idStatut': 1,
@@ -193,18 +194,22 @@ async function submitForm() {
                 'numLot': numLot.value,
                 'idAgent': idAgent
             };
-            
-            // Ajouter à la base de données
-            await sqlStore.createMateriel(request);
-            
-            // Ajouter à la liste des étiquettes
-            labels.value.push({
-                idStock: idStock,
-                nomMateriel: selectedMateriel.value.nomMateriel,
-                datePeremption: peremptionDateStr,
-                numLot: numLot.value
-            });
-        }
+        });
+
+        // Envoyer la liste à la base de données (adapter l'API pour supporter ce format)
+        await sqlStore.createMateriel(dataList);
+
+        // Ajouter à la liste des étiquettes
+        labels.value = ids.map(id => ({
+            idStock: parseInt(id),
+            nomMateriel: selectedMateriel.value.nomMateriel,
+            datePeremption: peremptionDateStr,
+            numLot: numLot.value
+        }));
+        
+        // Scroller vers le bas après la création des étiquettes
+        await nextTick();
+        scrollToBottom();
         
     } catch (error) {
         console.error('Erreur lors de la création des produits:', error);
@@ -219,6 +224,14 @@ async function submitForm() {
 const timeout = function(ms) {
     return new Promise((resolve) => {
         window.setTimeout(resolve, ms);
+    });
+}
+
+// Fonction pour scroller vers le bas de la page
+const scrollToBottom = () => {
+    window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth'
     });
 }
 
@@ -376,5 +389,9 @@ label{
     font-size: 13px;
     font-weight: 600;
     display: inline-block;
+}
+.reception-container {
+    padding-bottom: 10rem;
+    min-height: 100vh;
 }
 </style>
