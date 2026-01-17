@@ -39,32 +39,14 @@ const ROUTE_PERMISSIONS = {
 
 // Fonction pour vérifier l'authentification
 function checkAuthentication() {
-  // Vérifier d'abord le flag dans localStorage (plus fiable)
-  if (localStorage.getItem('auth0_authenticated') === 'true') {
+  // Vérifier le flag dans localStorage du nouveau système d'authentification
+  if (localStorage.getItem('cms_auth_authenticated') === 'true') {
     return true;
   }
   
-  // Vérifier aussi dans sessionStorage pour les clés Auth0 (fallback)
-  for (let i = 0; i < sessionStorage.length; i++) {
-    const key = sessionStorage.key(i);
-    if (key && (key.startsWith('auth0spajs') || key.includes('auth0'))) {
-      // Vérifier aussi que la valeur n'est pas vide
-      const value = sessionStorage.getItem(key);
-      if (value && value.length > 0) {
-        return true;
-      }
-    }
-  }
-  
-  // Vérifier aussi dans localStorage pour les clés Auth0
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && (key.startsWith('auth0spajs') || key.includes('auth0'))) {
-      const value = localStorage.getItem(key);
-      if (value && value.length > 0) {
-        return true;
-      }
-    }
+  // Fallback pour compatibilité avec l'ancien système
+  if (localStorage.getItem('auth0_authenticated') === 'true') {
+    return true;
   }
   
   return false;

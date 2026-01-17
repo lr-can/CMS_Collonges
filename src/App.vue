@@ -1,8 +1,8 @@
 <script setup>
 console.log(`%cFait avec amour 🫶, sueur 💪💦 et larmes 🥹 par le Caporal Lorcan BRENDERS pour un stage de projet universitaire.`, "background-color: #f4f6ff; color: #0078f3; text-align:justify; padding: 1rem; border-radius: 1rem;font-size:20px;font-weight:bold;");
 import { RouterLink, RouterView } from 'vue-router';
-import { useAuth0 } from '@auth0/auth0-vue';
-import { ref, watch} from 'vue';
+import { useAuth } from '@/composables/useAuth.js';
+import { ref, watch, computed, onMounted } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 import Bing from '@/assets/sounds/Bing.mp3';
@@ -10,8 +10,8 @@ const UpdateAudio = new Audio(Bing);
 
 const sqlStore = useSqlStore();
 
-const auth0 = useAuth0();
-const isAuthenticated = ref(auth0.isAuthenticated);
+const { isAuthenticated: authIsAuthenticated, loadAuthFromStorage } = useAuth();
+const isAuthenticated = computed(() => authIsAuthenticated.value);
 const appLoading = ref(true);
 const commitBackend = ref('0');
 const commitFrontend = ref('0');
@@ -38,38 +38,31 @@ sqlStore.getLastCommitNumber('CMS_Collonges').then((commit) => {
 });
 
 
-const isFirefox = /firefox/i.test(navigator.userAgent);
-const isChrome = /chrome|crios|chromium/i.test(navigator.userAgent);
-const isEdge = /edge/i.test(navigator.userAgent);
-
 const initialise = async () => {
   console.log('Checking authentication');
   try {
-    if (isEdge || isFirefox || isChrome) {
-      console.log("Browser is Safari/Firefox/Chrome, attempting silent login.");
-      console.log(auth0.getAccessTokenSilently());
-      await auth0.checkSession();
+    // Charger l'authentification depuis le cache
+    loadAuthFromStorage();
+    const authenticated = localStorage.getItem('cms_auth_authenticated') === 'true';
+    
+    if (authenticated) {
+      console.log('Authentication found in cache');
+      localStorage.setItem('cms_auth_authenticated', 'true');
     } else {
-      // For other browsers, force regular login
-      console.log("Non-supported browser, redirecting to login.");
-      await new Promise(r => setTimeout(r, 1500));
+      console.log('Authentication required');
+      localStorage.removeItem('cms_auth_authenticated');
     }
   } catch (error) {
     console.error('Error during authentication check', error);
   } finally {
-    isAuthenticated.value = auth0.isAuthenticated;
-    if (isAuthenticated.value) {
-      console.log('Authentication successful');
-      // Stocker un flag dans localStorage pour que le router puisse le vérifier
-      localStorage.setItem('auth0_authenticated', 'true');
-    } else {
-      console.log('Authentication required');
-      localStorage.removeItem('auth0_authenticated');
-    }
+    await new Promise(r => setTimeout(r, 1500));
+    appLoading.value = false;  // End the loading state here
   }
-  await new Promise(r => setTimeout(r, 1500));
-  appLoading.value = false;  // End the loading state here
 };
+
+onMounted(() => {
+  initialise();
+});
 
 // Ne réinitialiser le profil que s'il n'existe pas déjà
 if (!localStorage.getItem('currentProfile')) {

@@ -1,5 +1,5 @@
 import { computed } from 'vue';
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuth } from './useAuth.js';
 
 // Couleurs par profil
 export const PROFILE_COLORS = {
@@ -126,9 +126,9 @@ export const ROUTES_CONFIG = [
 ];
 
 export function useRoutes() {
-  const auth0 = useAuth0();
+  const { isAuthenticated: authIsAuthenticated, user: authUser } = useAuth();
   
-  const isAuthenticated = computed(() => auth0.isAuthenticated.value);
+  const isAuthenticated = computed(() => authIsAuthenticated.value);
   
   const currentProfile = computed(() => {
     return localStorage.getItem('currentProfile') || '';
@@ -184,7 +184,7 @@ export function useRoutes() {
     }
     
     // Vérifier si l'utilisateur a tous les accès (Développeur ou Chef de Caserne)
-    const user = auth0.user.value;
+    const user = authUser.value;
     if (user && user.profile && user.profile[2]) {
       const userProfile = user.profile[2];
       // Si l'utilisateur est développeur ou chef de caserne, il a accès à tout

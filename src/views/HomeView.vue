@@ -256,14 +256,14 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from "vue";
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuth } from '@/composables/useAuth.js';
 import { useRouter } from 'vue-router';
 import notConnected from '../components/notConnected.vue';
 import DashboardView from './DashboardView.vue';
 import pwaInstallPrompt from '../components/pwaInstallPrompt.vue';
 import { useRoutes, PROFILE_COLORS, ROUTES_CONFIG } from '@/composables/useRoutes.js';
 
-const auth0 = useAuth0();
+const { user: authUser } = useAuth();
 const router = useRouter();
 const { isAuthenticated, routesByProfile, getAvailableProfiles, isRouteAccessible: checkRouteAccess, hasFullAccess } = useRoutes();
 
@@ -299,7 +299,7 @@ const isRouteAccessible = (route) => {
   }
   
   // Vérifier si l'utilisateur a tous les accès (Développeur ou Chef de Caserne)
-  const user = auth0.user.value;
+  const user = authUser.value;
   if (user && user.profile && user.profile[2]) {
     const userProfile = user.profile[2];
     if (hasFullAccess(userProfile)) {
@@ -345,7 +345,7 @@ const navigateToRoute = async (route) => {
   
   // Si la route nécessite un profil et qu'aucun n'est sélectionné, le sélectionner automatiquement
   // Pour les développeurs, on peut toujours sélectionner le profil même s'ils ont accès à tout
-  const user = auth0.user.value;
+  const user = authUser.value;
   const isFullAccess = user && user.profile && user.profile[2] && hasFullAccess(user.profile[2]);
   
   let profileToSet = null;
@@ -402,35 +402,10 @@ const navigateToRoute = async (route) => {
   }
 };
 
-async function getAuthentification() {
-  const userAgent = navigator.userAgent;
-  const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
-  const isFirefox = userAgent.includes("Firefox");
-  const isChrome = userAgent.includes("Chrome") && !isSafari;
-
-  try {
-    if (isChrome || isFirefox) {
-      await auth0.getAccessTokenSilently();
-      let utilisateur = await auth0.user.value;
-      nomAgent.value = utilisateur.name;
-      
-      if (utilisateur.profile && utilisateur.profile[2]) {
-        availableProfiles.value = getAvailableProfiles(utilisateur.profile[2]);
-      }
-    }
-  } catch (error) {
-    if (error.error === 'login_required' || error.error === 'consent_required') {
-      console.log('Authentification requise');
-    } else {
-      console.error('Erreur d\'authentification', error);
-    }
-  }
-}
-
 const getAuthInfo = async () => {
-  let utilisateur = auth0.user.value;
+  const utilisateur = authUser.value;
   if (utilisateur) {
-    nomAgent.value = utilisateur.name;
+    nomAgent.value = utilisateur.name || '';
     if (utilisateur.profile && utilisateur.profile[2]) {
       availableProfiles.value = getAvailableProfiles(utilisateur.profile[2]);
       console.log('Profils disponibles:', availableProfiles.value);
@@ -441,14 +416,7 @@ const getAuthInfo = async () => {
 };
 
 onMounted(async () => {
-  await getAuthentification();
-  let profileCheck = setInterval(async () => {
-    getAuthInfo();
-    await auth0.checkSession();
-    if (auth0.isAuthenticated.value == true) {
-      clearInterval(profileCheck);
-    }
-  }, 2000);
+  getAuthInfo();
 });
 </script>
 

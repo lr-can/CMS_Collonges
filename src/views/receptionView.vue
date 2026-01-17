@@ -53,12 +53,12 @@ import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
 import Warning from '../assets/sounds/Deleted.mp3';
 import InputError from '../assets/sounds/InputError.mp3';
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuth } from '@/composables/useAuth.js';
 
 import { ref, onMounted } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
-const auth0 = useAuth0();
+const { user: authUser } = useAuth();
 const sqlStore = useSqlStore();
 
 const materiels = ref([]);
@@ -150,10 +150,14 @@ async function submitForm() {
             peremptionDateStr = new Date(peremptionDate.value).toISOString().split('T')[0];
         }
 
-        // Récupérer le matricule de l'utilisateur
+        // Récupérer le matricule de l'utilisateur depuis le cache
         let idAgent = null;
-        if (auth0.user.value && auth0.user.value.profile && auth0.user.value.profile[0]) {
-            idAgent = auth0.user.value.profile[0];
+        const utilisateur = authUser.value;
+        if (utilisateur && utilisateur.profile && utilisateur.profile[0]) {
+            idAgent = utilisateur.profile[0];
+        } else {
+            // Fallback : récupérer depuis le cache localStorage
+            idAgent = localStorage.getItem('cms_auth_matricule');
         }
 
         // Créer toutes les entrées dans la base de données

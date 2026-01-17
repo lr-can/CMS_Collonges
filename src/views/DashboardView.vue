@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuth } from '@/composables/useAuth.js';
 import nextExpiration from '../components/nextExpiration.vue';
 import introText from '../components/introText.vue';
 
@@ -54,7 +54,7 @@ const grade_url = ref("https://github.com/lr-can/CMS_Collonges/blob/main/src/ass
 
 const currentProfile = ref(localStorage.getItem('currentProfile'));
 
-const auth0 = useAuth0();
+const { user: authUser } = useAuth();
 
 async function changeGreeting(grade) {
   const mesRespectsGrades = ['Lieutenant', 'Capitaine', 'Commandant', 'Colonel', 'Contrôleur Général'];
@@ -77,9 +77,9 @@ const image_grade = (current_grade) => {
 };
 
 const getAuthInfo = async () => {
-  let utilisateur = auth0.user.value;
-  if (utilisateur) {
-    grade.value = utilisateur.profile[1];
+  const utilisateur = authUser.value;
+  if (utilisateur && utilisateur.profile) {
+    grade.value = utilisateur.profile[1] || '';
     grade_url.value = image_grade(grade.value);
 
     const sapeurs = ['Sap 1CL', 'Sap 2CL'];

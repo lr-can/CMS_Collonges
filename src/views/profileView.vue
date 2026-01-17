@@ -43,8 +43,8 @@
 </template> 
 
 <script setup>
-import { useAuth0 } from '@auth0/auth0-vue';
-import { ref } from 'vue';
+import { useAuth } from '@/composables/useAuth.js';
+import { ref, onMounted } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 const sqlStore = useSqlStore();
@@ -117,14 +117,22 @@ const dict_roles = {
   'Correspondant ASUP': ASUPCorrespondant
 };
 
-const auth0 = useAuth0();
+const { user: authUser, clearAuth } = useAuth();
 
-let utilisateur = auth0.user.value;
+const matricule = ref('');
+const grade = ref('');
+const nom = ref('');
+const role = ref('');
 
-const matricule = ref(utilisateur.profile[0]);
-const grade = ref(utilisateur.profile[1]);
-const nom = ref(utilisateur.name);
-const role = ref(utilisateur.profile[2].replace(/_(.*)/, ''));
+onMounted(() => {
+  const utilisateur = authUser.value;
+  if (utilisateur && utilisateur.profile) {
+    matricule.value = utilisateur.profile[0] || '';
+    grade.value = utilisateur.profile[1] || '';
+    nom.value = utilisateur.name || '';
+    role.value = utilisateur.profile[2] ? utilisateur.profile[2].replace(/_(.*)/, '') : '';
+  }
+});
 
 const showButtonProfile = ref(true);
 if (role.value == 'Correspondant ASUP' || role.value == "Resonsable Pharmacie" || role.value == "Responsable Formation") {
@@ -140,12 +148,9 @@ const image_role = (current_role) => {
 };
 
 const logout = () => {
-          auth0.logout({ 
-            logoutParams: { 
-              returnTo: window.location.origin
-            } 
-          })
-    };
+  clearAuth();
+  window.location.href = window.location.origin;
+};
 
 const changeProfile = () => {
   window.location.reload();
