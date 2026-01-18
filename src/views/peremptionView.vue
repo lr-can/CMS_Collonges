@@ -15,20 +15,43 @@
           <table class="peremption-table">
             <thead>
               <tr>
-                <th>Qté</th>
+                <th>Quantité</th>
                 <th>Matériel</th>
                 <th>Statut</th>
                 <th>Numéro de Lot</th>
                 <th>Date de Péremption</th>
+                <th>IDs</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in peremption" :key="item.numLot + formatDate(item.datePeremption)">
-                <td>{{ item.Nombre }}</td>
+                <td>
+                  <span class="quantity-badge">{{ item.Nombre }}</span>
+                </td>
                 <td>{{ item.nomMateriel }}</td>
-                <td>{{ item.nomStatut }}</td>
+                <td>
+                  <span class="status-badge" :class="getStatusClass(item.nomStatut)">
+                    {{ item.nomStatut }}
+                  </span>
+                </td>
                 <td>{{ item.numLot }}</td>
-                <td>{{ formatDate(item.datePeremption) }}</td>
+                <td>
+                  <span :class="{ 'invalid-date': isInvalidDate(item.datePeremption) }">
+                    {{ formatDate(item.datePeremption) }}
+                  </span>
+                </td>
+                <td>
+                  <div v-if="item.id_list && item.id_list.length > 0" class="ids-container">
+                    <span 
+                      v-for="(id, index) in item.id_list" 
+                      :key="index" 
+                      class="id-chip"
+                    >
+                      {{ id }}
+                    </span>
+                  </div>
+                  <span v-else class="no-ids">-</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -43,12 +66,16 @@
           >
             <div class="card-header">
               <span class="card-title">{{ item.nomMateriel }}</span>
-              <span class="card-badge">{{ item.Nombre }}</span>
+              <span class="card-badge">Quantité: {{ item.Nombre }}</span>
             </div>
             <div class="card-body">
               <div class="card-row">
                 <span class="card-label">Statut:</span>
-                <span class="card-value">{{ item.nomStatut }}</span>
+                <span class="card-value">
+                  <span class="status-badge" :class="getStatusClass(item.nomStatut)">
+                    {{ item.nomStatut }}
+                  </span>
+                </span>
               </div>
               <div class="card-row">
                 <span class="card-label">Numéro de Lot:</span>
@@ -56,7 +83,22 @@
               </div>
               <div class="card-row">
                 <span class="card-label">Date de Péremption:</span>
-                <span class="card-value card-date">{{ formatDate(item.datePeremption) }}</span>
+                <span class="card-value" :class="{ 'card-date': !isInvalidDate(item.datePeremption), 'invalid-date': isInvalidDate(item.datePeremption) }">
+                  {{ formatDate(item.datePeremption) }}
+                </span>
+              </div>
+              <div class="card-row card-ids-row">
+                <span class="card-label">IDs:</span>
+                <div v-if="item.id_list && item.id_list.length > 0" class="ids-container">
+                  <span 
+                    v-for="(id, index) in item.id_list" 
+                    :key="index" 
+                    class="id-chip"
+                  >
+                    {{ id }}
+                  </span>
+                </div>
+                <span v-else class="no-ids">-</span>
               </div>
             </div>
           </div>
@@ -116,7 +158,14 @@
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #ddd;
-    white-space: nowrap;
+  }
+
+  .peremption-table td:last-child {
+    white-space: normal;
+  }
+
+  .peremption-table .ids-container {
+    max-width: 300px;
   }
   
   .peremption-table th {
@@ -126,6 +175,11 @@
   
   .peremption-table tr:hover {
     background-color: #f9f9f9;
+  }
+
+  .peremption-table .status-badge {
+    font-size: 12px;
+    padding: 3px 10px;
   }
   
   /* Vue mobile : Cartes */
@@ -168,15 +222,63 @@
   }
   
   .card-badge {
-    background-color: #4a90e2;
-    color: white;
+    color: rgb(0, 0, 0);
     padding: 6px 12px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
     white-space: nowrap;
-    min-width: 40px;
+    min-width: 60px;
     text-align: center;
+  }
+
+  .quantity-badge {
+    display: inline-block;
+    background-color: #4a90e2;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 35px;
+  }
+
+  .ids-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .id-chip {
+    display: inline-block;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #90caf9;
+  }
+
+  .no-ids {
+    color: #999;
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .card-ids-row {
+    flex-wrap: wrap;
+  }
+
+  .card-ids-row .card-label {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .card-ids-row .ids-container {
+    width: 100%;
   }
   
   .card-body {
@@ -211,6 +313,44 @@
   .card-date {
     color: #d32f2f;
     font-weight: 600;
+  }
+
+  .invalid-date {
+    color: #999;
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  /* Styles pour les badges de statut */
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .status-vsav {
+    background-color: #004985;
+    color: white;
+  }
+
+  .status-pharmacy {
+    background-color: #975b00;
+    color: white;
+  }
+
+  .status-default {
+    background-color: #f44336;
+    color: white;
+  }
+
+  /* Styles pour les dates invalides dans le tableau */
+  .peremption-table .invalid-date {
+    color: #999;
+    font-style: italic;
   }
   
   /* Media queries pour responsive */
@@ -346,8 +486,72 @@
   };
   
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+    if (!dateString || dateString === 'INVALID' || dateString === 'Invalid Date' || dateString === 'null' || dateString === 'undefined') {
+      return 'Date invalide';
+    }
+    try {
+      // Gérer le format DD/MM/YYYY (ex: "28/01/2026")
+      if (typeof dateString === 'string' && dateString.includes('/')) {
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // Les mois sont 0-indexés en JavaScript
+          const year = parseInt(parts[2], 10);
+          const date = new Date(year, month, day);
+          if (!isNaN(date.getTime()) && date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+            return date.toLocaleDateString('fr-FR');
+          }
+        }
+      }
+      // Essayer le format standard
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Date invalide';
+      }
+      return date.toLocaleDateString('fr-FR');
+    } catch (error) {
+      return 'Date invalide';
+    }
+  };
+
+  const isInvalidDate = (dateString) => {
+    if (!dateString || dateString === 'INVALID' || dateString === 'Invalid Date' || dateString === 'null' || dateString === 'undefined') {
+      return true;
+    }
+    try {
+      // Gérer le format DD/MM/YYYY (ex: "28/01/2026")
+      if (typeof dateString === 'string' && dateString.includes('/')) {
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // Les mois sont 0-indexés en JavaScript
+          const year = parseInt(parts[2], 10);
+          const date = new Date(year, month, day);
+          if (!isNaN(date.getTime()) && date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+            return false; // Date valide
+          }
+        }
+      }
+      // Essayer le format standard
+      const date = new Date(dateString);
+      return isNaN(date.getTime());
+    } catch (error) {
+      return true;
+    }
+  };
+
+  const getStatusClass = (statut) => {
+    if (!statut) return 'status-default';
+    const statutLower = statut.toLowerCase().trim();
+    
+    // Mapping des statuts vers des classes CSS
+    if (statutLower === 'dispo vsav') {
+      return 'status-vsav';
+    } else if (statutLower === 'réserve pharmacie' || statutLower === 'reserve pharmacie') {
+      return 'status-pharmacy';
+    }
+    
+    return 'status-default';
   };
   </script>
   
