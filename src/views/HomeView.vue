@@ -3,17 +3,30 @@
     Chargement...
   </div>
   <div v-else>
-    <div class="header-section">
-      <div v-if="isAuthenticated" class="subtitle">
+    <div v-if="isAuthenticated">
+      <div class="subtitle">
         Bonjour, {{ nomAgent }} !
       </div>
-      <div v-else class="login-header">
-        <LoginForm />
+      <div class="profiles-section">
+        <div class="subsubtitle">
+          Profils disponibles
+        </div>
+        <div class="profile-chips">
+          <div 
+            v-for="profile in availableProfiles" 
+            :key="profile"
+            class="profile-chip"
+            :style="{ 
+              backgroundColor: PROFILE_COLORS[profile].background,
+              color: PROFILE_COLORS[profile].primary,
+              borderColor: PROFILE_COLORS[profile].primary
+            }"
+          >
+            {{ getProfileShortLabel(profile) }}
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <div v-if="isAuthenticated && currentProfile == ''">
-      <div class="subsubtitle">
+      <div class="subsubtitle" style="margin-top: 2rem;">
         Choisissez une option ci-dessous
       </div>
       
@@ -29,37 +42,50 @@
               v-for="route in routesByProfile.public" 
               :key="route.path"
               class="route-card"
+              :class="{ 'locked': !isRouteAccessible(route) }"
               :style="{ 
-                backgroundColor: PROFILE_COLORS.public.background,
-                color: PROFILE_COLORS.public.primary,
-                borderColor: PROFILE_COLORS.public.primary
+                backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.public.background : '#f0f0f0',
+                color: isRouteAccessible(route) ? PROFILE_COLORS.public.primary : '#999999',
+                opacity: isRouteAccessible(route) ? 1 : 0.6
               }"
-              @click="navigateToRoute(route)"
+              @click="handleLockedRouteClick(route)"
             >
-              <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+              <div class="icon-container">
+                <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+                <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
+              </div>
               <span>{{ route.name }}</span>
+              <div v-if="!isRouteAccessible(route)" class="lock-message">
+                Bientôt disponible
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Section Pharmacie -->
-        <div class="profile-section">
+        <div v-if="hasProfileAccess('pharmacie')" class="profile-section">
           <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.pharmacie.background, color: PROFILE_COLORS.pharmacie.primary }">
             <h3>Gestion Pharmacie</h3>
+          </div>
+          <!-- Mini tableau de bord Pharmacie -->
+          <div class="mini-dashboard">
+            <introText :profile="'pharmacie'" />
+            <div @click="clicking" class="mini-next-expiration">
+              <nextExpiration :profile="'pharmacie'" />
+            </div>
           </div>
           <div class="routes-grid">
             <div 
               v-for="route in getAllRoutesForProfile('pharmacie')" 
               :key="route.path"
               class="route-card"
-              :class="{ 'locked': !isRouteAccessible(route), 'active-profile': currentProfile === 'pharmacie' }"
+              :class="{ 'locked': !isRouteAccessible(route) }"
               :style="{ 
                 backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.pharmacie.background : '#f0f0f0',
                 color: isRouteAccessible(route) ? PROFILE_COLORS.pharmacie.primary : '#999999',
-                borderColor: isRouteAccessible(route) ? PROFILE_COLORS.pharmacie.primary : '#cccccc',
                 opacity: isRouteAccessible(route) ? 1 : 0.6
               }"
-              @click="navigateToRoute(route)"
+              @click="handleLockedRouteClick(route)"
             >
               <div class="icon-container">
                 <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
@@ -67,30 +93,36 @@
               </div>
               <span>{{ route.name }}</span>
               <div v-if="!isRouteAccessible(route) && !isAuthenticated" class="lock-message">
-                Connectez-vous pour y accéder
+                Cliquez pour vous connecter
               </div>
             </div>
           </div>
         </div>
 
         <!-- Section ASUP -->
-        <div class="profile-section">
+        <div v-if="hasProfileAccess('asup')" class="profile-section">
           <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.asup.background, color: PROFILE_COLORS.asup.primary }">
             <h3>Gestion ASUP</h3>
+          </div>
+          <!-- Mini tableau de bord ASUP -->
+          <div class="mini-dashboard">
+            <introText :profile="'asup'" />
+            <div @click="clicking" class="mini-next-expiration">
+              <nextExpiration :profile="'asup'" />
+            </div>
           </div>
           <div class="routes-grid">
             <div 
               v-for="route in getAllRoutesForProfile('asup')" 
               :key="route.path"
               class="route-card"
-              :class="{ 'locked': !isRouteAccessible(route), 'active-profile': currentProfile === 'asup' }"
+              :class="{ 'locked': !isRouteAccessible(route) }"
               :style="{ 
                 backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.asup.background : '#f0f0f0',
                 color: isRouteAccessible(route) ? PROFILE_COLORS.asup.primary : '#999999',
-                borderColor: isRouteAccessible(route) ? PROFILE_COLORS.asup.primary : '#cccccc',
                 opacity: isRouteAccessible(route) ? 1 : 0.6
               }"
-              @click="navigateToRoute(route)"
+              @click="handleLockedRouteClick(route)"
             >
               <div class="icon-container">
                 <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
@@ -98,30 +130,33 @@
               </div>
               <span>{{ route.name }}</span>
               <div v-if="!isRouteAccessible(route) && !isAuthenticated" class="lock-message">
-                Connectez-vous pour y accéder
+                Cliquez pour vous connecter
               </div>
             </div>
           </div>
         </div>
 
         <!-- Section Formation -->
-        <div class="profile-section">
+        <div v-if="hasProfileAccess('formation')" class="profile-section">
           <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.formation.background, color: PROFILE_COLORS.formation.primary }">
             <h3>Gestion Formation</h3>
+          </div>
+          <!-- Mini tableau de bord Formation -->
+          <div class="mini-dashboard">
+            <introText :profile="'formation'" />
           </div>
           <div class="routes-grid">
             <div 
               v-for="route in getAllRoutesForProfile('formation')" 
               :key="route.path"
               class="route-card"
-              :class="{ 'locked': !isRouteAccessible(route), 'active-profile': currentProfile === 'formation' }"
+              :class="{ 'locked': !isRouteAccessible(route) }"
               :style="{ 
                 backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.formation.background : '#f0f0f0',
                 color: isRouteAccessible(route) ? PROFILE_COLORS.formation.primary : '#999999',
-                borderColor: isRouteAccessible(route) ? PROFILE_COLORS.formation.primary : '#cccccc',
                 opacity: isRouteAccessible(route) ? 1 : 0.6
               }"
-              @click="navigateToRoute(route)"
+              @click="handleLockedRouteClick(route)"
             >
               <div class="icon-container">
                 <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
@@ -129,7 +164,7 @@
               </div>
               <span>{{ route.name }}</span>
               <div v-if="!isRouteAccessible(route) && !isAuthenticated" class="lock-message">
-                Connectez-vous pour y accéder
+                Cliquez pour vous connecter
               </div>
             </div>
           </div>
@@ -153,15 +188,22 @@
             v-for="route in routesByProfile.public" 
             :key="route.path"
             class="route-card"
+            :class="{ 'locked': !isRouteAccessible(route) }"
             :style="{ 
-              backgroundColor: PROFILE_COLORS.public.background,
-              color: PROFILE_COLORS.public.primary,
-              borderColor: PROFILE_COLORS.public.primary
+              backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.public.background : '#f0f0f0',
+              color: isRouteAccessible(route) ? PROFILE_COLORS.public.primary : '#999999',
+              opacity: isRouteAccessible(route) ? 1 : 0.6
             }"
-            @click="navigateToRoute(route)"
+            @click="handleLockedRouteClick(route)"
           >
-            <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+            <div class="icon-container">
+              <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
+              <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
+            </div>
             <span>{{ route.name }}</span>
+            <div v-if="!isRouteAccessible(route)" class="lock-message">
+              Bientôt disponible
+            </div>
           </div>
         </div>
       </div>
@@ -179,9 +221,9 @@
             :style="{ 
               backgroundColor: '#f0f0f0',
               color: '#999999',
-              borderColor: '#cccccc',
               opacity: 0.6
             }"
+            @click="router.push('/login')"
           >
             <div class="icon-container">
               <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
@@ -189,7 +231,7 @@
             </div>
             <span>{{ route.name }}</span>
             <div class="lock-message">
-              Connectez-vous pour y accéder
+              Cliquez pour vous connecter
             </div>
           </div>
         </div>
@@ -208,9 +250,9 @@
             :style="{ 
               backgroundColor: '#f0f0f0',
               color: '#999999',
-              borderColor: '#cccccc',
               opacity: 0.6
             }"
+            @click="router.push('/login')"
           >
             <div class="icon-container">
               <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
@@ -218,7 +260,7 @@
             </div>
             <span>{{ route.name }}</span>
             <div class="lock-message">
-              Connectez-vous pour y accéder
+              Cliquez pour vous connecter
             </div>
           </div>
         </div>
@@ -237,9 +279,9 @@
             :style="{ 
               backgroundColor: '#f0f0f0',
               color: '#999999',
-              borderColor: '#cccccc',
               opacity: 0.6
             }"
+            @click="router.push('/login')"
           >
             <div class="icon-container">
               <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
@@ -247,133 +289,7 @@
             </div>
             <span>{{ route.name }}</span>
             <div class="lock-message">
-              Connectez-vous pour y accéder
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-else-if="isAuthenticated && currentProfile !== ''">
-      <div class="subtitle">
-        Bonjour, {{ nomAgent }} !
-      </div>
-      <div class="subsubtitle">
-        Profil actif : {{ getProfileLabel(currentProfile) }}
-      </div>
-      <div class="dashboard-link" @click="router.push('/dashboard')">
-        <div class="dashboard-card">
-          <span>📊 Accéder au tableau de bord</span>
-        </div>
-      </div>
-      <div class="subsubtitle" style="margin-top: 2rem;">
-        Ou choisissez une option ci-dessous
-      </div>
-      
-      <!-- Menu global classé par profil (toujours visible) -->
-      <div class="menu-container">
-        <!-- Section Publique (en haut) -->
-        <div class="profile-section">
-          <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.public.background, color: PROFILE_COLORS.public.primary }">
-            <h3>Accès Public</h3>
-          </div>
-          <div class="routes-grid">
-            <div 
-              v-for="route in routesByProfile.public" 
-              :key="route.path"
-              class="route-card"
-              :style="{ 
-                backgroundColor: PROFILE_COLORS.public.background,
-                color: PROFILE_COLORS.public.primary,
-                borderColor: PROFILE_COLORS.public.primary
-              }"
-              @click="navigateToRoute(route)"
-            >
-              <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
-              <span>{{ route.name }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section Pharmacie -->
-        <div v-if="hasProfileAccess('pharmacie')" class="profile-section">
-          <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.pharmacie.background, color: PROFILE_COLORS.pharmacie.primary }">
-            <h3>Gestion Pharmacie</h3>
-          </div>
-          <div class="routes-grid">
-            <div 
-              v-for="route in getAllRoutesForProfile('pharmacie')" 
-              :key="route.path"
-              class="route-card"
-              :class="{ 'locked': !isRouteAccessible(route), 'active-profile': currentProfile === 'pharmacie' }"
-              :style="{ 
-                backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.pharmacie.background : '#f0f0f0',
-                color: isRouteAccessible(route) ? PROFILE_COLORS.pharmacie.primary : '#999999',
-                borderColor: isRouteAccessible(route) ? PROFILE_COLORS.pharmacie.primary : '#cccccc',
-                opacity: isRouteAccessible(route) ? 1 : 0.6
-              }"
-              @click="navigateToRoute(route)"
-            >
-              <div class="icon-container">
-                <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
-                <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
-              </div>
-              <span>{{ route.name }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section ASUP -->
-        <div v-if="hasProfileAccess('asup')" class="profile-section">
-          <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.asup.background, color: PROFILE_COLORS.asup.primary }">
-            <h3>Gestion ASUP</h3>
-          </div>
-          <div class="routes-grid">
-            <div 
-              v-for="route in getAllRoutesForProfile('asup')" 
-              :key="route.path"
-              class="route-card"
-              :class="{ 'locked': !isRouteAccessible(route), 'active-profile': currentProfile === 'asup' }"
-              :style="{ 
-                backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.asup.background : '#f0f0f0',
-                color: isRouteAccessible(route) ? PROFILE_COLORS.asup.primary : '#999999',
-                borderColor: isRouteAccessible(route) ? PROFILE_COLORS.asup.primary : '#cccccc',
-                opacity: isRouteAccessible(route) ? 1 : 0.6
-              }"
-              @click="navigateToRoute(route)"
-            >
-              <div class="icon-container">
-                <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
-                <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
-              </div>
-              <span>{{ route.name }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section Formation -->
-        <div v-if="hasProfileAccess('formation')" class="profile-section">
-          <div class="section-header" :style="{ backgroundColor: PROFILE_COLORS.formation.background, color: PROFILE_COLORS.formation.primary }">
-            <h3>Gestion Formation</h3>
-          </div>
-          <div class="routes-grid">
-            <div 
-              v-for="route in getAllRoutesForProfile('formation')" 
-              :key="route.path"
-              class="route-card"
-              :class="{ 'locked': !isRouteAccessible(route), 'active-profile': currentProfile === 'formation' }"
-              :style="{ 
-                backgroundColor: isRouteAccessible(route) ? PROFILE_COLORS.formation.background : '#f0f0f0',
-                color: isRouteAccessible(route) ? PROFILE_COLORS.formation.primary : '#999999',
-                borderColor: isRouteAccessible(route) ? PROFILE_COLORS.formation.primary : '#cccccc',
-                opacity: isRouteAccessible(route) ? 1 : 0.6
-              }"
-              @click="navigateToRoute(route)"
-            >
-              <div class="icon-container">
-                <img :src="getIconPath(route.icon)" :alt="route.name" width="32" height="auto" />
-                <img v-if="!isRouteAccessible(route)" :src="getIconPath('lock.svg')" alt="Verrouillé" class="lock-icon" width="16" height="auto" />
-              </div>
-              <span>{{ route.name }}</span>
+              Cliquez pour vous connecter
             </div>
           </div>
         </div>
@@ -384,13 +300,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { useAuth } from '@/composables/useAuth.js';
 import { useRouter } from 'vue-router';
-import DashboardView from './DashboardView.vue';
 import pwaInstallPrompt from '../components/pwaInstallPrompt.vue';
-import LoginForm from '../components/LoginForm.vue';
 import { useRoutes, PROFILE_COLORS, ROUTES_CONFIG } from '@/composables/useRoutes.js';
+import introText from '../components/introText.vue';
+import nextExpiration from '../components/nextExpiration.vue';
 
 const { user: authUser } = useAuth();
 const router = useRouter();
@@ -400,15 +316,11 @@ const isloading = ref(false);
 const nomAgent = ref('');
 const availableProfiles = ref([]);
 
-const currentProfile = computed(() => {
-  return localStorage.getItem('currentProfile') || '';
-});
-
-const getProfileLabel = (profile) => {
+const getProfileShortLabel = (profile) => {
   const labels = {
-    'pharmacie': 'Gestion Pharmacie',
-    'asup': 'Gestion ASUP',
-    'formation': 'Gestion Formation'
+    'pharmacie': 'Pharmacie',
+    'asup': 'ASUP',
+    'formation': 'Formation'
   };
   return labels[profile] || profile;
 };
@@ -422,9 +334,19 @@ const getAllRoutesForProfile = (profile) => {
 };
 
 const isRouteAccessible = (route) => {
-  // Pour les routes publiques, toujours accessibles
+  // Routes temporairement bloquées (en développement)
+  if (route.path === '/inventaires' || route.path === '/demandeFormation') {
+    return false;
+  }
+  
+  // Pour les routes publiques, toujours accessibles (sauf celles bloquées ci-dessus)
   if (route.profile === 'public') {
     return true;
+  }
+  
+  // Si la route nécessite une authentification et que l'utilisateur n'est pas authentifié
+  if (route.requiresAuth && !isAuthenticated.value) {
+    return false;
   }
   
   // Vérifier si l'utilisateur a tous les accès (Développeur ou Chef de Caserne)
@@ -432,7 +354,7 @@ const isRouteAccessible = (route) => {
   if (user && user.profile && user.profile[2]) {
     const userProfile = user.profile[2];
     if (hasFullAccess(userProfile)) {
-      // Les développeurs ont accès à tout, même si un profil différent est sélectionné
+      // Les développeurs ont accès à tout
       return true;
     }
   }
@@ -442,15 +364,9 @@ const isRouteAccessible = (route) => {
     return false;
   }
   
-  // Si un profil est sélectionné, seules les routes de ce profil sont accessibles
-  // (sauf pour les développeurs qui ont déjà été gérés ci-dessus)
-  if (currentProfile.value && route.profile !== currentProfile.value) {
-    return false;
-  }
-  
-  // Si pas de profil sélectionné mais route nécessite auth, accessible si utilisateur a le profil
-  if (!currentProfile.value && route.requiresAuth && isAuthenticated.value) {
-    return hasProfileAccess(route.profile);
+  // Si l'utilisateur est authentifié et a accès au profil, la route est accessible
+  if (route.requiresAuth && isAuthenticated.value && hasProfileAccess(route.profile)) {
+    return true;
   }
   
   // Utiliser la fonction du composable
@@ -461,10 +377,26 @@ const getIconPath = (iconName) => {
   return new URL(`../assets/icons/${iconName}`, import.meta.url).href;
 };
 
+const handleLockedRouteClick = (route) => {
+  if (!isRouteAccessible(route)) {
+    // Si la route est bloquée (en développement), ne rien faire ou afficher un message
+    if (route.path === '/inventaires' || route.path === '/demandeFormation') {
+      // Les routes en développement sont bloquées
+      return;
+    }
+    // Si la route n'est pas accessible et que l'utilisateur n'est pas authentifié, rediriger vers login
+    if (!isAuthenticated.value) {
+      router.push('/login');
+      return;
+    }
+  }
+  // Sinon, naviguer normalement
+  navigateToRoute(route);
+};
+
 const navigateToRoute = async (route) => {
   console.log('Navigation vers:', route.path);
   console.log('Route accessible?', isRouteAccessible(route));
-  console.log('Profil actuel:', currentProfile.value);
   console.log('Profil requis:', route.profile);
   
   if (!isRouteAccessible(route)) {
@@ -472,62 +404,11 @@ const navigateToRoute = async (route) => {
     return;
   }
   
-  // Si la route nécessite un profil et qu'aucun n'est sélectionné, le sélectionner automatiquement
-  // Pour les développeurs, on peut toujours sélectionner le profil même s'ils ont accès à tout
-  const user = authUser.value;
-  const isFullAccess = user && user.profile && user.profile[2] && hasFullAccess(user.profile[2]);
-  
-  let profileToSet = null;
-  
-  if (route.profile && route.profile !== 'public') {
-    if (!currentProfile.value) {
-      // Si aucun profil n'est sélectionné, le sélectionner automatiquement
-      if (hasProfileAccess(route.profile) || isFullAccess) {
-        profileToSet = route.profile;
-      }
-    } else if (currentProfile.value !== route.profile && !isFullAccess) {
-      // Si un profil différent est sélectionné et que l'utilisateur n'a pas accès complet, bloquer
-      console.log('Profil différent sélectionné et pas d\'accès complet');
-      return;
-    } else if (currentProfile.value !== route.profile && isFullAccess) {
-      // Si développeur, changer le profil pour correspondre à la route
-      profileToSet = route.profile;
-    }
-  }
-  
-  // Si on doit changer le profil, le faire avant la navigation
-  if (profileToSet) {
-    localStorage.setItem('currentProfile', profileToSet);
-    console.log('Profil sélectionné automatiquement:', profileToSet);
-    // Attendre un tick pour que localStorage soit bien mis à jour
-    await new Promise(resolve => setTimeout(resolve, 0));
-  }
-  
-  console.log('Tentative de navigation vers:', route.path);
-  console.log('Profil dans localStorage avant navigation:', localStorage.getItem('currentProfile'));
-  
   try {
-    // Utiliser replace au lieu de push pour éviter les problèmes de navigation
-    const result = await router.push(route.path);
-    console.log('Résultat de la navigation:', result);
-    
-    // Si la navigation a été interceptée (redirection), on peut essayer avec replace
-    if (result && result.name === 'home' && route.path !== '/') {
-      console.log('Navigation interceptée, tentative avec replace');
-      await router.replace(route.path);
-    }
-    
+    await router.push(route.path);
     console.log('Navigation réussie vers:', route.path);
-    console.log('Route actuelle après navigation:', router.currentRoute.value.path);
   } catch (error) {
     console.error('Erreur lors de la navigation:', error);
-    // En cas d'erreur, essayer avec replace
-    try {
-      await router.replace(route.path);
-      console.log('Navigation réussie avec replace');
-    } catch (replaceError) {
-      console.error('Erreur avec replace aussi:', replaceError);
-    }
   }
 };
 
@@ -586,7 +467,7 @@ onMounted(async () => {
   justify-content: center;
   padding: 1rem 0.75rem;
   border-radius: 8px;
-  border: 1.5px solid;
+  border: none;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   text-align: center;
@@ -597,7 +478,7 @@ onMounted(async () => {
 .route-card:hover:not(.locked) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-width: 2px;
+  filter: brightness(0.95);
 }
 
 .icon-container {
@@ -628,7 +509,6 @@ onMounted(async () => {
 .route-card.locked:hover {
   transform: none;
   box-shadow: none;
-  border-width: 1.5px;
 }
 
 .route-card span {
@@ -677,6 +557,103 @@ onMounted(async () => {
 .dashboard-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.profiles-section {
+  margin-bottom: 1.5rem;
+}
+
+.profile-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.profile-chip {
+  padding: 0.3rem 0.75rem;
+  border-radius: 12px;
+  border: 1.5px solid;
+  font-weight: 600;
+  font-size: 0.75rem;
+  cursor: default;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.dashboard-link-inline {
+  margin: 1rem 0;
+  cursor: pointer;
+}
+
+.dashboard-card-inline {
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 2px solid;
+  transition: all 0.2s ease-in-out;
+}
+
+.dashboard-card-inline:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mini-dashboard {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  transform: scale(0.85);
+  transform-origin: top left;
+  width: 117.65%; /* Compense le scale pour garder la largeur */
+}
+
+.mini-dashboard :deep(.subsubtitle) {
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.mini-dashboard :deep(.display) {
+  margin-top: 10px;
+  margin-left: 10px;
+  transform: scale(0.9);
+  transform-origin: top left;
+}
+
+.mini-dashboard :deep(.number) {
+  font-size: 1.5rem;
+}
+
+.mini-dashboard :deep(.Expiration) {
+  font-size: 0.9rem;
+}
+
+.mini-dashboard :deep(.prochain-peremption) {
+  margin-left: 0;
+  margin-bottom: 0.5rem;
+}
+
+.mini-dashboard :deep(.expirant) {
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.mini-dashboard :deep(.peremption) {
+  font-size: 1rem;
+  padding-top: 10%;
+}
+
+.mini-dashboard :deep(.materiel) {
+  font-size: 0.9rem;
+}
+
+.mini-next-expiration {
+  margin-top: 0.5rem;
 }
 
 @media (min-width: 768px) {

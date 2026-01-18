@@ -16,6 +16,9 @@ import formationSearchAgent from '@/views/formationSearchAgent.vue'
 import telexView from '@/views/telexView.vue'
 import peremptions from '@/views/peremptionView.vue'
 import RIGrandPublic from '@/views/RIGrandPublic.vue'
+import LoginView from '@/views/LoginView.vue'
+import InventairesView from '@/views/InventairesView.vue'
+import DemandeFormationView from '@/views/DemandeFormationView.vue'
 
 // Configuration des routes avec leurs permissions
 const ROUTE_PERMISSIONS = {
@@ -119,6 +122,20 @@ const router = createRouter({
       component: HomeView
     },
     {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      beforeEnter: (to, from, next) => {
+        // Si l'utilisateur est déjà authentifié, rediriger vers home
+        const isAuthenticated = checkAuthentication();
+        if (isAuthenticated) {
+          next({ name: 'home' });
+        } else {
+          next();
+        }
+      }
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
@@ -214,6 +231,16 @@ const router = createRouter({
       path: '/RIGrandPublic',
       name: 'RIGrandPublic',
       component: RIGrandPublic
+    },
+    {
+      path: '/inventaires',
+      name: 'inventaires',
+      component: InventairesView
+    },
+    {
+      path: '/demandeFormation',
+      name: 'demandeFormation',
+      component: DemandeFormationView
     }
   ]
 })

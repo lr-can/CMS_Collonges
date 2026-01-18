@@ -168,7 +168,7 @@ const getImgSource = () => {
         } else {
             notificationSource.value = base_URL+"takecare.svg";
         }
-        showExpiration.value = true;
+        // Ne pas ouvrir automatiquement - l'utilisateur doit cliquer pour voir les péremptions
 }
 }
 setInterval(() => {

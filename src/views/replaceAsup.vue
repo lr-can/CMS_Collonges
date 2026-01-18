@@ -157,8 +157,11 @@ const materielAremplacer = ref([]);
 const loadingInfo = ref(false);
 
 const auth0 = useAuth0();
-let utilisateur = auth0.user.value;
-const matricule = ref(utilisateur.profile[0]);
+let utilisateur = null;
+if (auth0 && auth0.user && auth0.user.value) {
+  utilisateur = auth0.user.value;
+}
+const matricule = ref(utilisateur && utilisateur.profile && utilisateur.profile[0] ? utilisateur.profile[0] : '');
 
 async function getMateriels() {
     await sqlStore.getMedicamentsList();

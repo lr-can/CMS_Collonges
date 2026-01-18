@@ -25,9 +25,11 @@
       </div>
 
       <div v-if="!showButton" id="agentInfo">
-          <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
-          {{ nomAgent }} {{ prenomAgent }} <span id="nivASUP"> {{ niveauASUP }}</span>
-          <a href="#" @click.prevent="resetAgent" class="not-you-link">Ce n'est pas vous ?</a>
+          <div id="agentInfoText">
+            <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
+            {{ nomAgent }} {{ prenomAgent }} <span id="nivASUP"> {{ niveauASUP }}</span>
+          </div>
+          <div id="agentInfoLink"><a href="#" @click.prevent="resetAgent" class="not-you-link">Ce n'est pas vous ?</a></div>
         </div>
     </div>
 
@@ -183,7 +185,7 @@ const auth0 = useAuth0();
 const matriculeProfile = ref(null);
 let utilisateur = null;
 
-if (auth0.user.value){
+if (auth0 && auth0.user && auth0.user.value && auth0.user.value.profile && auth0.user.value.profile[0]){
   utilisateur = auth0.user.value;
   console.log('Utilisateur:', utilisateur);
   matriculeProfile.value = utilisateur.profile[0];
@@ -924,5 +926,29 @@ p{
 .loadingBtn{
   background-color: white;
   border: 1px solid #0078f3;
+}
+
+#agentInfo{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+#agentInfoText{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+#agentInfoText span{
+  min-width: 30px;
+}
+#agentInfoLink{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
 }
 </style>

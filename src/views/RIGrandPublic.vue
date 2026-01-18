@@ -25,9 +25,11 @@
       </div>
 
       <div v-if="!showButton" id="agentInfo">
+        <div id="agentInfoText">
           <span id="gradeSpan"><img :src="image_grade()" width="30px" height="auto"></span>
           {{ nomAgent }} {{ prenomAgent }}
-          <a href="#" @click.prevent="resetAgent" class="not-you-link">Ce n'est pas vous ?</a>
+        </div>
+        <div id="agentInfoLink"><a href="#" @click.prevent="resetAgent" class="not-you-link">Ce n'est pas vous ?</a></div>
         </div>
     </div>
 
@@ -879,4 +881,19 @@ p{
 
 }
 
+#agentInfoText{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+#agentInfoLink{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+#agentInfoText span{
+  min-width: 30px;
+}
 </style>

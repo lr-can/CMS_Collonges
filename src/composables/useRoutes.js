@@ -123,6 +123,20 @@ export const ROUTES_CONFIG = [
     requiresAuth: false
     // Route publique accessible à tous, y compris les utilisateurs avec le profil pharmacie
   },
+  {
+    path: '/inventaires',
+    name: 'Inventaires',
+    icon: 'search.svg',
+    profile: 'public',
+    requiresAuth: false
+  },
+  {
+    path: '/demandeFormation',
+    name: 'Demande de formation',
+    icon: 'searchAgent.svg',
+    profile: 'public',
+    requiresAuth: false
+  },
 ];
 
 export function useRoutes() {

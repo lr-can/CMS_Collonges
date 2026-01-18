@@ -66,9 +66,12 @@ import qrCodeReserve from '../components/qrCodeReserve.vue';
 
 const auth0 = useAuth0();
 
-let utilisateur = auth0.user.value;
+let utilisateur = null;
+if (auth0 && auth0.user && auth0.user.value) {
+  utilisateur = auth0.user.value;
+}
 
-const matricule = ref(utilisateur.profile[0]);
+const matricule = ref(utilisateur && utilisateur.profile && utilisateur.profile[0] ? utilisateur.profile[0] : '');
 
 const introduction = ref(true);
 const PartialOrComplete = ref(true);

@@ -147,11 +147,11 @@
   <script setup>
   import Vue3Signature from "vue3-signature"
   import { DocusealForm } from '@docuseal/vue'
-  import { ref } from 'vue';
-  import { useAuth0 } from '@auth0/auth0-vue';
+  import { ref, onMounted } from 'vue';
+  import { useAuth } from '@/composables/useAuth.js';
   import { useSqlStore } from "@/stores/database.js";
 
-  const auth0 = useAuth0();
+  const { user: authUser } = useAuth();
   const sqlStore = useSqlStore();
   const clearSignature = () => {
             signature.value.clear();
@@ -342,10 +342,17 @@
 };
 
 const generateDocumentData = async () => {
-        const utilisateur = auth0.user.value;
-        email.value = utilisateur.email;
-        nomCorrespondant1.value = utilisateur.name;
-        nomCorrespondant2.value = utilisateur.name;
+        // Récupérer l'utilisateur depuis le cache (comme dans HomeView)
+        const utilisateur = authUser.value;
+        
+        if (!utilisateur) {
+          console.error('Erreur: utilisateur non trouvé dans le cache');
+          return;
+        }
+        
+        email.value = utilisateur.email || '';
+        nomCorrespondant1.value = utilisateur.name || '';
+        nomCorrespondant2.value = utilisateur.name || '';
 
         // Extraire les données de peremptionCount.value
         const data = peremptionCount.value.data;
@@ -398,8 +405,11 @@ const generateDocumentData = async () => {
     };
 
 
-    verifyIfNoDemande();
-  
+    // Initialiser immédiatement car l'utilisateur est dans le cache (comme dans HomeView)
+    onMounted(async () => {
+      await verifyIfNoDemande();
+    });
+
   </script>
   
 <style scoped>
