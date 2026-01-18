@@ -18,17 +18,35 @@
                 <InputText id="numLot" v-model="numLot" class="form-item" placeholder="Indiquez le numéro de lot" required/>
             </label>
             <label for="nbProduits">Nombre de produits<span class="mandatory">*</span>
-                <InputNumber id="nbProduits" v-model="nbProduits" :min="1" :max="100" class="form-item form-item-large" placeholder="Nombre de produits" required />
+                <InputText 
+                    id="nbProduits" 
+                    v-model="nbProduits" 
+                    type="number"
+                    inputmode="numeric"
+                    class="form-item form-item-large" 
+                    placeholder="Nombre de produits" 
+                    required 
+                    @blur="validateNbProduits"
+                />
+                <span v-if="nbProduitsError" class="error-message">{{ nbProduitsError }}</span>
             </label>
             <div class="first-id-section">
                 <label for="firstId">Premier ID disponible
-                    <div class="first-id-input-group">
-                        <InputNumber id="firstId" v-model="firstId" :min="1" class="form-item form-item-large first-id-input" placeholder="Premier ID" :disabled="loadingIds" />
-                        <button type="button" class="fetch-ids-btn" @click="fetchIds" :disabled="!nbProduits || nbProduits < 1 || loadingIds">
-                            <span v-if="loadingIds">Chargement...</span>
-                            <span v-else>Récupérer automatiquement</span>
-                        </button>
-                    </div>
+                    <button type="button" class="fetch-ids-btn" @click="fetchIds" :disabled="!isNbProduitsValid || loadingIds">
+                        <span v-if="loadingIds">Chargement...</span>
+                        <span v-else>Récupérer automatiquement</span>
+                    </button>
+                    <InputText 
+                        id="firstId" 
+                        v-model="firstId" 
+                        type="number"
+                        inputmode="numeric"
+                        class="form-item form-item-large first-id-input" 
+                        placeholder="Premier ID" 
+                        :disabled="loadingIds"
+                        @blur="validateFirstId"
+                    />
+                    <span v-if="firstIdError" class="error-message">{{ firstIdError }}</span>
                 </label>
                 <div v-if="retrievedIds.length > 0" class="retrieved-ids-display">
                     <p class="ids-label">IDs récupérés ({{ retrievedIds.length }}):</p>
@@ -38,7 +56,7 @@
                 </div>
             </div>
             <span class="mandatory">*</span> Champs obligatoires
-            <div class="validationBtn" @click="submitForm" :class="{ 'disabled': loading || loadingIds }">
+            <div class="validationBtn" @click="submitForm" :class="{ 'disabled': !isFormValid || loading || loadingIds }" :style="{ pointerEvents: (!isFormValid || loading || loadingIds) ? 'none' : 'auto' }">
                 <span v-if="loading || loadingIds">Chargement...</span>
                 <span v-else>Envoyer vers la base de données</span>
             </div>
@@ -64,12 +82,11 @@
 import Dropdown from 'primevue/dropdown';
 import Calendar from 'primevue/calendar';
 import InputText from 'primevue/inputtext';
-import InputNumber from 'primevue/inputnumber';
 import Warning from '../assets/sounds/Deleted.mp3';
 import InputError from '../assets/sounds/InputError.mp3';
 import { useAuth } from '@/composables/useAuth.js';
 
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 
 const { user: authUser } = useAuth();
@@ -79,8 +96,10 @@ const materiels = ref([]);
 const selectedMateriel = ref();
 const peremptionDate = ref();
 const numLot = ref();
-const nbProduits = ref(null);
-const firstId = ref(null);
+const nbProduits = ref('');
+const firstId = ref('');
+const nbProduitsError = ref('');
+const firstIdError = ref('');
 const retrievedIds = ref([]);
 const reset = ref(false);
 const loading = ref(false);
@@ -88,6 +107,86 @@ const loadingIds = ref(false);
 const labels = ref([]);
 const warningSound = new Audio(Warning);
 const errorSound = new Audio(InputError);
+
+// Validation du nombre de produits
+const validateNbProduits = () => {
+    nbProduitsError.value = '';
+    const valueStr = nbProduits.value ? String(nbProduits.value).trim() : '';
+    
+    if (!valueStr) {
+        nbProduitsError.value = 'Le nombre de produits est obligatoire';
+        return false;
+    }
+    
+    const num = Number(valueStr);
+    if (isNaN(num) || !Number.isInteger(num)) {
+        nbProduitsError.value = 'Veuillez entrer un nombre entier valide';
+        return false;
+    }
+    
+    if (num < 1) {
+        nbProduitsError.value = 'Le nombre doit être au moins 1';
+        return false;
+    }
+    
+    if (num > 100) {
+        nbProduitsError.value = 'Le nombre ne peut pas dépasser 100';
+        return false;
+    }
+    
+    return true;
+};
+
+// Validation du premier ID
+const validateFirstId = () => {
+    firstIdError.value = '';
+    const valueStr = firstId.value ? String(firstId.value).trim() : '';
+    
+    if (!valueStr) {
+        return true; // Optionnel
+    }
+    
+    const num = Number(valueStr);
+    if (isNaN(num) || !Number.isInteger(num)) {
+        firstIdError.value = 'Veuillez entrer un nombre entier valide';
+        return false;
+    }
+    
+    if (num < 1) {
+        firstIdError.value = 'L\'ID doit être au moins 1';
+        return false;
+    }
+    
+    return true;
+};
+
+// Computed pour vérifier si le nombre de produits est valide
+const isNbProduitsValid = computed(() => {
+    const valueStr = nbProduits.value ? String(nbProduits.value).trim() : '';
+    if (!valueStr) return false;
+    const num = Number(valueStr);
+    return !isNaN(num) && Number.isInteger(num) && num >= 1 && num <= 100;
+});
+
+// Computed pour vérifier si tous les champs obligatoires sont remplis et valides
+const isFormValid = computed(() => {
+    // Vérifier que le matériel est sélectionné
+    if (!selectedMateriel.value) return false;
+    
+    // Vérifier que le numéro de lot est rempli
+    const numLotStr = numLot.value ? String(numLot.value).trim() : '';
+    if (!numLotStr) return false;
+    
+    // Vérifier que le nombre de produits est valide
+    if (!isNbProduitsValid.value) return false;
+    
+    // Vérifier qu'il n'y a pas d'erreurs de validation
+    if (nbProduitsError.value) return false;
+    const firstIdStr = firstId.value ? String(firstId.value) : '';
+    if (firstIdStr && firstIdStr.trim() && firstIdError.value) return false;
+    
+    return true;
+});
 
 async function getMateriels() {
     await sqlStore.getMateriels();
@@ -127,35 +226,53 @@ async function getNextAvailableIds(count) {
 
 // Fonction pour récupérer les IDs manuellement (via le bouton)
 async function fetchIds() {
-    if (!nbProduits.value || nbProduits.value < 1) {
+    if (!validateNbProduits()) {
         errorSound.play();
-        alert('Veuillez d\'abord indiquer le nombre de produits.');
         return;
     }
-    await getNextAvailableIds(nbProduits.value);
+    const count = Number(String(nbProduits.value || ''));
+    await getNextAvailableIds(count);
 }
 
 async function submitForm() {
-    if (!selectedMateriel.value || !numLot.value || !nbProduits.value) {
+    // Vérifier si le formulaire est valide
+    if (!isFormValid.value || loading.value || loadingIds.value) {
+        return;
+    }
+    
+    // Valider tous les champs (double vérification)
+    if (!validateNbProduits()) {
         errorSound.play();
-        alert('Au moins un champ obligatoire n\'a pas été rempli.');
+        return;
+    }
+    
+    if (firstId.value && !validateFirstId()) {
+        errorSound.play();
         return;
     }
 
     loading.value = true;
     
     try {
+        const nbProduitsNum = Number(String(nbProduits.value || ''));
+        
         // Générer les IDs : soit depuis l'API, soit à partir du firstId si modifié manuellement
         let ids = [];
-        if (firstId.value && firstId.value > 0) {
-            // Si l'utilisateur a modifié le premier ID manuellement, générer une séquence
-            for (let i = 0; i < nbProduits.value; i++) {
-                ids.push(firstId.value + i);
+        const firstIdStr = firstId.value ? String(firstId.value).trim() : '';
+        if (firstIdStr) {
+            const firstIdNum = Number(firstIdStr);
+            if (firstIdNum > 0) {
+                // Si l'utilisateur a modifié le premier ID manuellement, générer une séquence
+                for (let i = 0; i < nbProduitsNum; i++) {
+                    ids.push(firstIdNum + i);
+                }
             }
-        } else {
+        }
+        
+        if (ids.length === 0) {
             // Sinon, récupérer depuis l'API
-            ids = await getNextAvailableIds(nbProduits.value);
-            if (ids.length !== nbProduits.value) {
+            ids = await getNextAvailableIds(nbProduitsNum);
+            if (ids.length !== nbProduitsNum) {
                 throw new Error('Nombre d\'IDs insuffisant');
             }
         }
@@ -239,8 +356,10 @@ const reinitialiser = () => {
     selectedMateriel.value = null;
     peremptionDate.value = null;
     numLot.value = null;
-    nbProduits.value = null;
-    firstId.value = null;
+    nbProduits.value = '';
+    firstId.value = '';
+    nbProduitsError.value = '';
+    firstIdError.value = '';
     retrievedIds.value = [];
     labels.value = [];
     reset.value = true;
@@ -265,9 +384,8 @@ const reinitialiser = () => {
 }
 .form-item-large {
     font-size: 1.2rem;
-    padding: 1rem;
 }
-.form-item-large > input {
+.form-item-large :deep(input) {
     font-size: 1.2rem;
     padding: 1rem;
 }
@@ -275,11 +393,31 @@ const reinitialiser = () => {
     background-color: #f0f0f0;
     cursor: not-allowed;
 }
+.error-message {
+    display: block;
+    color: #ce0500;
+    font-size: 14px;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
 label{
     font-weight: 500;
     font-size: 16px;
     margin-top: 1.5rem;
     margin-bottom: 1.2rem;
+    display: block;
+}
+/* Styles pour s'assurer que Dropdown et Calendar s'affichent correctement */
+.form-item :deep(.p-dropdown),
+.form-item :deep(.p-calendar) {
+    width: 100%;
+    display: block;
+}
+.form-item :deep(.p-dropdown .p-dropdown-label),
+.form-item :deep(.p-calendar .p-inputtext) {
+    width: 100%;
+    border-radius: 30px;
 }
 .returnBtn{
     cursor: pointer;
@@ -304,9 +442,42 @@ label{
     max-width: 100%;
     margin-bottom: 1rem;
 }
+.validationBtn {
+    width: 100%;
+    min-height: 60px;
+    padding: 1.5rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    background-color: #0078f3;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.validationBtn:hover:not(.disabled) {
+    background-color: #0056b3;
+}
 .validationBtn.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    background-color: #e0e0e0 !important;
+    color: #999999 !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+    box-shadow: none;
+}
+.validationBtn.disabled:hover {
+    background-color: #e0e0e0 !important;
+    color: #999999 !important;
 }
 .labels-section {
     margin-top: 3rem;
@@ -341,13 +512,20 @@ label{
 .first-id-section {
     margin-top: 1.5rem;
 }
+.first-id-section label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
 .first-id-input-group {
     display: flex;
+    flex-direction: column;
     gap: 0.75rem;
-    align-items: flex-start;
+    width: 100%;
 }
 .first-id-input {
-    flex: 1;
+    width: 100%;
+    margin-top: 0.5rem;
 }
 .fetch-ids-btn {
     background-color: #0078f3;
@@ -361,7 +539,9 @@ label{
     cursor: pointer;
     transition: all 0.3s ease-in-out;
     white-space: nowrap;
-    min-width: 180px;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    order: -1;
 }
 .fetch-ids-btn:hover:not(:disabled) {
     background-color: #0056b3;
