@@ -1,39 +1,46 @@
 <template>
-        <Dropdown v-model="selected" :options="devices" optionLabel="label" optionsValue="deviceId" placeholder="Sélectionnez une autre camera" @change="newSelection" class="form-item" v-if="devices.length > 1"/>
-        <div id="camera">
-            <QrcodeStream 
-            :paused="paused"
-            @detect="onDetect"
-            v-if="selected"
-            @error="onError"
-            @camera-on="resetValidationState"
-            :constraints="{audio: false, facingMode: 'environment', deviceId: selected.deviceId}"
-            id="readerComponent"></QrcodeStream>
+        <div class="list-header">
+            <div class="subsubtitle">Matériel présent dans la pharmacie</div>
+            <button type="button" class="help-btn" @click="toggleHelp">?</button>
         </div>
-        <div v-if="validationSuccess" class="validation-success">
-                <p> Modification prise en compte </p>
-            </div>
-            <div v-if="validationError" class="validation-error">
-                <p>Erreur</p>
-            </div>
-            <div v-if="validationPending" class="validation-pending">
-                <p><img src="@/assets/loading.gif" alt="" width="50px" height="auto">Changement dans la sélection...</p>
-            </div>
-        <div class="subsubtitle">
-            Matériel présent dans la pharmacie
+        <p v-if="showHelp" class="help-text">
+            Cliquez sur un ID pour l'exclure de l'archivage. Les éléments exclus passent en bas dans "Toujours disponible".
+        </p>
+        <div class="quick-input">
+            <input
+                v-model="manualId"
+                type="number"
+                inputmode="numeric"
+                placeholder="Saisir un ID"
+                class="manual-input"
+                @keyup.enter="toggleById"
+            />
+            <button type="button" class="manual-btn" @click="toggleById">Basculer</button>
         </div>
+        <div v-if="manualError" class="input-error">{{ manualError }}</div>
         <div v-if="visualisationPharma.length == 0">Aucun {{ props.info.nomMateriel }} présent dans la pharmacie.</div>
-        <div v-if="visualisationPharma.length > 0" class="visualisation">
-            <div class="pharmaItem" v-for="row in visualisationPharma" :class="getSelectionStatus(row.idStock)" :key="row.idStock" @click="RemoveInList(row.idStock)">{{ row.idStock }}</div>
+        <div v-else>
+            <div class="section-title">À archiver</div>
+            <div v-if="toArchiveList.length == 0" class="empty-list">Aucun matériel à archiver.</div>
+            <div v-if="toArchiveList.length > 0" class="visualisation">
+                <div class="pharmaItem archiveItem" v-for="row in toArchiveList" :key="row.idStock" @click="toggleArchive(row.idStock)">
+                    {{ row.idStock }}
+                </div>
+            </div>
+            <div class="section-title">Toujours disponible</div>
+            <div v-if="availableList.length == 0" class="empty-list">Aucun matériel disponible.</div>
+            <div v-if="availableList.length > 0" class="visualisation">
+                <div class="pharmaItem availableItem" v-for="row in availableList" :key="row.idStock" @click="toggleArchive(row.idStock)">
+                    {{ row.idStock }}
+                </div>
+            </div>
         </div>
         <div id="supprimer" @click="archive()"><span v-if="!deleting">Confirmer l'archivage de {{ listToProcess.length }} élément{{ pluriel() }}</span><span><img src="@/assets/loading.gif" alt="" width="50px" height="auto" v-if="deleting"></span></div>
         
 </template>
 
 <script setup>
-import { QrcodeStream } from 'vue-qrcode-reader';
-import { ref, computed } from 'vue';
-import Dropdown from 'primevue/dropdown';
+import { ref, computed, onMounted } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 import { useAuth0 } from '@auth0/auth0-vue';
 import Loading from '../assets/sounds/Loading.mp3';
@@ -41,35 +48,23 @@ import Deleted from '../assets/sounds/Deleted.mp3';
 
 const props = defineProps(['info']);
 
-const isValid = ref(false);
-const paused = ref(false);
-const result = ref('null');
 const sqlStore = useSqlStore();
 const loadingSound = new Audio(Loading);
 const deletedSound = new Audio(Deleted);
 const auth0 = useAuth0();
 const utilisateur = auth0?.user?.value || null;
 const matricule = utilisateur?.profile?.[0] || localStorage.getItem('cms_auth_matricule') || '';
-const selected = ref(null);
-const devices = ref([]);
 const visualisationPharma = ref([]);
 const listToProcess = ref([]);
 const deleting = ref(false);
 const emit = defineEmits(['archive']);
+const showHelp = ref(false);
+const manualId = ref('');
+const manualError = ref('');
 
-const getDevices = async () => {
-    devices.value = (await navigator.mediaDevices.enumerateDevices()).filter(
-        ({ kind }) => kind === 'videoinput'
-    );
-    
-    selected.value = devices.value[devices.value.length - 1];
-    getVisualisationPharma();
+const toggleHelp = () => {
+    showHelp.value = !showHelp.value;
 };
-
-getDevices();
-const newSelection = () => {
-    console.log(selected.value);
-}
 
 async function getVisualisationPharma(){
    await sqlStore.getVisualisationPharma(props.info.idMateriel);
@@ -77,74 +72,56 @@ async function getVisualisationPharma(){
    if (visualisationPharma.value.length == 0) {
        emit('archive');
    }
-   let idStocksList = visualisationPharma.value.map((item) => item.idStock);
+   let idStocksList = visualisationPharma.value
+        .map((item) => Number(item.idStock))
+        .filter((item) => Number.isFinite(item));
    listToProcess.value = idStocksList;
 
 }
 
-const RemoveInList = (idStock) => {
+const toggleArchive = (idStock) => {
+    const normalizedId = Number(idStock);
+    if (!Number.isFinite(normalizedId)) {
+        return;
+    }
     loadingSound.pause();
-    if (listToProcess.value.includes(idStock)) {
-        listToProcess.value = listToProcess.value.filter((item) => item !== idStock);
+    if (listToProcess.value.includes(normalizedId)) {
+        listToProcess.value = listToProcess.value.filter((item) => item !== normalizedId);
         loadingSound.play();
     } else {
-        listToProcess.value.push(idStock);
+        listToProcess.value.push(normalizedId);
         loadingSound.play();
     }
     console.log(listToProcess.value);
 }
 
-const getSelectionStatus = (idStock) => {
-    if (listToProcess.value.includes(idStock)) {
-        return 'selected';
+const toArchiveList = computed(() => {
+    return visualisationPharma.value.filter((item) => listToProcess.value.includes(Number(item.idStock)));
+});
+
+const availableList = computed(() => {
+    return visualisationPharma.value.filter((item) => !listToProcess.value.includes(Number(item.idStock)));
+});
+
+const toggleById = () => {
+    manualError.value = '';
+    const parsedId = parseInt(String(manualId.value || '').trim(), 10);
+    if (!Number.isFinite(parsedId)) {
+        manualError.value = "Veuillez saisir un ID valide.";
+        return;
     }
-    return '';
-}
-
-const validationPending = computed(() => {
-	return isValid.value === undefined && paused.value
-})
-
-const validationSuccess = computed(() => {
-	return isValid.value === true
-})
-
-const validationError = computed(() => {
-    return isValid.value === false
-})
-
-const resetValidationState = function() {
-	isValid.value = undefined
-}
-
-
-const onError = console.error
-
-function vibrate(){
-    if (navigator.vibrate) {
-        navigator.vibrate(200);
+    const exists = visualisationPharma.value.some((item) => Number(item.idStock) === parsedId);
+    if (!exists) {
+        manualError.value = "ID introuvable dans la liste.";
+        return;
     }
-}
-const timeout = function(ms) {
-	return new Promise((resolve) => {
-		window.setTimeout(resolve, ms)
-	})
-}
+    toggleArchive(parsedId);
+    manualId.value = '';
+};
 
-const onDetect = async function([firstDetectedCode]) {
-    vibrate();
-	result.value = parseInt(firstDetectedCode.rawValue);
-	paused.value = true;
-    loadingSound.play();
-    await RemoveInList(result.value);
-    isValid.value = true; 
-    await timeout(500);
-    paused.value = false;
-    await timeout(2000);
-    resetValidationState();
-
-
-}
+onMounted(() => {
+    getVisualisationPharma();
+});
 const archive = async () => {
     deleting.value = true;
     const data = {
@@ -176,10 +153,11 @@ const pluriel = () => {
 </script>
 
 <style scoped>  
-.reader{
-    position: relative;
-    width: 100%;
-    height: 100%;
+.list-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
 }
 
 .validation-success {
@@ -209,17 +187,64 @@ const pluriel = () => {
     text-align: center;
     max-width: 70%;
 }
-#camera {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-        border-radius: 30px;
-        max-height: 30vh;
-    }
-#readerComponent {
-        scale: 1.2;
-    }
+.help-btn{
+    border: 1px solid #e0e0e0;
+    background-color: #fff;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #0078f3;
+}
+.help-btn:hover{
+    background-color: #f4f6ff;
+}
+.help-text{
+    margin: 0.5rem 0 1rem 0;
+    color: #666666;
+    font-size: 0.9rem;
+}
+.quick-input{
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.manual-input{
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.95rem;
+}
+.manual-btn{
+    border: none;
+    background-color: #0078f3;
+    color: white;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.manual-btn:hover{
+    background-color: #0056b3;
+}
+.input-error{
+    color: #ce0500;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+.section-title{
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #333333;
+}
+.empty-list{
+    color: #666666;
+    margin-bottom: 0.5rem;
+}
 .pharmaItem{
     border-radius: 10px;
     flex: 0 1 30%;
@@ -232,19 +257,27 @@ const pluriel = () => {
 			animation: gradient 2s ease infinite;
     color: #666666;
 }
+.archiveItem{
+    background-image: linear-gradient(to right bottom, #ffdddd 60%, #f60700 100%);
+    color: #f60700;
+}
+.availableItem{
+    background-image: linear-gradient(to right bottom, #eeeeee 60%, #dffee6 100%);
+    color: #1f8d49;
+}
 @media (min-width: 1024px){
-.pharmaItem:hover{
+.archiveItem:hover{
     cursor: pointer;
     background-image: linear-gradient(to right bottom, #ffdddd 60%, #f60700 100%);
     transition: background-image 0.3s ease;
     color: #f60700;
 }
+.availableItem:hover{
+    cursor: pointer;
+    background-image: linear-gradient(to right bottom, #dffee6 60%, #1f8d49 100%);
+    transition: background-image 0.3s ease;
+    color: #1f8d49;
 }
-.selected{
-    background-image: linear-gradient(to right bottom, #ffdddd 60%, #ff9c9c 100%);
-        background-size: 140% 140%;
-			animation: gradient 2s ease infinite;
-    color: #f60700;
 }
 .visualisation{
     margin-top: 1rem;
