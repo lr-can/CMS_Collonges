@@ -161,7 +161,8 @@ let utilisateur = null;
 if (auth0 && auth0.user && auth0.user.value) {
   utilisateur = auth0.user.value;
 }
-const matricule = ref(utilisateur && utilisateur.profile && utilisateur.profile[0] ? utilisateur.profile[0] : '');
+const storedMatricule = localStorage.getItem('cms_auth_matricule') || localStorage.getItem('cms_matricule') || '';
+const matricule = ref(storedMatricule || (utilisateur && utilisateur.profile && utilisateur.profile[0] ? utilisateur.profile[0] : ''));
 
 async function getMateriels() {
     await sqlStore.getMedicamentsList();
@@ -255,10 +256,11 @@ const validateChange = async () => {
 
     let confirmationMessage = `Confirmez-vous l'archivage d${materielAremplacer.value.length == 1 ? "'" : "e"} ${materielAremplacer.value.length} médicament${materielAremplacer.value.length == 1 ? "" : "s"}, ainsi que l'ajout de ${nombreMedicaments.value} ${selectedMedicament.value.label} ?`;
     console.log(newMedicamentInfo);
-    console.log(materielAremplacer.value, vsavNombreDict, newMedicamentInfo, matricule.value);
+    const matriculeToSend = localStorage.getItem('cms_auth_matricule') || localStorage.getItem('cms_matricule') || matricule.value || '';
+    console.log(materielAremplacer.value, vsavNombreDict, newMedicamentInfo, matriculeToSend);
     if (confirm(confirmationMessage)) {
         loadingButton.value = true;
-        await sqlStore.replaceAsup(materielAremplacer.value, vsavNombreDict, newMedicamentInfo, matricule.value);
+        await sqlStore.replaceAsup(materielAremplacer.value, vsavNombreDict, newMedicamentInfo, matriculeToSend);
         loadingButton.value = false;
         await sqlStore.getWhithAffection(selectedMedicament.value.value);
         materielAAssocier.value = sqlStore.materielAAssocier;
