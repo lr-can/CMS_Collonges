@@ -96,6 +96,13 @@
       </div>
       <div v-else>
         <p>Sélection des médicaments utilisés.</p>
+        <div class="checkboxLine">
+          <input id="acteAnnule" type="checkbox" v-model="acteAnnule" :disabled="step5">
+          <label for="acteAnnule">Acte annulé / problème médicament</label>
+        </div>
+        <p v-if="acteAnnule" class="infoMessage">
+          Vous pouvez valider sans sélectionner de médicament.
+        </p>
         <div class="input">
           <MultiSelect v-model="selectedMedicaments" :options="medicamentsGroupes" optionLabel="code" optionGroupLabel="label" optionGroupChildren="items" display="chip" placeholder="Sélection des médicaments" class="w-full md:w-80" :disabled="step5">
             <template #option="slotProps">
@@ -109,9 +116,10 @@
             </template>
           </MultiSelect>
         </div>
-        <p v-if="selectedMedicaments.length === 0">Vous n'avez pas encore sélectionné de médicaments.</p>
+        <p v-if="selectedMedicaments.length === 0 && !acteAnnule">Vous n'avez pas encore sélectionné de médicaments.</p>
+        <p v-if="selectedMedicaments.length === 0 && acteAnnule">Aucun médicament sélectionné (acte annulé / problème médicament).</p>
         <p v-if="selectedMedicaments.length > 0">Vous avez sélectionné {{ selectedMedicaments.length }} médicament{{ selectedMedicaments.length > 1 ? 's' : '' }}.</p>
-        <div v-if="selectedMedicaments.length > 0 && !step5">
+        <div v-if="(selectedMedicaments.length > 0 || acteAnnule) && !step5">
           <button @click="submitDeclaration" class="arrow-button">
             Valider
           </button>
@@ -155,6 +163,7 @@
         <p>Médecin : Dr {{ nomMedecin }} {{ prenomMedecin }}</p>
         <p>Intervention : {{ numIntervention }}</p>
         <p>Acte de soin : {{ selectedSoin.label }}</p>
+        <p v-if="acteAnnule">Acte annulé / problème médicament : Oui</p>
         <p>Médicaments : {{ exctractNameandCount() }}</p>
         <p>Effets secondaires : {{ effetsSecondaires.join(', ') }}</p>
         <p>Commentaire : {{ commentaire }}</p>
@@ -280,6 +289,7 @@ const selectedSoin = ref(null);
 const selectedMedicaments = ref([]);
 const medicamentsGroupes = ref([]);
 const medicamentsList = ref([]);
+const acteAnnule = ref(false);
 const vsavAsup = ref(null);
 const hasSecondEffect = ref(false);
 const effetsSecondaires = ref([]);
@@ -492,6 +502,7 @@ const resetAgent = () => {
   rppsNumber.value = '10xxxxxxxxxx';
   nomMedecin.value = '';
   prenomMedecin.value = '';
+  acteAnnule.value = false;
   errorMessage.value = '';
   responseError.value = false;
   buttonLabel.value = 'Rechercher';
@@ -627,6 +638,9 @@ const soinValidation = async () => {
 }
 const exctractNameandCount = () => {
   let medicaments = selectedMedicaments.value;
+  if (medicaments.length === 0) {
+    return acteAnnule.value ? 'Aucun (acte annulé / problème médicament)' : '';
+  }
   let medicamentsCount = {};
   let medicamentsList = [];
   medicaments.forEach(medicament => {
@@ -640,7 +654,8 @@ const exctractNameandCount = () => {
   for (let name in medicamentsCount) {
     medicamentsList.push(name + ' x' + medicamentsCount[name]);
   }
-  return medicamentsList.join(', ');
+  const summary = medicamentsList.join(', ');
+  return acteAnnule.value ? `${summary} (acte annulé / problème médicament)` : summary;
 }
 const submitDeclaration = () => {
   loading.play();
@@ -761,6 +776,23 @@ const sendDeclaration = async () => {
   flex-wrap: nowrap; 
   margin-top: 0;
   padding-top: 0;
+}
+.checkboxLine{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: normal;
+  margin-top: 0.5rem;
+}
+.checkboxLine input{
+  margin: 0;
+}
+.infoMessage{
+  font-style: italic;
+  color: #666666;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
 }
 .arrow-button{
   background-color: #0078f3;
