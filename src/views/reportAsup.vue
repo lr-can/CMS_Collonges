@@ -28,7 +28,14 @@
             <div class="subtitle">ASUP</div>
             <div>
                 <p>
-                    <span class="bold">Agent :<br></span> <span class="agentInfo"><img :src="image_grade(detailData.agent.grade)" width="25px" height="auto"><span>{{ detailData.agent.nomAgent }} {{ detailData.agent.prenomAgent }} ({{ detailData.matriculeAgent }})</span></span>
+                    <span class="bold">Agent :<br></span>
+                    <span class="agentInfo">
+                        <img v-if="image_grade(detailData.agent?.grade)" :src="image_grade(detailData.agent?.grade)" width="25px" height="auto">
+                        <span>
+                            {{ formatAgentName(detailData.agent) }}
+                            <span v-if="detailData.matriculeAgent"> ({{ detailData.matriculeAgent }})</span>
+                        </span>
+                    </span>
                 </p>
                 <p>
                     <span class="bold">Acte :<br></span> {{ detailData.acteSoin }}
@@ -75,7 +82,10 @@
                     <div class="utilisationsASUP-content-items" v-for="item in asupData.rows4.sort((a, b) => new Date(b.dateActe) - new Date(a.dateActe))" :key="item.id" @click="showDetail(item.numIntervention)">
                         <div class="utilisationsASUP-content-item">{{ new Date(item.dateActe).toLocaleDateString() }}</div>
                         <div class="utilisationsASUP-content-item">{{ item.numIntervention }}</div>
-                        <div class="utilisationsASUP-content-item agentInfo"><img :src="image_grade(item.agent.grade)" width="25px" height="auto"><span>{{ item.agent.nomAgent }} {{ item.agent.prenomAgent }}</span></div>
+                        <div class="utilisationsASUP-content-item agentInfo">
+                            <img v-if="image_grade(item.agent?.grade)" :src="image_grade(item.agent?.grade)" width="25px" height="auto">
+                            <span>{{ formatAgentName(item.agent) }}</span>
+                        </div>
                         <div class="utilisationsASUP-content-item">{{ item.acteSoin }}</div>
                         <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList ? item.idMedicamentsList.length : "Aucun" }}</div>
                         <div class="utilisationsASUP-content-item">Dr {{ item.medecinPrescripteur.nomExercice }}</div>
@@ -103,7 +113,10 @@
                                 <div class="status1-content-item">{{ item.count }}</div>
                                 <div class="status1-content-item">{{ item.nomMedicament }}</div>
                                 <div class="status1-content-item">{{ item.affectationVSAV }}</div>
-                                <div class="status1-content-item agentInfo"><img :src="image_grade(item.createur.grade)" width="25px" height="auto"><span>{{ item.createur.nomAgent }} {{ item.createur.prenomAgent }}</span></div>
+                                <div class="status1-content-item agentInfo">
+                                    <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
+                                    <span>{{ formatAgentName(item.createur) }}</span>
+                                </div>
                                 <div class="status1-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
                                 <div class="status1-content-item">{{ item.numLot }}</div>           
                             </div>
@@ -127,7 +140,10 @@
                         <div class="status3-content-item">{{ item.count }}</div>
                         <div class="status3-content-item">{{ item.nomMedicament }}</div>
                         <div class="status3-content-item">{{ item.affectationVSAV }}</div>
-                        <div class="status3-content-item agentInfo"><img :src="image_grade(item.createur.grade)" width="25px" height="auto"><span>{{ item.createur.nomAgent }} {{ item.createur.prenomAgent }}</span></div>
+                        <div class="status3-content-item agentInfo">
+                            <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
+                            <span>{{ formatAgentName(item.createur) }}</span>
+                        </div>
                         <div class="status3-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
                         <div class="status3-content-item">{{ item.numLot }}</div>           
                     </div>
@@ -149,7 +165,10 @@
                         <div class="status2-content-item">{{ item.count }}</div>
                         <div class="status2-content-item">{{ item.nomMedicament }}</div>
                         <div class="status2-content-item">{{ item.affectationVSAV }}</div>
-                        <div class="status2-content-item agentInfo"><img :src="image_grade(item.createur.grade)" width="25px" height="auto"><span>{{ item.createur.nomAgent }} {{ item.createur.prenomAgent }}</span></div>
+                        <div class="status2-content-item agentInfo">
+                            <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
+                            <span>{{ formatAgentName(item.createur) }}</span>
+                        </div>
                         <div class="status2-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
                         <div class="status2-content-item">{{ item.numLot }}</div>           
                     </div>
@@ -224,7 +243,18 @@ const dict_grades = {
 };
 
 const image_grade = (current_grade) => {
-  return dict_grades[current_grade];
+  if (!current_grade) {
+    return null;
+  }
+  return dict_grades[current_grade] ?? null;
+};
+
+const formatAgentName = (agent) => {
+  if (!agent) {
+    return 'Agent non renseigné';
+  }
+  const nomComplet = [agent.nomAgent, agent.prenomAgent].filter(Boolean).join(' ');
+  return nomComplet || 'Agent non renseigné';
 };
 
 const selectedSoin = ref(null);
