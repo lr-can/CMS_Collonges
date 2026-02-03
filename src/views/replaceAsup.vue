@@ -218,6 +218,26 @@ async function getMedicamentToReplace(medId) {
     if (nombreVsav2.value == 0){
         vsav2Selected.value = true;
     }
+    const previewDate =
+        datePeremption.value instanceof Date
+            ? new Date(datePeremption.value.getTime() + 5 * 60 * 60 * 1000).toISOString().split('T')[0]
+            : null;
+    const previewPayload = {
+        materielsAremplacer: materielAremplacer.value,
+        vsavNombreDict: {
+            vsav1: nombreVsav1.value,
+            vsav2: nombreVsav2.value,
+            remaining: parseInt(nombreMedicaments.value) - (parseInt(nombreVsav1.value) + parseInt(nombreVsav2.value))
+        },
+        newMedicamentInfo: {
+            selectedMedicament: selectedMedicament.value,
+            datePeremption: previewDate,
+            numLot: numLot.value,
+            nombreMedicaments: nombreMedicaments.value
+        },
+        matricule: matricule.value
+    };
+    console.log('replaceAsup preview payload (avant selection VSAV)', previewPayload);
     loadingInfo.value = false;
 }
 
