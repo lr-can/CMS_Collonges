@@ -255,6 +255,7 @@ const validateChange = async () => {
 
     let confirmationMessage = `Confirmez-vous l'archivage d${materielAremplacer.value.length == 1 ? "'" : "e"} ${materielAremplacer.value.length} médicament${materielAremplacer.value.length == 1 ? "" : "s"}, ainsi que l'ajout de ${nombreMedicaments.value} ${selectedMedicament.value.label} ?`;
     console.log(newMedicamentInfo);
+    console.log(materielAremplacer.value, vsavNombreDict, newMedicamentInfo, matricule.value);
     if (confirm(confirmationMessage)) {
         loadingButton.value = true;
         await sqlStore.replaceAsup(materielAremplacer.value, vsavNombreDict, newMedicamentInfo, matricule.value);
@@ -494,4 +495,5 @@ p{
     border-radius: 5px;
     font-weight: bold;
 }
+
 </style>
