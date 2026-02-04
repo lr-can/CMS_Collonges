@@ -181,6 +181,26 @@
     font-size: 12px;
     padding: 3px 10px;
   }
+
+  @media screen and (min-width: 1024px) {
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+    }
+
+    .table-container {
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #fff;
+    }
+
+    .peremption-table th,
+    .peremption-table td {
+      padding: 14px 16px;
+    }
+  }
   
   /* Vue mobile : Cartes */
   .cards-container {

@@ -208,10 +208,12 @@ setInterval(() => {
 
 @media (min-width: 1024px) {
  .materiel{
-    width: 15vw;
+    width: auto;
+    min-width: 240px;
     }
     .peremption{
-        width: 5vw;
+        width: auto;
+        min-width: 90px;
     }
 }
 .over{

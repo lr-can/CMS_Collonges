@@ -582,4 +582,16 @@ label{
     padding-bottom: 10rem;
     min-height: 100vh;
 }
+
+@media (min-width: 1024px) {
+    .reception-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding-bottom: 6rem;
+    }
+
+    #reinitializing {
+        margin-left: 0;
+    }
+}
 </style>

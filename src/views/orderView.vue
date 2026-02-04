@@ -479,4 +479,18 @@ margin-top: 2rem;
     display: flex;
     flex-direction: column;
 }
+
+@media (min-width: 1024px) {
+    #formOrder,
+    #commandeOperations,
+    .commandeContainer {
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .additionnalInfoDiv {
+        max-width: 520px;
+    }
+}
 </style>

@@ -983,4 +983,43 @@ p{
   justify-content: flex-end;
   width: 100%;
 }
+
+@media (min-width: 1024px) {
+  #asupForm {
+    max-width: 900px;
+  }
+
+  #asupForm,
+  #asupForm div {
+    font-size: 14px;
+  }
+
+  .subsubtitle {
+    font-size: 2rem;
+  }
+
+  .input {
+    gap: 1rem;
+  }
+
+  .p-inputtext {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  #inputText,
+  #inputTextDoc {
+    width: auto;
+    flex: 1;
+  }
+
+  #inputTextDoc .p-inputtext {
+    width: 100%;
+  }
+
+  .arrow-button {
+    min-width: 120px;
+    height: 2.5rem;
+  }
+}
 </style>

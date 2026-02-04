@@ -129,6 +129,22 @@ p{
     
 }
 
+@media (min-width: 1024px) {
+    .display {
+        margin-left: 0;
+        column-gap: 12px;
+        row-gap: 8px;
+        max-width: 700px;
+    }
+
+    .lots,
+    .redLots,
+    .greenLot {
+        padding-top: 2.5rem;
+        padding-bottom: 2.5rem;
+    }
+}
+
 .display > div{
     border-radius: 10px;
 }

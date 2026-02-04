@@ -306,6 +306,17 @@ const handleLogin = async () => {
   flex-shrink: 0;
 }
 
+@media (min-width: 1024px) {
+  .login-container {
+    padding: 2rem 0;
+  }
+
+  .login-form {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
 @media (max-width: 640px) {
   .login-form {
     padding: 2rem 1.5rem;
