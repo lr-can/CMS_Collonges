@@ -68,27 +68,40 @@
             <div class="utilisationsASUP">
                 <div class="utilisationsASUP-title">Historique ASUP</div>
                 <p id="utilisationMessage">
-                    Cliquez sur une ligne pour obtenir des informations détaillées sur l'intervention.
+                    Cliquez sur une carte pour obtenir des informations détaillées sur l'intervention.
                 </p>
-                <div v-if="asupData.rows4.length != 0" class="utilisationsASUP-content">
-                    <div class="utilisationsASUP-header">
-                        <div class="utilisationsASUP-header-item">Date</div>
-                        <div class="utilisationsASUP-header-item">Inter</div>
-                        <div class="utilisationsASUP-header-item">Agent</div>
-                        <div class="utilisationsASUP-header-item">ASUP</div>
-                        <div class="utilisationsASUP-header-item">Méd. Utilisés</div>
-                        <div class="utilisationsASUP-header-item">Prescripteur</div>
-                    </div>
-                    <div class="utilisationsASUP-content-items" v-for="item in asupData.rows4.sort((a, b) => new Date(b.dateActe) - new Date(a.dateActe))" :key="item.id" @click="showDetail(item.numIntervention)">
-                        <div class="utilisationsASUP-content-item">{{ new Date(item.dateActe).toLocaleDateString() }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.numIntervention }}</div>
-                        <div class="utilisationsASUP-content-item agentInfo">
-                            <img v-if="image_grade(item.agent?.grade)" :src="image_grade(item.agent?.grade)" width="25px" height="auto">
-                            <span>{{ formatAgentName(item.agent) }}</span>
+                <div v-if="sortedHistory.length !== 0" class="utilisationsASUP-content">
+                    <div class="utilisationsASUP-cards">
+                        <div class="utilisationsASUP-card" v-for="item in visibleHistory" :key="item.id" @click="showDetail(item.numIntervention)">
+                            <div class="utilisationsASUP-card-header">
+                                <span class="utilisationsASUP-date">{{ new Date(item.dateActe).toLocaleDateString() }}</span>
+                                <span class="utilisationsASUP-inter">Inter {{ item.numIntervention }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Agent</span>
+                                <span class="agentInfo">
+                                    <img v-if="image_grade(item.agent?.grade)" :src="image_grade(item.agent?.grade)" width="25px" height="auto">
+                                    <span>{{ formatAgentName(item.agent) }}</span>
+                                </span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">ASUP</span>
+                                <span>{{ item.acteSoin }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Méd. utilisés</span>
+                                <span>{{ item.idMedicamentsList ? item.idMedicamentsList.length : "Aucun" }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Prescripteur</span>
+                                <span>Dr {{ item.medecinPrescripteur.nomExercice }}</span>
+                            </div>
                         </div>
-                        <div class="utilisationsASUP-content-item">{{ item.acteSoin }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList ? item.idMedicamentsList.length : "Aucun" }}</div>
-                        <div class="utilisationsASUP-content-item">Dr {{ item.medecinPrescripteur.nomExercice }}</div>
+                    </div>
+                    <div v-if="hasMoreHistory" class="utilisationsASUP-actions">
+                        <button type="button" class="utilisationsASUP-more" @click="toggleHistory">
+                            {{ showAllHistory ? 'Voir moins' : 'Voir plus' }}
+                        </button>
                     </div>
                 </div>
                 <div v-else class="utilisationsASUP-message">Aucune utilisation ASUP enregistrée.</div>
@@ -179,7 +192,7 @@
     </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 import Dropdown from 'primevue/dropdown';
 
@@ -191,6 +204,8 @@ const showPanel = ref(false);
 const detailData = ref({});
 const imgLoading = ref(true);
 const sortedData = ref({});
+const visibleHistoryLimit = 3;
+const showAllHistory = ref(false);
 const groupedSoins = ref([
   {
     label: 'ASUP Niv. 1',
@@ -258,6 +273,24 @@ const formatAgentName = (agent) => {
 };
 
 const selectedSoin = ref(null);
+
+const sortedHistory = computed(() => {
+    const rows = Array.isArray(asupData.value?.rows4) ? asupData.value.rows4 : [];
+    return [...rows].sort((a, b) => new Date(b.dateActe) - new Date(a.dateActe));
+});
+
+const visibleHistory = computed(() => {
+    if (showAllHistory.value) {
+        return sortedHistory.value;
+    }
+    return sortedHistory.value.slice(0, visibleHistoryLimit);
+});
+
+const hasMoreHistory = computed(() => sortedHistory.value.length > visibleHistoryLimit);
+
+const toggleHistory = () => {
+    showAllHistory.value = !showAllHistory.value;
+};
 
 const getData = async () => {
     isLoading.value = true;
@@ -426,11 +459,83 @@ const navigate = () => {
     white-space: nowrap;
 }
 .utilisationsASUP-content {
-    display: table;
-    width: 120%;
+    display: block;
+    width: 100%;
     margin-bottom: 1rem;
-    overflow-x: scroll;
-    white-space: nowrap;
+}
+.utilisationsASUP-cards{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+@media (min-width: 900px) {
+    .utilisationsASUP-cards{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (min-width: 1200px) {
+    .utilisationsASUP-cards{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+.utilisationsASUP-card{
+    border: 1px solid #dffdf7;
+    border-radius: 12px;
+    padding: 0.75rem;
+    background-color: #f7fffd;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+.utilisationsASUP-card:hover{
+    transform: translateY(-2px);
+    box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 12px;
+}
+.utilisationsASUP-card-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #009081;
+}
+.utilisationsASUP-date{
+    font-size: 0.9rem;
+}
+.utilisationsASUP-inter{
+    font-size: 0.9rem;
+}
+.utilisationsASUP-card-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.85rem;
+}
+.utilisationsASUP-card-row .agentInfo{
+    justify-content: flex-end;
+}
+.card-label{
+    color: #666666;
+    font-weight: 600;
+    min-width: 90px;
+}
+.utilisationsASUP-actions{
+    display: flex;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+.utilisationsASUP-more{
+    border: 1px solid #009081;
+    background-color: white;
+    color: #009081;
+    border-radius: 999px;
+    padding: 0.4rem 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+.utilisationsASUP-more:hover{
+    background-color: #dffdf7;
 }
 .status1-content {
     display: table;
