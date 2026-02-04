@@ -68,27 +68,40 @@
             <div class="utilisationsASUP">
                 <div class="utilisationsASUP-title">Historique ASUP</div>
                 <p id="utilisationMessage">
-                    Cliquez sur une ligne pour obtenir des informations détaillées sur l'intervention.
+                    Cliquez sur une carte pour obtenir des informations détaillées sur l'intervention.
                 </p>
-                <div v-if="asupData.rows4.length != 0" class="utilisationsASUP-content">
-                    <div class="utilisationsASUP-header">
-                        <div class="utilisationsASUP-header-item">Date</div>
-                        <div class="utilisationsASUP-header-item">Inter</div>
-                        <div class="utilisationsASUP-header-item">Agent</div>
-                        <div class="utilisationsASUP-header-item">ASUP</div>
-                        <div class="utilisationsASUP-header-item">Méd. Utilisés</div>
-                        <div class="utilisationsASUP-header-item">Prescripteur</div>
-                    </div>
-                    <div class="utilisationsASUP-content-items" v-for="item in asupData.rows4.sort((a, b) => new Date(b.dateActe) - new Date(a.dateActe))" :key="item.id" @click="showDetail(item.numIntervention)">
-                        <div class="utilisationsASUP-content-item">{{ new Date(item.dateActe).toLocaleDateString() }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.numIntervention }}</div>
-                        <div class="utilisationsASUP-content-item agentInfo">
-                            <img v-if="image_grade(item.agent?.grade)" :src="image_grade(item.agent?.grade)" width="25px" height="auto">
-                            <span>{{ formatAgentName(item.agent) }}</span>
+                <div v-if="sortedHistory.length !== 0" class="utilisationsASUP-content">
+                    <div class="utilisationsASUP-cards cards-grid">
+                        <div class="utilisationsASUP-card" v-for="item in visibleHistory" :key="item.id" @click="showDetail(item.numIntervention)">
+                            <div class="utilisationsASUP-card-header">
+                                <span class="utilisationsASUP-date">{{ new Date(item.dateActe).toLocaleDateString() }}</span>
+                                <span class="utilisationsASUP-inter">Inter {{ item.numIntervention }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Agent</span>
+                                <span class="agentInfo">
+                                    <img v-if="image_grade(item.agent?.grade)" :src="image_grade(item.agent?.grade)" width="25px" height="auto">
+                                    <span>{{ formatAgentName(item.agent) }}</span>
+                                </span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">ASUP</span>
+                                <span>{{ item.acteSoin }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Méd. utilisés</span>
+                                <span>{{ item.idMedicamentsList ? item.idMedicamentsList.length : "Aucun" }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Prescripteur</span>
+                                <span>Dr {{ item.medecinPrescripteur.nomExercice }}</span>
+                            </div>
                         </div>
-                        <div class="utilisationsASUP-content-item">{{ item.acteSoin }}</div>
-                        <div class="utilisationsASUP-content-item">{{ item.idMedicamentsList ? item.idMedicamentsList.length : "Aucun" }}</div>
-                        <div class="utilisationsASUP-content-item">Dr {{ item.medecinPrescripteur.nomExercice }}</div>
+                    </div>
+                    <div v-if="hasMoreHistory" class="list-actions">
+                        <button type="button" class="see-more-btn" @click="toggleHistory">
+                            {{ showAllHistory ? 'Voir moins' : 'Voir plus' }}
+                        </button>
                     </div>
                 </div>
                 <div v-else class="utilisationsASUP-message">Aucune utilisation ASUP enregistrée.</div>
@@ -100,25 +113,38 @@
                 </div>
                 <div>
                     <div v-if="selectedSoin != null">
-                        <div v-if="sortedData && sortedData[selectedSoin.code] && sortedData[selectedSoin.code].length > 0" class="status1-content">
-                            <div class="status1-header">
-                                <div class="status1-header-item">Nbre</div>
-                                <div class="status1-header-item">Nom Médicament</div>
-                                <div class="status1-header-item">VSAV</div>
-                                <div class="status1-header-item">Créateur</div>
-                                <div class="status1-header-item">Date Péremption</div>
-                                <div class="status1-header-item">Num Lot</div>
-                            </div>
-                            <div class="status1-content-items" v-for="item in sortedData[selectedSoin.code]" :key="item.id">
-                                <div class="status1-content-item">{{ item.count }}</div>
-                                <div class="status1-content-item">{{ item.nomMedicament }}</div>
-                                <div class="status1-content-item">{{ item.affectationVSAV }}</div>
-                                <div class="status1-content-item agentInfo">
-                                    <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
-                                    <span>{{ formatAgentName(item.createur) }}</span>
+                        <div v-if="selectedItems.length > 0" class="status1-content">
+                            <div class="status-cards cards-grid">
+                                <div class="status-card status1-card" v-for="item in visibleSelectedItems" :key="item.id">
+                                    <div class="status-card-header">
+                                        <span class="status-card-title">{{ item.nomMedicament }}</span>
+                                        <span class="status-card-count">x{{ item.count }}</span>
+                                    </div>
+                                    <div class="status-card-row">
+                                        <span class="card-label">VSAV</span>
+                                        <span>{{ item.affectationVSAV }}</span>
+                                    </div>
+                                    <div class="status-card-row">
+                                        <span class="card-label">Créateur</span>
+                                        <span class="agentInfo">
+                                            <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
+                                            <span>{{ formatAgentName(item.createur) }}</span>
+                                        </span>
+                                    </div>
+                                    <div class="status-card-row">
+                                        <span class="card-label">Péremption</span>
+                                        <span>{{ new Date(item.datePeremption).toLocaleDateString() }}</span>
+                                    </div>
+                                    <div class="status-card-row">
+                                        <span class="card-label">Lot</span>
+                                        <span>{{ item.numLot }}</span>
+                                    </div>
                                 </div>
-                                <div class="status1-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
-                                <div class="status1-content-item">{{ item.numLot }}</div>           
+                            </div>
+                            <div v-if="hasMoreSelectedItems" class="list-actions">
+                                <button type="button" class="see-more-btn" @click="toggleRegistered">
+                                    {{ showAllRegistered ? 'Voir moins' : 'Voir plus' }}
+                                </button>
                             </div>
                         </div>
                         <div v-else class="status1-message">Aucun médicament enregistré pour cet acte.</div>
@@ -127,50 +153,76 @@
             </div>
             <div class="status3">
             <div class="status3-title">Remplacements pour péremption</div>
-            <div v-if="asupData && asupData.rows3 && asupData.rows3.length != 0" class="status3-content">
-                <div class="status3-header">
-                    <div class="status3-header-item">Nbre</div>
-                    <div class="status3-header-item">Nom Médicament</div>
-                        <div class="status3-header-item">VSAV</div>
-                        <div class="status3-header-item">Créateur</div>
-                        <div class="status3-header-item">Date Péremption</div>
-                        <div class="status3-header-item">Num Lot</div>
-                    </div>
-                    <div class="status3-content-items" v-for="item in asupData.rows3" :key="item.id">
-                        <div class="status3-content-item">{{ item.count }}</div>
-                        <div class="status3-content-item">{{ item.nomMedicament }}</div>
-                        <div class="status3-content-item">{{ item.affectationVSAV }}</div>
-                        <div class="status3-content-item agentInfo">
-                            <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
-                            <span>{{ formatAgentName(item.createur) }}</span>
+            <div v-if="expiringItems.length !== 0" class="status3-content">
+                <div class="status-cards cards-grid">
+                    <div class="status-card status3-card" v-for="item in visibleExpiringItems" :key="item.id">
+                        <div class="status-card-header">
+                            <span class="status-card-title">{{ item.nomMedicament }}</span>
+                            <span class="status-card-count">x{{ item.count }}</span>
                         </div>
-                        <div class="status3-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
-                        <div class="status3-content-item">{{ item.numLot }}</div>           
+                        <div class="status-card-row">
+                            <span class="card-label">VSAV</span>
+                            <span>{{ item.affectationVSAV }}</span>
+                        </div>
+                        <div class="status-card-row">
+                            <span class="card-label">Créateur</span>
+                            <span class="agentInfo">
+                                <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
+                                <span>{{ formatAgentName(item.createur) }}</span>
+                            </span>
+                        </div>
+                        <div class="status-card-row">
+                            <span class="card-label">Péremption</span>
+                            <span>{{ new Date(item.datePeremption).toLocaleDateString() }}</span>
+                        </div>
+                        <div class="status-card-row">
+                            <span class="card-label">Lot</span>
+                            <span>{{ item.numLot }}</span>
+                        </div>
                     </div>
                 </div>
-                <div v-else class="status3-message">Aucun médicament à remplacer avant la fin du mois prochain.</div>
+                <div v-if="hasMoreExpiringItems" class="list-actions">
+                    <button type="button" class="see-more-btn" @click="toggleExpiring">
+                        {{ showAllExpiring ? 'Voir moins' : 'Voir plus' }}
+                    </button>
+                </div>
+            </div>
+            <div v-else class="status3-message">Aucun médicament à remplacer avant la fin du mois prochain.</div>
             </div>
             <div class="status2">
                 <div class="status2-title">Médicaments utilisés en remplacement</div>
-                <div v-if="asupData.rows2.length != 0" class="status2-content">
-                    <div class="status2-header">
-                        <div class="status2-header-item">Nbre</div>
-                        <div class="status2-header-item">Nom Médicament</div>
-                        <div class="status2-header-item">VSAV</div>
-                        <div class="status2-header-item">Créateur</div>
-                        <div class="status2-header-item">Date Péremption</div>
-                        <div class="status2-header-item">Num Lot</div>
-                    </div>
-                    <div class="status2-content-items" v-for="item in asupData.rows2" :key="item.id">
-                        <div class="status2-content-item">{{ item.count }}</div>
-                        <div class="status2-content-item">{{ item.nomMedicament }}</div>
-                        <div class="status2-content-item">{{ item.affectationVSAV }}</div>
-                        <div class="status2-content-item agentInfo">
-                            <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
-                            <span>{{ formatAgentName(item.createur) }}</span>
+                <div v-if="replacementItems.length !== 0" class="status2-content">
+                    <div class="status-cards cards-grid">
+                        <div class="status-card status2-card" v-for="item in visibleReplacementItems" :key="item.id">
+                            <div class="status-card-header">
+                                <span class="status-card-title">{{ item.nomMedicament }}</span>
+                                <span class="status-card-count">x{{ item.count }}</span>
+                            </div>
+                            <div class="status-card-row">
+                                <span class="card-label">VSAV</span>
+                                <span>{{ item.affectationVSAV }}</span>
+                            </div>
+                            <div class="status-card-row">
+                                <span class="card-label">Créateur</span>
+                                <span class="agentInfo">
+                                    <img v-if="image_grade(item.createur?.grade)" :src="image_grade(item.createur?.grade)" width="25px" height="auto">
+                                    <span>{{ formatAgentName(item.createur) }}</span>
+                                </span>
+                            </div>
+                            <div class="status-card-row">
+                                <span class="card-label">Péremption</span>
+                                <span>{{ new Date(item.datePeremption).toLocaleDateString() }}</span>
+                            </div>
+                            <div class="status-card-row">
+                                <span class="card-label">Lot</span>
+                                <span>{{ item.numLot }}</span>
+                            </div>
                         </div>
-                        <div class="status2-content-item">{{ new Date(item.datePeremption).toLocaleDateString() }}</div>
-                        <div class="status2-content-item">{{ item.numLot }}</div>           
+                    </div>
+                    <div v-if="hasMoreReplacementItems" class="list-actions">
+                        <button type="button" class="see-more-btn" @click="toggleReplacement">
+                            {{ showAllReplacement ? 'Voir moins' : 'Voir plus' }}
+                        </button>
                     </div>
                 </div>
                 <div v-else class="status2-message">Aucun médicament utilisé en cours de remplacement.</div>
@@ -179,7 +231,7 @@
     </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useSqlStore } from "@/stores/database.js";
 import Dropdown from 'primevue/dropdown';
 
@@ -191,6 +243,11 @@ const showPanel = ref(false);
 const detailData = ref({});
 const imgLoading = ref(true);
 const sortedData = ref({});
+const previewLimit = 3;
+const showAllHistory = ref(false);
+const showAllRegistered = ref(false);
+const showAllExpiring = ref(false);
+const showAllReplacement = ref(false);
 const groupedSoins = ref([
   {
     label: 'ASUP Niv. 1',
@@ -259,11 +316,83 @@ const formatAgentName = (agent) => {
 
 const selectedSoin = ref(null);
 
+const sortedHistory = computed(() => {
+    const rows = Array.isArray(asupData.value?.rows4) ? asupData.value.rows4 : [];
+    return [...rows].sort((a, b) => new Date(b.dateActe) - new Date(a.dateActe));
+});
+
+const visibleHistory = computed(() => {
+    if (showAllHistory.value) {
+        return sortedHistory.value;
+    }
+    return sortedHistory.value.slice(0, previewLimit);
+});
+
+const hasMoreHistory = computed(() => sortedHistory.value.length > previewLimit);
+
+const selectedItems = computed(() => {
+    const code = selectedSoin.value?.code;
+    const items = code ? sortedData.value?.[code] : [];
+    return Array.isArray(items) ? items : [];
+});
+
+const visibleSelectedItems = computed(() => {
+    if (showAllRegistered.value) {
+        return selectedItems.value;
+    }
+    return selectedItems.value.slice(0, previewLimit);
+});
+
+const hasMoreSelectedItems = computed(() => selectedItems.value.length > previewLimit);
+
+const expiringItems = computed(() => {
+    return Array.isArray(asupData.value?.rows3) ? asupData.value.rows3 : [];
+});
+
+const visibleExpiringItems = computed(() => {
+    if (showAllExpiring.value) {
+        return expiringItems.value;
+    }
+    return expiringItems.value.slice(0, previewLimit);
+});
+
+const hasMoreExpiringItems = computed(() => expiringItems.value.length > previewLimit);
+
+const replacementItems = computed(() => {
+    return Array.isArray(asupData.value?.rows2) ? asupData.value.rows2 : [];
+});
+
+const visibleReplacementItems = computed(() => {
+    if (showAllReplacement.value) {
+        return replacementItems.value;
+    }
+    return replacementItems.value.slice(0, previewLimit);
+});
+
+const hasMoreReplacementItems = computed(() => replacementItems.value.length > previewLimit);
+
+const toggleHistory = () => {
+    showAllHistory.value = !showAllHistory.value;
+};
+
+const toggleRegistered = () => {
+    showAllRegistered.value = !showAllRegistered.value;
+};
+
+const toggleExpiring = () => {
+    showAllExpiring.value = !showAllExpiring.value;
+};
+
+const toggleReplacement = () => {
+    showAllReplacement.value = !showAllReplacement.value;
+};
+
 const getData = async () => {
     isLoading.value = true;
     await sqlStore.getAsupVizData();
     asupData.value = sqlStore.asupVizData;
-    sortedData.value = asupData.value.rows1.reduce((acc, item) => {
+    const rows1 = Array.isArray(asupData.value?.rows1) ? asupData.value.rows1 : [];
+    sortedData.value = rows1.reduce((acc, item) => {
         if (!acc[item.acteSoin]) {
             acc[item.acteSoin] = [];
         }
@@ -274,6 +403,10 @@ const getData = async () => {
     isLoading.value = false;
 
 };
+
+watch(selectedSoin, () => {
+    showAllRegistered.value = false;
+});
 
 getData();
 
@@ -411,142 +544,160 @@ const navigate = () => {
     color: #C08C65;
 }
 
-.status3-content {
-    display: table;
-    width: 120%;
-    margin-bottom: 1rem;
-    overflow-x: scroll;
-    white-space: nowrap;
-}
-.status2-content {
-    display: table;
-    width: 120%;
-    margin-bottom: 1rem;
-    overflow-x: scroll;
-    white-space: nowrap;
-}
+.status1-content,
+.status2-content,
+.status3-content,
 .utilisationsASUP-content {
-    display: table;
-    width: 120%;
+    width: 100%;
     margin-bottom: 1rem;
-    overflow-x: scroll;
-    white-space: nowrap;
-}
-.status1-content {
-    display: table;
-    width: 120%;
-    margin-bottom: 1rem;
-    overflow-x: scroll;
-    white-space: nowrap;
-}
-.status1-header{
-    display: table-row;
-}
-.status3-header{
-    display: table-row;
-}
-.status2-header{
-    display: table-row;
-}
-.utilisationsASUP-header{
-    display: table-row;
-}
-.status3-header-item{
-    display: table-cell;
-    font-weight: bold;
-    padding: 0.5rem;
-    color: #d64d00;
-    border-bottom: 1px solid #d64d00;
-    text-align: center;
-    vertical-align: middle;
-}
-.status2-header-item{
-    display: table-cell;
-    color: #0078f3;
-    font-weight: bold;
-    padding: 0.5rem;
-    border-bottom: 1px solid #0078f3;
-    text-align: center;
-    vertical-align: middle;
-}
-.utilisationsASUP-header-item{
-    color: #009081;
-    display: table-cell;
-    font-weight: bold;
-    padding: 0.5rem;
-    border-bottom: 1px solid #009081;
-    text-align: center;
-    vertical-align: middle;
 }
 
-.status3-content-items{
-    display: table-row;
-    padding: 0.5rem;
+.cards-grid{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
 }
-.status2-content-items{
-    display: table-row;
-    padding: 0.5rem;
+@media (min-width: 900px) {
+    .cards-grid{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
-.utilisationsASUP-content-items{
-    display: table-row;
-    padding: 0.5rem;
+@media (min-width: 1200px) {
+    .cards-grid{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
-.status1-content-items{
-    display: table-row;
-    padding: 0.5rem;
-}
-.status3-content-item{
-    display: table-cell;
-    border-bottom: 1px solid #d64d00;
-    text-align: center;
-    vertical-align: middle;
-    padding: 0.5rem;
-}
-.status2-content-item{
-    display: table-cell;
-    border-bottom: 1px solid #0078f3;
-    text-align: center;
-    vertical-align: middle;
-    padding: 0.5rem;
-}
-.utilisationsASUP-content-item{
-    display: table-cell;
-    border-bottom: 1px solid #009081;
-    text-align: center;
-    vertical-align: middle;
-    padding: 0.5rem;
-}
-.status1-content-item{
-    display: table-cell;
-    border-bottom: 1px solid #C08C65;
-    text-align: center;
-    vertical-align: middle;
-    padding: 0.5rem;
-}
-.status1-header-item{
-    display: table-cell;
-    font-weight: bold;
-    padding: 0.5rem;
-    color: #C08C65;
-    border-bottom: 1px solid #C08C65;
-    text-align: center;
-    vertical-align: middle;
-}
-.utilisationsASUP-content-item:hover{
-    background-color: #dffdf7;
+
+.utilisationsASUP-card{
+    border: 1px solid #dffdf7;
+    border-radius: 12px;
+    padding: 0.85rem;
+    background-color: #f7fffd;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
+    word-break: break-word;
 }
-.status3-content-items:nth-child(odd){
-    background-color: #fff4f3;
+.utilisationsASUP-card:hover{
+    transform: translateY(-2px);
+    box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 12px;
 }
-.status2-content-items:nth-child(odd){
+.utilisationsASUP-card-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #009081;
+}
+.utilisationsASUP-date,
+.utilisationsASUP-inter{
+    font-size: 0.95rem;
+}
+.utilisationsASUP-card-row{
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.25rem 0;
+    font-size: 0.85rem;
+}
+.utilisationsASUP-card-row .agentInfo{
+    justify-content: flex-start;
+}
+
+.status-card{
+    border-radius: 12px;
+    padding: 0.85rem;
+    border: 1px solid transparent;
+    background-color: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    word-break: break-word;
+}
+.status-card:hover{
+    transform: translateY(-2px);
+    box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 12px;
+}
+.status-card-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+.status-card-title{
+    font-size: 0.95rem;
+}
+.status-card-count{
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.status-card-row{
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.25rem 0;
+    font-size: 0.85rem;
+}
+.status1-card{
+    border-color: #C08C65;
+    background-color: #fbf5f2;
+}
+.status1-card .status-card-header{
+    color: #C08C65;
+}
+.status2-card{
+    border-color: #0078f3;
     background-color: #f4f6ff;
 }
-.utilisationsASUP-content-items:nth-child(odd){
-    background-color: #dffdf7;
+.status2-card .status-card-header{
+    color: #0078f3;
 }
-.status1-content-items:nth-child(odd){
-    background-color: #fbf5f2;
+.status3-card{
+    border-color: #d64d00;
+    background-color: #fff4f3;
+}
+.status3-card .status-card-header{
+    color: #d64d00;
+}
+
+.card-label{
+    color: #666666;
+    font-weight: 600;
+}
+
+.list-actions{
+    display: flex;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+.see-more-btn{
+    border: 1px solid #666666;
+    background-color: white;
+    color: #333333;
+    border-radius: 999px;
+    padding: 0.4rem 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+.see-more-btn:hover{
+    background-color: #f6f6f6;
+}
+
+@media (min-width: 900px) {
+    .utilisationsASUP-card-row,
+    .status-card-row{
+        font-size: 0.95rem;
+        grid-template-columns: 130px 1fr;
+    }
+    .status-card-title,
+    .utilisationsASUP-date,
+    .utilisationsASUP-inter{
+        font-size: 1rem;
+    }
 }
 .status3-message, .status2-message, .utilisationsASUP-message, .status1-message, .message{
     font-style: italic;
@@ -560,8 +711,10 @@ const navigate = () => {
 
 
 .agentInfo {
-    display: flex;
-    align-items: left;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
     text-align: left;
 }
 .agentInfo > img {
@@ -572,8 +725,7 @@ const navigate = () => {
     border-radius: 5px;
 }
 .agentInfo > span {
-    display: inline-flex;
-    align-items: center;
+    display: inline;
     vertical-align: middle;
 }
 </style>
