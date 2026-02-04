@@ -105,23 +105,25 @@ initialise();
       </div>
     </div>
   </transition>
-  <header>
-    <div class="top-menu" id="logoCell">
-      <a href="/">
-        <img alt="CMS logo" class="logo" src="@/assets/logoTitle.png" width="170vh" height="auto" />
-      </a>
+  <div class="app-shell">
+    <header>
+      <div class="top-menu" id="logoCell">
+        <a href="/">
+          <img alt="CMS logo" class="logo" src="@/assets/logoTitle.png" width="170vh" height="auto" />
+        </a>
+      </div>
+      <div class="top-menu" id="profile">
+        <nav class="profile-nav">
+          <RouterLink to="/profile" v-if="isAuthenticated"><img alt="Profile" src="@/assets/icons/profile.svg" width="30" height="auto" /></RouterLink>
+        </nav>
+      </div>
+    </header>
+    <div v-if="isUpdated && !appLoading" class="update" @click="reloadApp">
+      <span>Une mise à jour de l'application a été effectuée !<br> Cliquez pour recharger.</span>
     </div>
-    <div class="top-menu" id="profile">
-      <nav>
-        <RouterLink to="/profile" v-if="isAuthenticated"><img alt="Profile" src="@/assets/icons/profile.svg" width="30" height="auto" /></RouterLink>
-      </nav>
+    <div id="RouterView">
+      <RouterView />
     </div>
-  </header>
-  <div v-if="isUpdated && !appLoading" class="update" @click="reloadApp">
-    <span>Une mise à jour de l'application a été effectuée !<br> Cliquez pour recharger.</span>
-  </div>
-  <div id="RouterView">
-    <RouterView />
   </div>
   <div class="wrapper">
     <nav>
@@ -144,36 +146,44 @@ initialise();
 </template>
 
 <style scoped>
+.app-shell {
+  width: 100%;
+}
+
 header {
   line-height: 1;
-  max-height: 20vh;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
 }
 
 .top-menu {
-  height: 12vh;
-  padding: 0px;
+  display: flex;
+  align-items: center;
+  padding: 0;
 }
 
 #profile {
-  padding: auto; 
+  padding: 0;
 }
 
 #RouterView {
-  padding: 1.5rem;
+  padding: 1.5rem 0 2.5rem;
 }
 
 .logo {
   display: block;
-  margin: 0 auto 2rem;
+  margin: 0 auto;
+  width: clamp(120px, 38vw, 180px);
 }
 
 #logoNav {
   opacity: 1;
 }
 
-nav {
+.wrapper nav {
   width: 100%;
   font-size: 12px;
   text-align: center;
@@ -181,25 +191,25 @@ nav {
   white-space: nowrap;
 }
 
-nav a.router-link-exact-active {
+.wrapper nav a.router-link-exact-active {
   opacity: 0.25;
 }
 
-nav a {
+.wrapper nav a {
   opacity: 0.85;
 }
 
-nav a.router-link-exact-active:hover {
+.wrapper nav a.router-link-exact-active:hover {
   background-color: transparent;
 }
 
-nav a {
+.wrapper nav a {
   display: inline-block;
   padding: 0 1rem;
   border-left: 1px solid var(--color-border);
 }
 
-nav a:first-of-type {
+.wrapper nav a:first-of-type {
   border: 0;
 }
 
@@ -218,13 +228,51 @@ nav a:first-of-type {
 }
 
 @media (min-width: 1024px) {
+  .app-shell {
+    max-width: var(--layout-max-width);
+    margin: 0 auto;
+    background: white;
+    border-radius: var(--layout-shell-radius);
+    box-shadow: var(--layout-shell-shadow);
+    padding: 1.5rem 2rem 2rem;
+  }
+
+  header {
+    padding-bottom: 0;
+  }
+
+  #RouterView {
+    padding: 1.5rem 0 0;
+  }
+
   .wrapper {
-    height: 5vw;
-    left: 35vw;
-    right: 35vw;
-    bottom: 0.5rem;
-    border-radius: 15px;
-    opacity: 0.95;
+    top: var(--layout-gutter);
+    bottom: var(--layout-gutter);
+    left: var(--layout-gutter);
+    right: auto;
+    width: var(--layout-side-width);
+    height: auto;
+    border-radius: 18px;
+    opacity: 0.98;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .wrapper nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+    white-space: normal;
+  }
+
+  .wrapper nav a {
+    border-left: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.6rem 0;
+  }
+
+  .wrapper nav a:last-of-type {
+    border-bottom: none;
   }
 }
 
@@ -262,5 +310,12 @@ nav a:first-of-type {
   text-align: center;
   padding: 0.5rem;
   cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .update {
+    border-radius: 10px;
+    margin-top: 0.5rem;
+  }
 }
 </style>

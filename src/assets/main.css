@@ -18,11 +18,11 @@
 }
 
 #app {
-  max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 1rem 5.5rem;
   font-weight: normal;
- padding-bottom: 3rem;
+  min-height: 100vh;
 }
 
 a,
@@ -42,19 +42,14 @@ a,
 
 @media (min-width: 1024px) {
   body {
-    display: flex;
-    place-items: center;
+    background: #f4f6ff;
   }
 
   #app {
-      max-width: 500px;
-      min-width: 500px;
-      min-height: 90vh;
-      padding-left: 3vw;
-      padding-right: 3vw;
-      margin-bottom: 20px;
-      border-radius: 15px;
-      box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+      max-width: none;
+      padding: var(--layout-gutter);
+      padding-left: calc(var(--layout-side-width) + var(--layout-gutter));
+      padding-bottom: var(--layout-gutter);
   }
 }
 @keyframes gradient {

@@ -212,6 +212,41 @@ const changeProfile = () => {
   }
   
 }
+
+@media (min-width: 1024px) {
+  #grade {
+    font-size: 14px;
+  }
+
+  #nom {
+    font-size: 20px;
+  }
+
+  .information-layout {
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .information-grade > img {
+    width: 180px;
+    height: auto;
+  }
+
+  .logoutBtns {
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+
+  .logoutBtns > div {
+    min-width: 200px;
+  }
+
+  .versionNum {
+    position: static;
+    margin-top: 2rem;
+    text-align: left;
+  }
+}
 #logout{
   color: white;
   background-color: #f60700;

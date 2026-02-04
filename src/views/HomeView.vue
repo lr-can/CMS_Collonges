@@ -684,6 +684,64 @@ onMounted(async () => {
   .section-header h3 {
     font-size: 1.1rem;
   }
+
+  .menu-container {
+    margin-top: 2rem;
+  }
+
+  .profile-section {
+    margin-bottom: 2rem;
+  }
+
+  .routes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .route-card {
+    min-height: 120px;
+    padding: 1.5rem 1.25rem;
+  }
+
+  .route-card span {
+    font-size: 0.95rem;
+  }
+
+  .profiles-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .profile-chips {
+    flex-wrap: wrap;
+  }
+
+  .mini-dashboard {
+    transform: none;
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .mini-dashboard :deep(.subsubtitle) {
+    font-size: 1rem;
+  }
+
+  .mini-dashboard :deep(.display) {
+    transform: none;
+    margin-left: 0;
+  }
+
+  .mini-dashboard :deep(.number) {
+    font-size: 1.8rem;
+  }
+
+  .mini-dashboard :deep(.peremption) {
+    font-size: 1.1rem;
+    padding-top: 0;
+  }
 }
 </style>
 
