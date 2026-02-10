@@ -310,13 +310,19 @@ export const useSqlStore = defineStore('database', () => {
     
     try {
       const response = await fetch(`https://api.cms-collonges.fr/reinitialiserRetourInter`, requestOptions);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erreur reset retour intervention (${response.status}) ${errorText}`);
+      }
       const result = await response.json();
       const data = result.data;
       console.log(data);
       archivagePeremptionResponse.value = data;
+      return result;
     } catch (error) {
       console.error(error);
       archivagePeremptionResponse.value = error;
+      throw error;
     }
   }
 
@@ -1068,9 +1074,19 @@ async function resetRICount(type, matricule){
   };
   try {
     const response = await fetch(`https://api.cms-collonges.fr/resetRICount/${type}/${matricule}`, requestOptions);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Erreur resetRICount (${response.status}) ${errorText}`);
+    }
+    const resultText = await response.text();
+    try {
+      return JSON.parse(resultText);
+    } catch {
+      return { message: resultText || "OK" };
+    }
   } catch (error) {
     console.error(error);
-    return null;
+    throw error;
   }
 }
 
