@@ -8,7 +8,7 @@
         <div class="consigne">
             <span class="number">2</span>
             Une <span class="TextHighlight">liste Firebase</span> des matériels à vérifier est créée.
-            Les matériels sont visibles en temps réel avec un statut <b>available</b> / <b>locked</b> / <b>done</b>.
+            Les matériels sont visibles en temps réel avec un statut <b>disponible</b> / <b>verrouillé</b> / <b>validé</b>.
         </div>
         <div class="consigne">
             <span class="number">3</span>
@@ -69,25 +69,31 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-title">available</div>
+                <div class="stat-title">Disponibles</div>
                 <div class="stat-value">{{ availableCount }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-title">locked (moi)</div>
+                <div class="stat-title">Verrouillés (moi)</div>
                 <div class="stat-value">{{ lockedByMeCount }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-title">locked (autres)</div>
+                <div class="stat-title">Verrouillés (autres)</div>
                 <div class="stat-value">{{ lockedByOthersCount }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-title">done</div>
+                <div class="stat-title">Validés</div>
                 <div class="stat-value">{{ doneCount }}</div>
             </div>
         </div>
 
         <div v-if="materials.length === 0" class="empty-message">
             Aucun matériel à vérifier pour ce mode.
+        </div>
+        <p v-else class="hint-click">
+            Cliquez sur une carte disponible pour la verrouiller et démarrer directement sa mise à disposition.
+        </p>
+        <div v-if="lockedByMeCount > 0" class="small-action release-action" @click="releaseMyLocks">
+            Libérer mes verrouillages actifs ({{ lockedByMeCount }})
         </div>
 
         <div v-else class="materials-grid">
@@ -96,6 +102,7 @@
                 :key="material.idMateriel"
                 class="material-card"
                 :class="statusClass(material)"
+                @click="handleMaterialClick(material)"
             >
                 <div class="material-header">
                     <span :class="zoneClass(material.zone)">Zone {{ material.zone || "Autre" }}</span>
@@ -105,44 +112,12 @@
                 <div class="material-meta">
                     Objectif VSAV : <b>{{ material.nbVSAV }}</b>
                 </div>
-                <div class="material-actions">
-                    <button
-                        v-if="isAvailable(material) || isLockedByMe(material)"
-                        type="button"
-                        class="mini-btn lock-btn"
-                        @click="toggleMaterialLock(material)"
-                    >
-                        {{ isLockedByMe(material) ? "Unlock" : "Lock" }}
-                    </button>
-                    <button
-                        v-if="isLockedByMe(material)"
-                        type="button"
-                        class="mini-btn check-btn"
-                        @click="startMaterialCheck(material)"
-                    >
-                        Vérifier
-                    </button>
+                <div class="material-actions-inline">
                     <span v-if="isLockedByOther(material)" class="locked-by">
                         Verrouillé par {{ material.lockedBy }}
                     </span>
                 </div>
             </div>
-        </div>
-
-        <div v-if="lockedByMe.length > 0" class="my-locks">
-            <div class="subsubtitle">Mes matériels verrouillés</div>
-            <div class="chips">
-                <button
-                    v-for="material in lockedByMe"
-                    :key="`mine-${material.idMateriel}`"
-                    class="chip"
-                    type="button"
-                    @click="startMaterialCheck(material)"
-                >
-                    {{ material.nomMateriel }}
-                </button>
-            </div>
-            <div class="small-action" @click="releaseMyLocks">Libérer tous mes locks</div>
         </div>
 
         <div v-if="currentMaterial" class="check-panel">
@@ -177,7 +152,7 @@
                 </span>
             </div>
             <p v-if="!canValidateReset" class="hint">
-                Pour valider : tous les matériels doivent être en <b>done</b> et aucun lock ne doit rester actif.
+                Pour valider : tous les matériels doivent être en <b>validé</b> et aucun verrouillage ne doit rester actif.
             </p>
         </div>
     </div>
@@ -437,21 +412,20 @@ const startOrJoinSession = async () => {
     }
 };
 
-const isAvailable = (material) => material.status === "available";
 const isLockedByMe = (material) => material.status === "locked" && material.lockedBy === matricule.value;
 const isLockedByOther = (material) => material.status === "locked" && material.lockedBy !== matricule.value;
 
 const statusLabel = (material) => {
     if (material.status === "done") {
-        return "done";
+        return "validé";
     }
     if (isLockedByMe(material)) {
-        return "locked (vous)";
+        return "verrouillé (vous)";
     }
     if (isLockedByOther(material)) {
-        return "locked";
+        return "verrouillé";
     }
-    return "available";
+    return "disponible";
 };
 
 const statusClass = (material) => {
@@ -487,59 +461,69 @@ const zoneClass = (zone) => {
     return "Autre";
 };
 
-const toggleMaterialLock = async (material) => {
+const handleMaterialClick = async (material) => {
     clearMessages();
     if (!material?.idMateriel) {
         return;
     }
+
+    if (material.status === "done") {
+        infoMessage.value = `${material.nomMateriel} est déjà validé.`;
+        return;
+    }
+
+    if (isLockedByOther(material)) {
+        infoMessage.value = `${material.nomMateriel} est verrouillé par ${material.lockedBy}.`;
+        return;
+    }
+
+    if (isLockedByMe(material)) {
+        startMaterialCheck(material);
+        return;
+    }
+
     const materialRef = firebaseRef(db, `${SESSION_PATH}/materials/${material.idMateriel}`);
+
     try {
         const tx = await runTransaction(materialRef, (current) => {
             if (!current) {
                 return current;
             }
             const currentStatus = current.status || "available";
-
-            if (currentStatus === "done") {
+            if (currentStatus !== "available") {
                 return current;
             }
-            if (currentStatus === "available") {
-                return {
-                    ...current,
-                    status: "locked",
-                    lockedBy: matricule.value,
-                    lockedAt: Date.now(),
-                    updatedAt: Date.now()
-                };
-            }
-            if (currentStatus === "locked" && current.lockedBy === matricule.value) {
-                return {
-                    ...current,
-                    status: "available",
-                    lockedBy: null,
-                    lockedAt: null,
-                    updatedAt: Date.now()
-                };
-            }
-            return current;
+            return {
+                ...current,
+                status: "locked",
+                lockedBy: matricule.value,
+                lockedAt: Date.now(),
+                updatedAt: Date.now()
+            };
         });
 
         if (!tx.snapshot.exists()) {
             return;
         }
+
         const after = tx.snapshot.val();
+
         if (after.status === "locked" && after.lockedBy === matricule.value) {
-            infoMessage.value = `${after.nomMateriel} verrouillé.`;
-        } else if (after.status === "available") {
-            infoMessage.value = `${after.nomMateriel} remis en available.`;
-            if (currentMaterialId.value === after.idMateriel) {
-                closeCurrentMaterialPanel();
-            }
-        } else if (after.status === "locked" && after.lockedBy !== matricule.value) {
-            infoMessage.value = `${after.nomMateriel} est déjà locked par ${after.lockedBy}.`;
+            infoMessage.value = `${after.nomMateriel} verrouillé. Ouverture du traitement...`;
+            startMaterialCheck(after);
+            return;
+        }
+
+        if (after.status === "locked" && after.lockedBy !== matricule.value) {
+            infoMessage.value = `${after.nomMateriel} vient d'être verrouillé par ${after.lockedBy}.`;
+            return;
+        }
+
+        if (after.status === "done") {
+            infoMessage.value = `${after.nomMateriel} est déjà validé.`;
         }
     } catch (error) {
-        errorMessage.value = `Erreur de lock/unlock : ${error.message}`;
+        errorMessage.value = `Erreur de verrouillage : ${error.message}`;
     }
 };
 
@@ -595,9 +579,9 @@ const completeCurrentMaterial = async () => {
 
         const after = tx.snapshot.val();
         if (after.status !== "done") {
-            throw new Error("Impossible de finaliser ce matériel (lock perdu ou déjà traité).");
+            throw new Error("Impossible de finaliser ce matériel (verrouillage perdu ou déjà traité).");
         }
-        infoMessage.value = `${after.nomMateriel} marqué done.`;
+        infoMessage.value = `${after.nomMateriel} marqué comme validé.`;
         closeCurrentMaterialPanel();
     } catch (error) {
         errorMessage.value = `Erreur de validation matériel : ${error.message}`;
@@ -628,17 +612,17 @@ const releaseMyLocks = async () => {
 
     try {
         await update(sessionRef, updatesPayload);
-        infoMessage.value = "Tous vos locks ont été libérés.";
+        infoMessage.value = "Tous vos verrouillages ont été libérés.";
         closeCurrentMaterialPanel();
     } catch (error) {
-        errorMessage.value = `Erreur lors de la libération des locks : ${error.message}`;
+        errorMessage.value = `Erreur lors de la libération des verrouillages : ${error.message}`;
     }
 };
 
 const validateRetourIntervention = async () => {
     clearMessages();
     if (!canValidateReset.value) {
-        errorMessage.value = "Validation impossible : il reste des matériels non done ou des locks actifs.";
+        errorMessage.value = "Validation impossible : il reste des matériels non validés ou des verrouillages actifs.";
         return;
     }
 
@@ -832,6 +816,12 @@ onUnmounted(() => {
     font-style: italic;
 }
 
+.hint-click {
+    color: #666666;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
 .materials-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -844,6 +834,13 @@ onUnmounted(() => {
     border-radius: 12px;
     padding: 0.8rem;
     background-color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.material-card:hover {
+    transform: translateY(-2px);
+    box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 12px;
 }
 
 .material-card.status-available {
@@ -893,42 +890,15 @@ onUnmounted(() => {
     margin-bottom: 0.6rem;
 }
 
-.material-actions {
+.material-actions-inline {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.mini-btn {
-    border: none;
-    border-radius: 8px;
-    padding: 0.35rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.lock-btn {
-    background-color: #f4f6ff;
-    color: #0078f3;
-}
-
-.check-btn {
-    background-color: #dffee6;
-    color: #1f8d49;
+    justify-content: flex-end;
+    min-height: 1.2rem;
 }
 
 .locked-by {
     color: #666666;
     font-size: 0.8rem;
-}
-
-.my-locks {
-    margin-bottom: 1rem;
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    padding: 0.8rem;
 }
 
 .chips {
@@ -958,6 +928,11 @@ onUnmounted(() => {
 
 .small-action:hover {
     text-decoration: underline;
+}
+
+.release-action {
+    margin-bottom: 1rem;
+    text-align: right;
 }
 
 .check-panel {
