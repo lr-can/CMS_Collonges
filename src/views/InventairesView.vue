@@ -139,6 +139,7 @@
           type="button"
           class="vehicle-item"
           :class="{ selected: selectedVehicle === vehicle }"
+          :disabled="!vehiclesDisponibles.includes(vehicle)"
           @click="selectedVehicle = vehicle"
         >
           {{ vehicle }}
@@ -730,6 +731,7 @@ const agentsLoading = ref(false);
 const agentsError = ref('');
 
 const inventaireParVehicule = ref({});
+const enginsStatus = ref([]);
 const inventaireLoading = ref(false);
 const inventaireError = ref('');
 
@@ -889,7 +891,19 @@ const subtitleText = computed(() => {
 });
 
 const vehicles = computed(() => {
+  if (enginsStatus.value.length) {
+    return enginsStatus.value
+      .filter((engin) => engin.hidden === false)
+      .map((engin) => engin.engin);
+  }
   return Object.keys(inventaireParVehicule.value);
+});
+
+const vehiclesDisponibles = computed(() => {
+  if (!enginsStatus.value.length) return vehicles.value;
+  return enginsStatus.value
+    .filter((engin) => engin.hidden === false && engin.status === 'ACTIVATED' && engin.sheetFound)
+    .map((engin) => engin.engin);
 });
 
 const agentsByMatricule = computed(() => {
@@ -1060,7 +1074,7 @@ const mapInventaireVehicule = (rawData) => {
   const mapped = {};
 
   Object.entries(rawData).forEach(([key, rows]) => {
-    if (key === 'Historique') {
+    if (key === 'Historique' || key === 'enginsStatus') {
       return;
     }
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -1257,6 +1271,7 @@ const fetchInventaires = async () => {
     }
     const data = await response.json();
     inventaireParVehicule.value = mapInventaireVehicule(data);
+    enginsStatus.value = Array.isArray(data.enginsStatus) ? data.enginsStatus : [];
   } catch (error) {
     inventaireError.value = error.message || 'Erreur inconnue lors du chargement des inventaires.';
   } finally {
@@ -2739,6 +2754,13 @@ const launchInventaire = async () => {
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
+}
+
+.vehicle-item:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
 }
 
 .launch-wrapper {
