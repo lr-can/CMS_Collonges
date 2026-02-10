@@ -335,7 +335,7 @@ const getAllRoutesForProfile = (profile) => {
 
 const isRouteAccessible = (route) => {
   // Routes temporairement bloquées (en développement)
-  if (route.path === '/inventaires' || route.path === '/demandeFormation') {
+  if (route.path === '/demandeFormation') {
     return false;
   }
   
@@ -380,7 +380,7 @@ const getIconPath = (iconName) => {
 const handleLockedRouteClick = (route) => {
   if (!isRouteAccessible(route)) {
     // Si la route est bloquée (en développement), ne rien faire ou afficher un message
-    if (route.path === '/inventaires' || route.path === '/demandeFormation') {
+    if (route.path === '/demandeFormation') {
       // Les routes en développement sont bloquées
       return;
     }
