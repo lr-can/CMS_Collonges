@@ -43,35 +43,35 @@
                 <p>
                     <span class="bold">Médicaments :<br></span> {{ detailData.idMedicamentsList ? detailData.idMedicamentsList.length : 'Aucun' }}
                 </p>
-                <div>
-                    <span class="bold">Prescripteur :</span>
-                    <div class="doctor-card">
-                        <div class="doctor-card-name">{{ formatDoctorDisplayName(detailData.medecinPrescripteur) }}</div>
-                        <div class="doctor-card-rpps">RPPS : {{ formatDoctorRpps(detailData.medecinPrescripteur) }}</div>
-                        <div class="doctor-card-row">
-                            <span class="card-label">Spécialité</span>
-                            <span>{{ formatDoctorSpeciality(detailData.medecinPrescripteur) }}</span>
-                        </div>
-                        <div class="doctor-card-row">
-                            <span class="card-label">Structure</span>
-                            <span>{{ formatDoctorStructure(detailData.medecinPrescripteur) }}</span>
-                        </div>
-                        <div class="doctor-card-row">
-                            <span class="card-label">Ville</span>
-                            <span>{{ formatDoctorCity(detailData.medecinPrescripteur) }}</span>
-                        </div>
-                        <div class="doctor-card-row">
-                            <span class="card-label">Téléphone</span>
-                            <span>{{ formatDoctorPhone(detailData.medecinPrescripteur) }}</span>
-                        </div>
-                    </div>
-                </div>
                 <p>
                     <span class="bold">Effets secondaires :<br></span> {{ detailData.effetsSecondaires != null ? detailData.effetsSecondaires : 'Aucun' }}
                 </p>
                 <p>
                     <span class="bold">Commentaire :<br></span> {{ detailData.commentaire != null ? detailData.commentaire : 'Aucun' }}
                 </p>
+            </div>
+            <div class="subtitle">Médecin</div>
+            <div>
+                <div class="doctor-card">
+                    <div class="doctor-card-name">{{ formatDoctorDisplayName(detailData.medecinPrescripteur) }}</div>
+                    <div class="doctor-card-rpps">RPPS : {{ formatDoctorRpps(detailData.medecinPrescripteur) }}</div>
+                    <div class="doctor-card-row">
+                        <span class="card-label">Spécialité</span>
+                        <span>{{ formatDoctorSpeciality(detailData.medecinPrescripteur) }}</span>
+                    </div>
+                    <div class="doctor-card-row">
+                        <span class="card-label">Structure</span>
+                        <span>{{ formatDoctorStructure(detailData.medecinPrescripteur) }}</span>
+                    </div>
+                    <div class="doctor-card-row">
+                        <span class="card-label">Ville</span>
+                        <span>{{ formatDoctorCity(detailData.medecinPrescripteur) }}</span>
+                    </div>
+                    <div class="doctor-card-row">
+                        <span class="card-label">Téléphone</span>
+                        <span>{{ formatDoctorPhone(detailData.medecinPrescripteur) }}</span>
+                    </div>
+                </div>
             </div>
         </div>
     <div class="subtitle">
@@ -115,22 +115,6 @@
                             <div class="utilisationsASUP-card-row">
                                 <span class="card-label">Prescripteur</span>
                                 <span>{{ formatDoctorDisplayName(item.medecinPrescripteur) }}</span>
-                            </div>
-                            <div class="utilisationsASUP-card-row">
-                                <span class="card-label">Spécialité</span>
-                                <span>{{ formatDoctorSpeciality(item.medecinPrescripteur) }}</span>
-                            </div>
-                            <div class="utilisationsASUP-card-row">
-                                <span class="card-label">Structure</span>
-                                <span>{{ formatDoctorStructure(item.medecinPrescripteur) }}</span>
-                            </div>
-                            <div class="utilisationsASUP-card-row">
-                                <span class="card-label">Ville</span>
-                                <span>{{ formatDoctorCity(item.medecinPrescripteur) }}</span>
-                            </div>
-                            <div class="utilisationsASUP-card-row">
-                                <span class="card-label">Téléphone</span>
-                                <span>{{ formatDoctorPhone(item.medecinPrescripteur) }}</span>
                             </div>
                         </div>
                     </div>
