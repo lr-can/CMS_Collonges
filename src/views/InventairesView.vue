@@ -72,20 +72,25 @@
           v-for="group in groupedAgents"
           :key="group.key"
           class="agent-group"
+          :class="{ empty: group.items.length === 0 }"
         >
           <button
             type="button"
             class="agent-group-title"
             :aria-expanded="expandedStatus[group.key]"
-            @click="toggleGroup(group.key)"
+            :disabled="group.items.length === 0"
+            @click="toggleGroup(group)"
           >
-            <span class="status-dot" :style="{ backgroundColor: group.color }"></span>
+            <span
+              class="status-dot"
+              :style="{ backgroundColor: group.items.length === 0 ? '#d1d5db' : group.color }"
+            ></span>
             <span class="group-label">{{ group.label }}</span>
-            <span class="toggle-indicator">
-              {{ expandedStatus[group.key] ? 'Réduire' : 'Afficher' }}
+            <span class="toggle-indicator" :class="{ muted: group.items.length === 0 }">
+              {{ group.items.length === 0 ? 'Aucun agent disponible' : (expandedStatus[group.key] ? 'Réduire' : 'Afficher') }}
             </span>
           </button>
-          <div v-if="expandedStatus[group.key]" class="agent-grid">
+          <div v-if="group.items.length > 0 && expandedStatus[group.key]" class="agent-grid">
             <button
               v-for="agent in group.items"
               :key="agent.matricule"
@@ -106,7 +111,7 @@
                 </div>
               </div>
               <div class="agent-matricule">
-                {{ agent.matricule }}
+                <span class="matricule-chip">{{ agent.matricule }}</span>
               </div>
             </button>
           </div>
@@ -210,6 +215,15 @@
             <div class="section-header">
               <h3>Zones d'inventaire</h3>
             </div>
+            <div class="zones-progress">
+              <div class="zones-progress-header">
+                <span>Progression des zones</span>
+                <span>{{ zonesProgress.done }} / {{ zonesProgress.total }} terminées</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill zones-progress-fill" :style="{ width: `${zonesProgress.percent}%` }"></div>
+              </div>
+            </div>
             <div class="zones-grid">
               <button
                 v-for="zone in zonesList"
@@ -220,40 +234,61 @@
                 :disabled="!canOpenZone(zone)"
                 @click="openZone(zone)"
               >
-                <div class="zone-title">{{ zone.nomZone }}</div>
-                <div class="zone-status">
-                  <template v-if="zone.status === 'LOCKED'">
-                    <template v-if="canResumeZone(zone)">
-                      <span class="zone-highlight">Reprendre cette section</span>
-                    </template>
-                    <template v-else>
-                      Cette section est verrouillée par
-                      <span class="zone-agent">
-                        <img
-                          v-if="zone.infoInventateur?.grade"
-                          :src="gradeImage(zone.infoInventateur.grade)"
-                          :alt="zone.infoInventateur.grade"
-                          class="zone-grade-icon"
-                        />
-                        <span>{{ formatAgentDisplay(zone.infoInventateur) }}</span>
-                      </span>
-                    </template>
-                  </template>
-                  <template v-else-if="zone.status === 'DONE'">
-                    Réalisé par
-                    <span class="zone-agent">
-                      <img
-                        v-if="zone.infoInventateur?.grade"
-                        :src="gradeImage(zone.infoInventateur.grade)"
-                        :alt="zone.infoInventateur.grade"
-                        class="zone-grade-icon"
-                      />
-                      <span>{{ formatAgentDisplay(zone.infoInventateur) }}</span>
-                    </span>
-                  </template>
-                  <template v-else>
-                    Disponible
-                  </template>
+                <div class="zone-card-main">
+                  <div class="zone-icon-box">
+                    <img
+                      v-if="getZoneIconUrl(zone) && !zoneIconErrors[zone.key]"
+                      :src="getZoneIconUrl(zone)"
+                      :alt="`Illustration ${zone.nomZone}`"
+                      class="zone-illustration"
+                      @error="markZoneIconError(zone.key)"
+                    />
+                    <div v-else class="zone-icon-placeholder"></div>
+                  </div>
+                  <div class="zone-card-content">
+                    <div class="zone-title-row">
+                      <div class="zone-title-wrap">
+                        <div class="zone-title">{{ zone.nomZone }}</div>
+                        <div class="zone-result-tag" :class="zoneResultClass(zone)">
+                          {{ zoneResultLabel(zone) }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="zone-status">
+                      <template v-if="zone.status === 'LOCKED'">
+                        <template v-if="canResumeZone(zone)">
+                          <span class="zone-highlight">Reprendre cette section</span>
+                        </template>
+                        <template v-else>
+                          Cette section est verrouillée par
+                          <span class="zone-agent">
+                            <img
+                              v-if="zone.infoInventateur?.grade"
+                              :src="gradeImage(zone.infoInventateur.grade)"
+                              :alt="zone.infoInventateur.grade"
+                              class="zone-grade-icon"
+                            />
+                            <span>{{ formatAgentDisplay(zone.infoInventateur) }}</span>
+                          </span>
+                        </template>
+                      </template>
+                      <template v-else-if="zone.status === 'DONE'">
+                        Terminée · reprise possible
+                        <span class="zone-agent">
+                          <img
+                            v-if="zone.infoInventateur?.grade"
+                            :src="gradeImage(zone.infoInventateur.grade)"
+                            :alt="zone.infoInventateur.grade"
+                            class="zone-grade-icon"
+                          />
+                          <span>{{ formatAgentDisplay(zone.infoInventateur) }}</span>
+                        </span>
+                      </template>
+                      <template v-else>
+                        Disponible
+                      </template>
+                    </div>
+                  </div>
                 </div>
               </button>
             </div>
@@ -266,7 +301,7 @@
                 v-for="summary in globalSummaryItems"
                 :key="summary.item.codeMateriel || `${summary.zoneKey}-${summary.index}`"
                 type="button"
-                class="zone-summary-card"
+                class="zone-summary-card click-feedback"
                 @click="editGlobalItem(summary)"
               >
                 <div class="zone-summary-name">{{ summary.item.nomMateriel }}</div>
@@ -282,12 +317,12 @@
               </button>
             </div>
             <div class="zone-final">
-              <label class="input-label">Commentaire</label>
+              <label class="input-label">Commentaire global (optionnel)</label>
               <textarea
                 class="text-area"
                 v-model="inventaireCommentaire"
                 rows="3"
-                placeholder="Ajouter un commentaire global"
+                placeholder="Ajouter un commentaire de fin d'inventaire"
               ></textarea>
               <button
                 type="button"
@@ -323,7 +358,7 @@
                   <input
                     id="kilometrage"
                     type="number"
-                    class="text-input"
+                    class="text-input compact-number-input"
                     v-model="etatVehicule.kilometrage"
                     @change="saveEtatVehicule"
                     placeholder="Km"
@@ -477,7 +512,7 @@
                       v-for="summary in zoneSummaryItems"
                       :key="summary.item.codeMateriel || summary.index"
                       type="button"
-                      class="zone-summary-card"
+                      class="zone-summary-card click-feedback"
                       @click="editZoneItem(summary.index)"
                     >
                       <div class="zone-summary-name">{{ summary.item.nomMateriel }}</div>
@@ -493,38 +528,20 @@
                     </button>
                   </div>
                 </div>
-                <div class="zone-final">
-                  <label class="input-label">Commentaire</label>
-                  <textarea
-                    class="text-area"
-                    v-model="inventaireCommentaire"
-                    rows="3"
-                    placeholder="Ajouter un commentaire global"
-                  ></textarea>
-                  <button
-                    type="button"
-                    class="launch-button"
-                    :disabled="!allZonesDone || submitLoading"
-                    @click="submitInventaire"
-                  >
-                    {{ submitLoading ? 'Validation...' : 'Valider l\'inventaire' }}
-                  </button>
-                  <div v-if="!allZonesDone" class="zone-summary-hint">
-                    Toutes les zones doivent être terminées avant validation.
-                  </div>
-                  <div v-if="submitError" class="error-message">
-                    {{ submitError }}
-                  </div>
-                </div>
                 <button type="button" class="launch-button zone-close-button" @click="closeZone">
-                  Fermer
+                  Revenir au menu
                 </button>
               </div>
               <div v-else class="item-content">
                   <div class="swipe-card-wrapper">
                   <div
                     class="swipe-card"
-                    :class="{ dragging: swipeActive, disabled: showIssueForm }"
+                    :class="{
+                      dragging: swipeActive,
+                      disabled: showIssueForm,
+                      'tone-ok': swipeOffset >= 20,
+                      'tone-pb': swipeOffset <= -20
+                    }"
                     :style="swipeCardStyle"
                       @pointerdown="onSwipeStart"
                       @pointermove="onSwipeMove"
@@ -534,9 +551,6 @@
                       @touchmove="onSwipeTouchMove"
                       @touchend="handleSwipeEnd"
                   >
-                    <div class="swipe-overlay swipe-left" :style="{ opacity: swipeLeftOpacity }">Problème</div>
-                    <div class="swipe-overlay swipe-right" :style="{ opacity: swipeRightOpacity }">OK</div>
-
                     <div class="item-chip">{{ selectedZone.nomZone }}</div>
                     <div class="item-title">{{ currentItem.item.nomMateriel }}</div>
                     <div class="item-meta">
@@ -627,28 +641,25 @@
 
                 <div v-if="showIssueForm" class="issue-form">
                   <div class="special-title">Signaler un problème</div>
-                  <label class="issue-option">
-                    <input type="checkbox" v-model="issueSelections.reserve" />
-                    Matériel manquant, ajout depuis la réserve
-                  </label>
-                  <label class="issue-option">
-                    <input type="checkbox" v-model="issueSelections.commande" />
-                    Matériel manquant, à commander
-                  </label>
-                  <label v-if="String(currentItem.item.isPeremption) === '1'" class="issue-option">
-                    <input type="checkbox" v-model="issueSelections.peremption" />
-                    Date de péremption &lt; 2 mois
-                  </label>
-                  <label class="issue-option">
-                    <input type="checkbox" v-model="issueSelections.defectueux" />
-                    Matériel défectueux
-                  </label>
+                  <div class="issue-cards-grid">
+                    <button
+                      v-for="option in issueOptions"
+                      :key="option.key"
+                      type="button"
+                      class="issue-card"
+                      :class="{ active: issueSelections[option.key] }"
+                      @click="toggleIssueOption(option.key)"
+                    >
+                      <div class="issue-card-title">{{ option.title }}</div>
+                      <div class="issue-card-description">{{ option.description }}</div>
+                    </button>
+                  </div>
 
                   <div v-if="issueSelections.reserve || issueSelections.peremption" class="issue-field">
                     <label class="input-label">Indiquez le nombre d'items pris depuis la réserve :</label>
                     <input
                       type="number"
-                      class="text-input"
+                      class="text-input compact-number-input"
                       v-model="issueReserveCount"
                       min="0"
                     />
@@ -676,9 +687,6 @@
                 <div class="item-actions">
                   <button type="button" class="return-button" @click="goToPreviousItem">
                     Précédent
-                  </button>
-                  <button type="button" class="launch-button" @click="cancelPreviousItem">
-                    Annuler l'item précédent
                   </button>
                 </div>
 
@@ -874,8 +882,10 @@ const expandedStatus = ref({
   IN: false
 });
 
-const toggleGroup = (statusKey) => {
-  expandedStatus.value[statusKey] = !expandedStatus.value[statusKey];
+const toggleGroup = (group) => {
+  if (!group?.key) return;
+  if (!Array.isArray(group.items) || group.items.length === 0) return;
+  expandedStatus.value[group.key] = !expandedStatus.value[group.key];
 };
 
 const canLaunch = computed(() => {
@@ -925,6 +935,39 @@ const zonesList = computed(() => {
   });
 });
 
+const zoneIconErrors = ref({});
+const zonesProgress = computed(() => {
+  const total = zonesList.value.length;
+  const done = zonesList.value.filter((zone) => zone.status === 'DONE').length;
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { total, done, percent };
+});
+
+const zoneHasProblem = (zone) => {
+  if (!zone) return false;
+  const materiels = Array.isArray(zone.materiels) ? zone.materiels : [];
+  const relevant = materiels.filter((item) => String(item.noCheck) !== '1');
+  return relevant.some((item) => item.statutInventaire === 'NOK');
+};
+
+const zoneResultLabel = (zone) => {
+  if (!zone) return 'À faire';
+  if (zone.status === 'DONE') {
+    return zoneHasProblem(zone) ? 'Problème' : 'Okay';
+  }
+  if (zone.status === 'LOCKED') return 'En cours';
+  return 'À faire';
+};
+
+const zoneResultClass = (zone) => {
+  if (!zone) return 'is-pending';
+  if (zone.status === 'DONE') {
+    return zoneHasProblem(zone) ? 'is-problem' : 'is-okay';
+  }
+  if (zone.status === 'LOCKED') return 'is-progress';
+  return 'is-pending';
+};
+
 const isInventaireurConnected = computed(() => Boolean(connectedMatricule.value));
 const selectedZoneKey = ref('');
 const selectedZone = computed(() => {
@@ -946,6 +989,29 @@ const issueSelections = ref({
 });
 const issueComment = ref('');
 const issueReserveCount = ref('');
+const issueOptionDefinitions = [
+  {
+    key: 'reserve',
+    title: 'Réserve',
+    description: 'Matériel manquant, ajout depuis la réserve'
+  },
+  {
+    key: 'commande',
+    title: 'Commande',
+    description: 'Matériel manquant, à commander'
+  },
+  {
+    key: 'peremption',
+    title: 'Péremption',
+    description: 'Date de péremption < 2 mois',
+    peremptionOnly: true
+  },
+  {
+    key: 'defectueux',
+    title: 'Défectueux',
+    description: 'Matériel défectueux'
+  }
+];
 const inventaireCommentaire = ref('');
 const submitError = ref('');
 const submitLoading = ref(false);
@@ -1001,19 +1067,16 @@ const swipeCardStyle = computed(() => {
   };
 });
 
-const swipeLeftOpacity = computed(() => {
-  if (swipeOffset.value >= 0) return 0;
-  return Math.min(Math.abs(swipeOffset.value) / 120, 1);
-});
-
-const swipeRightOpacity = computed(() => {
-  if (swipeOffset.value <= 0) return 0;
-  return Math.min(Math.abs(swipeOffset.value) / 120, 1);
-});
-
 const currentItem = computed(() => {
   if (!zoneItems.value.length) return null;
   return zoneItems.value[currentItemIndex.value] || null;
+});
+
+const issueOptions = computed(() => {
+  return issueOptionDefinitions.filter((option) => {
+    if (!option.peremptionOnly) return true;
+    return String(currentItem.value?.item?.isPeremption) === '1';
+  });
 });
 
 const zoneSummaryItems = computed(() => {
@@ -1096,6 +1159,41 @@ const mapInventaireVehicule = (rawData) => {
 
 const normalizeMatricule = (matricule) => {
   return String(matricule || '').trim().toUpperCase();
+};
+
+const normalizeAssetPart = (value) => {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
+
+const formatEnginAssetName = (value) => {
+  return normalizeAssetPart(value)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+};
+
+const formatZoneAssetName = (value) => {
+  return normalizeAssetPart(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+};
+
+const getZoneIconUrl = (zone) => {
+  if (!zone) return '';
+  const enginSlug = formatEnginAssetName(inventaireData.value?.vehicule || selectedVehicle.value);
+  const zoneSlug = formatZoneAssetName(zone.codeZone || zone.key || zone.nomZone);
+  if (!enginSlug || !zoneSlug) return '';
+  return `https://github.com/lr-can/affichageCT/blob/main/${enginSlug}_${zoneSlug}.png?raw=true`;
+};
+
+const markZoneIconError = (zoneKey) => {
+  if (!zoneKey) return;
+  zoneIconErrors.value = {
+    ...zoneIconErrors.value,
+    [zoneKey]: true
+  };
 };
 
 const formatDateTime = (value) => {
@@ -1235,7 +1333,6 @@ const zoneStatusClass = (zone) => {
 
 const canOpenZone = (zone) => {
   if (!zone) return false;
-  if (zone.status === 'DONE') return false;
   if (zone.status === 'LOCKED') {
     return canResumeZone(zone);
   }
@@ -1339,6 +1436,13 @@ watch(
 );
 
 watch(
+  () => inventaireData.value?.vehicule || selectedVehicle.value,
+  () => {
+    zoneIconErrors.value = {};
+  }
+);
+
+watch(
   () => selectedZoneKey.value,
   () => {
     resetItemState();
@@ -1419,6 +1523,11 @@ const openZone = async (zone) => {
   };
 
   try {
+    if (zone.status === 'DONE') {
+      const confirmed = window.confirm('Confirmez la prise en charge de la zone concernée');
+      if (!confirmed) return;
+      await update(dbRef(db, zonePath), { infoInventateur });
+    }
     if (zone.status === 'PENDING') {
       await update(dbRef(db, zonePath), {
         status: 'LOCKED',
@@ -1619,6 +1728,14 @@ const buildOkComment = () => {
   return comments.join(' | ');
 };
 
+const toggleIssueOption = (key) => {
+  if (!Object.prototype.hasOwnProperty.call(issueSelections.value, key)) {
+    return;
+  }
+  issueSelections.value[key] = !issueSelections.value[key];
+  itemError.value = '';
+};
+
 const submitIssue = async () => {
   if (!currentItem.value) return;
   const selected = issueSelections.value;
@@ -1669,26 +1786,6 @@ const goToPreviousItem = () => {
   }
 };
 
-const cancelPreviousItem = async () => {
-  if (!zoneItems.value.length) return;
-  const prevIndex = getPreviousIndex(currentItemIndex.value - 1);
-  if (prevIndex < 0) return;
-  try {
-    await update(
-      dbRef(db, `inventaire/zones/${selectedZone.value.key}/materiels/${zoneItems.value[prevIndex].index}`),
-      {
-        statutInventaire: '',
-        commentaireInventaire: ''
-      }
-    );
-    currentItemIndex.value = prevIndex;
-    resetItemState();
-  } catch (error) {
-    console.error('Erreur annulation item:', error);
-    itemError.value = 'Impossible d\'annuler l\'item précédent.';
-  }
-};
-
 const editGlobalItem = (summary) => {
   if (!summary?.zoneKey) return;
   selectedZoneKey.value = summary.zoneKey;
@@ -1720,11 +1817,13 @@ const buildInventairePayload = () => {
     if (zone.codeZone === 'ETAT_VEHICULE') return;
     const materiels = zone.materiels || [];
     materiels.forEach((item) => {
-      if (item.statutInventaire === 'NOK') {
+      const commentaireInventaire = String(item.commentaireInventaire || '').trim();
+      const hasCommentaire = Boolean(commentaireInventaire);
+      if (item.statutInventaire === 'NOK' || hasCommentaire) {
         inventaire[item.codeMateriel || item.nomMateriel] = {
           nomMateriel: item.nomMateriel || '',
           zone: zone.nomZone || zone.codeZone,
-          commentaire: item.commentaireInventaire || ''
+          commentaire: commentaireInventaire
         };
       }
     });
@@ -2022,6 +2121,13 @@ const launchInventaire = async () => {
   line-height: 1.2;
   height: 42px;
 }
+
+.compact-number-input {
+  flex: 0 0 150px;
+  max-width: 170px;
+  height: 36px;
+  padding: 0.45rem 0.65rem;
+}
 .zone-top-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2123,6 +2229,11 @@ const launchInventaire = async () => {
   background: #f9fafb;
 }
 
+.agent-group.empty {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
 .agent-group-title {
   width: 100%;
   display: flex;
@@ -2139,6 +2250,11 @@ const launchInventaire = async () => {
   cursor: pointer;
 }
 
+.agent-group-title:disabled {
+  cursor: not-allowed;
+  color: #9ca3af;
+}
+
 .group-label {
   flex: 1 1 auto;
   min-width: 0;
@@ -2150,6 +2266,10 @@ const launchInventaire = async () => {
   font-size: 0.85rem;
   font-weight: 600;
   color: #2563eb;
+}
+
+.toggle-indicator.muted {
+  color: #9ca3af;
 }
 
 .agent-grid {
@@ -2191,6 +2311,8 @@ const launchInventaire = async () => {
 .agent-grade-icon {
   width: 28px;
   height: auto;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 .agent-name {
@@ -2199,15 +2321,51 @@ const launchInventaire = async () => {
 }
 
 .agent-matricule {
-  font-size: 0.9rem;
-  color: #6b7280;
-  font-style: italic;
+  display: flex;
+  align-items: center;
+}
+
+.matricule-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .zones-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.zones-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.zones-progress-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.zones-progress-fill {
+  background: linear-gradient(90deg, #2563eb 0%, #16a34a 100%);
 }
 
 .zones-grid {
@@ -2223,19 +2381,109 @@ const launchInventaire = async () => {
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
   text-align: left;
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.zone-card:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
 }
 
 .zone-card:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.7;
+}
+
+.zone-card-main {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.zone-icon-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zone-illustration {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.zone-icon-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background: #d1d5db;
+}
+
+.zone-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.zone-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.zone-title-wrap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.zone-result-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.zone-result-tag.is-okay {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.zone-result-tag.is-problem {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.zone-result-tag.is-progress {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.zone-result-tag.is-pending {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .zone-title {
   font-weight: 700;
   color: #111827;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .zone-status {
@@ -2268,13 +2516,12 @@ const launchInventaire = async () => {
 
 .zone-locked {
   border-color: #f59e0b;
-  background: #fff7ed;
+  background: #ffffff;
 }
 
 .zone-done {
   border-color: #10b981;
-  background: #ecfdf5;
-  opacity: 0.5;
+  background: #ffffff;
 }
 
 .zone-pending {
@@ -2367,6 +2614,8 @@ const launchInventaire = async () => {
   font-size: 1.4rem;
   font-weight: 700;
   color: #111827;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .item-meta {
@@ -2494,12 +2743,39 @@ const launchInventaire = async () => {
   gap: 0.6rem;
 }
 
-.issue-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  color: #1f2937;
+.issue-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.55rem;
+}
+
+.issue-card {
+  text-align: left;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.7rem 0.75rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.issue-card:hover {
+  border-color: #93c5fd;
+}
+
+.issue-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.issue-card-title {
+  font-weight: 700;
+  color: #111827;
+}
+
+.issue-card-description {
+  color: #4b5563;
+  font-size: 0.88rem;
 }
 
 .issue-field {
@@ -2528,7 +2804,7 @@ const launchInventaire = async () => {
   border-radius: 18px;
   padding: 1.2rem;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
   position: relative;
 }
 
@@ -2540,29 +2816,12 @@ const launchInventaire = async () => {
   opacity: 0.7;
 }
 
-.swipe-overlay {
-  position: absolute;
-  top: 16px;
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.75rem;
-  opacity: 0;
-  transition: opacity 0.1s ease;
+.swipe-card.tone-ok {
+  background: #effaf4;
 }
 
-.swipe-left {
-  left: 16px;
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.swipe-right {
-  right: 16px;
-  background: #dcfce7;
-  color: #166534;
+.swipe-card.tone-pb {
+  background: #fef2f2;
 }
 
 .swipe-hint {
@@ -2640,6 +2899,13 @@ const launchInventaire = async () => {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.zone-summary-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
 }
 
 .zone-summary-name {
@@ -2791,6 +3057,17 @@ const launchInventaire = async () => {
   cursor: not-allowed;
 }
 
+.agent-card:active,
+.zone-card:active,
+.vehicle-item:active,
+.zone-summary-card:active,
+.issue-card:active,
+.launch-button:active,
+.return-button:active,
+.disconnect-button:active {
+  transform: scale(0.98);
+}
+
 .launch-hint {
   margin: 0;
   color: #6b7280;
@@ -2816,16 +3093,75 @@ const launchInventaire = async () => {
 
 @media (max-width: 720px) {
   .inventaire-container {
-    padding: 1.5rem 0.3rem 2.5rem;
+    padding: 1rem 0.45rem 2rem;
+    gap: 1.25rem;
   }
 
   .inventaire-section {
-    padding: 0rem;
+    padding: 0.95rem;
+    gap: 1rem;
+    border-radius: 12px;
   }
 
   .section-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .section-header h2,
+  .section-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    overflow-wrap: anywhere;
+  }
+
+  .selection-count {
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+
+  .zones-grid,
+  .agent-grid,
+  .zone-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .zone-card-main {
+    grid-template-columns: 48px 1fr;
+    gap: 0.6rem;
+  }
+
+  .zone-icon-box {
+    width: 48px;
+    height: 48px;
+  }
+
+  .zone-status {
+    font-size: 0.88rem;
+  }
+
+  .item-title {
+    font-size: 1.22rem;
+  }
+
+  .zone-detail {
+    padding: 1rem;
+  }
+
+  .connexion-input {
+    flex-direction: column;
+  }
+
+  .launch-button,
+  .return-button,
+  .disconnect-button {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .compact-number-input {
+    flex: 1 1 auto;
+    max-width: 100%;
   }
 }
 </style>
