@@ -72,20 +72,25 @@
           v-for="group in groupedAgents"
           :key="group.key"
           class="agent-group"
+          :class="{ empty: group.items.length === 0 }"
         >
           <button
             type="button"
             class="agent-group-title"
             :aria-expanded="expandedStatus[group.key]"
-            @click="toggleGroup(group.key)"
+            :disabled="group.items.length === 0"
+            @click="toggleGroup(group)"
           >
-            <span class="status-dot" :style="{ backgroundColor: group.color }"></span>
+            <span
+              class="status-dot"
+              :style="{ backgroundColor: group.items.length === 0 ? '#d1d5db' : group.color }"
+            ></span>
             <span class="group-label">{{ group.label }}</span>
-            <span class="toggle-indicator">
-              {{ expandedStatus[group.key] ? 'Réduire' : 'Afficher' }}
+            <span class="toggle-indicator" :class="{ muted: group.items.length === 0 }">
+              {{ group.items.length === 0 ? 'Aucun agent disponible' : (expandedStatus[group.key] ? 'Réduire' : 'Afficher') }}
             </span>
           </button>
-          <div v-if="expandedStatus[group.key]" class="agent-grid">
+          <div v-if="group.items.length > 0 && expandedStatus[group.key]" class="agent-grid">
             <button
               v-for="agent in group.items"
               :key="agent.matricule"
@@ -242,12 +247,11 @@
                   </div>
                   <div class="zone-card-content">
                     <div class="zone-title-row">
-                      <div class="zone-title">{{ zone.nomZone }}</div>
-                      <div
-                        class="zone-status-pill"
-                        :class="zone.status === 'DONE' ? 'is-ok' : zone.status === 'LOCKED' ? 'is-locked' : 'is-pending'"
-                      >
-                        PB &lt;&gt; OK
+                      <div class="zone-title-wrap">
+                        <div class="zone-title">{{ zone.nomZone }}</div>
+                        <div class="zone-result-tag" :class="zoneResultClass(zone)">
+                          {{ zoneResultLabel(zone) }}
+                        </div>
                       </div>
                     </div>
                     <div class="zone-status">
@@ -548,14 +552,7 @@
                       @touchend="handleSwipeEnd"
                   >
                     <div class="item-chip">{{ selectedZone.nomZone }}</div>
-                    <div class="item-title-row">
-                      <div class="item-title">{{ currentItem.item.nomMateriel }}</div>
-                      <div class="item-state-switch" :class="itemDecisionClass">
-                        <span>PB</span>
-                        <span class="item-state-separator">&lt;&gt;</span>
-                        <span>OK</span>
-                      </div>
-                    </div>
+                    <div class="item-title">{{ currentItem.item.nomMateriel }}</div>
                     <div class="item-meta">
                       Quantité : {{ currentItem.item.qteMateriel }}
                     </div>
@@ -885,8 +882,10 @@ const expandedStatus = ref({
   IN: false
 });
 
-const toggleGroup = (statusKey) => {
-  expandedStatus.value[statusKey] = !expandedStatus.value[statusKey];
+const toggleGroup = (group) => {
+  if (!group?.key) return;
+  if (!Array.isArray(group.items) || group.items.length === 0) return;
+  expandedStatus.value[group.key] = !expandedStatus.value[group.key];
 };
 
 const canLaunch = computed(() => {
@@ -943,6 +942,31 @@ const zonesProgress = computed(() => {
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
   return { total, done, percent };
 });
+
+const zoneHasProblem = (zone) => {
+  if (!zone) return false;
+  const materiels = Array.isArray(zone.materiels) ? zone.materiels : [];
+  const relevant = materiels.filter((item) => String(item.noCheck) !== '1');
+  return relevant.some((item) => item.statutInventaire === 'NOK');
+};
+
+const zoneResultLabel = (zone) => {
+  if (!zone) return 'À faire';
+  if (zone.status === 'DONE') {
+    return zoneHasProblem(zone) ? 'Problème' : 'Okay';
+  }
+  if (zone.status === 'LOCKED') return 'En cours';
+  return 'À faire';
+};
+
+const zoneResultClass = (zone) => {
+  if (!zone) return 'is-pending';
+  if (zone.status === 'DONE') {
+    return zoneHasProblem(zone) ? 'is-problem' : 'is-okay';
+  }
+  if (zone.status === 'LOCKED') return 'is-progress';
+  return 'is-pending';
+};
 
 const isInventaireurConnected = computed(() => Boolean(connectedMatricule.value));
 const selectedZoneKey = ref('');
@@ -1055,12 +1079,6 @@ const issueOptions = computed(() => {
   });
 });
 
-const itemDecisionClass = computed(() => {
-  if (swipeOffset.value >= 20) return 'ok';
-  if (swipeOffset.value <= -20) return 'pb';
-  return '';
-});
-
 const zoneSummaryItems = computed(() => {
   if (!selectedZone.value) return [];
   return zoneItems.value.map(({ item, index }) => ({
@@ -1143,10 +1161,20 @@ const normalizeMatricule = (matricule) => {
   return String(matricule || '').trim().toUpperCase();
 };
 
-const slugifyForZoneAsset = (value) => {
+const normalizeAssetPart = (value) => {
   return String(value || '')
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '');
+};
+
+const formatEnginAssetName = (value) => {
+  return normalizeAssetPart(value)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+};
+
+const formatZoneAssetName = (value) => {
+  return normalizeAssetPart(value)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
@@ -1154,8 +1182,8 @@ const slugifyForZoneAsset = (value) => {
 
 const getZoneIconUrl = (zone) => {
   if (!zone) return '';
-  const enginSlug = slugifyForZoneAsset(inventaireData.value?.vehicule || selectedVehicle.value);
-  const zoneSlug = slugifyForZoneAsset(zone.codeZone || zone.key || zone.nomZone);
+  const enginSlug = formatEnginAssetName(inventaireData.value?.vehicule || selectedVehicle.value);
+  const zoneSlug = formatZoneAssetName(zone.codeZone || zone.key || zone.nomZone);
   if (!enginSlug || !zoneSlug) return '';
   return `https://github.com/lr-can/affichageCT/blob/main/${enginSlug}_${zoneSlug}.png?raw=true`;
 };
@@ -1789,11 +1817,13 @@ const buildInventairePayload = () => {
     if (zone.codeZone === 'ETAT_VEHICULE') return;
     const materiels = zone.materiels || [];
     materiels.forEach((item) => {
-      if (item.statutInventaire === 'NOK') {
+      const commentaireInventaire = String(item.commentaireInventaire || '').trim();
+      const hasCommentaire = Boolean(commentaireInventaire);
+      if (item.statutInventaire === 'NOK' || hasCommentaire) {
         inventaire[item.codeMateriel || item.nomMateriel] = {
           nomMateriel: item.nomMateriel || '',
           zone: zone.nomZone || zone.codeZone,
-          commentaire: item.commentaireInventaire || ''
+          commentaire: commentaireInventaire
         };
       }
     });
@@ -2199,6 +2229,11 @@ const launchInventaire = async () => {
   background: #f9fafb;
 }
 
+.agent-group.empty {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
 .agent-group-title {
   width: 100%;
   display: flex;
@@ -2215,6 +2250,11 @@ const launchInventaire = async () => {
   cursor: pointer;
 }
 
+.agent-group-title:disabled {
+  cursor: not-allowed;
+  color: #9ca3af;
+}
+
 .group-label {
   flex: 1 1 auto;
   min-width: 0;
@@ -2226,6 +2266,10 @@ const launchInventaire = async () => {
   font-size: 0.85rem;
   font-weight: 600;
   color: #2563eb;
+}
+
+.toggle-indicator.muted {
+  color: #9ca3af;
 }
 
 .agent-grid {
@@ -2391,35 +2435,46 @@ const launchInventaire = async () => {
 
 .zone-title-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
 }
 
-.zone-status-pill {
+.zone-title-wrap {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem;
-  background: #e5e7eb;
-  color: #4b5563;
-  border-radius: 999px;
-  padding: 0.2rem 0.55rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  white-space: nowrap;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
-.zone-status-pill.is-ok {
+.zone-result-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.zone-result-tag.is-okay {
   background: #dcfce7;
   color: #166534;
 }
 
-.zone-status-pill.is-locked {
+.zone-result-tag.is-problem {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.zone-result-tag.is-progress {
   background: #ffedd5;
   color: #9a3412;
 }
 
-.zone-status-pill.is-pending {
+.zone-result-tag.is-pending {
   background: #dbeafe;
   color: #1d4ed8;
 }
@@ -2427,6 +2482,8 @@ const launchInventaire = async () => {
 .zone-title {
   font-weight: 700;
   color: #111827;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .zone-status {
@@ -2459,12 +2516,12 @@ const launchInventaire = async () => {
 
 .zone-locked {
   border-color: #f59e0b;
-  background: #fff7ed;
+  background: #ffffff;
 }
 
 .zone-done {
   border-color: #10b981;
-  background: #ecfdf5;
+  background: #ffffff;
 }
 
 .zone-pending {
@@ -2553,44 +2610,12 @@ const launchInventaire = async () => {
   font-size: 0.85rem;
 }
 
-.item-title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.65rem;
-}
-
 .item-title {
   font-size: 1.4rem;
   font-weight: 700;
   color: #111827;
-}
-
-.item-state-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: #e5e7eb;
-  color: #4b5563;
-  border-radius: 999px;
-  padding: 0.2rem 0.55rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.item-state-switch.ok {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.item-state-switch.pb {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.item-state-separator {
-  font-weight: 900;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .item-meta {
@@ -3068,16 +3093,75 @@ const launchInventaire = async () => {
 
 @media (max-width: 720px) {
   .inventaire-container {
-    padding: 1.5rem 0.3rem 2.5rem;
+    padding: 1rem 0.45rem 2rem;
+    gap: 1.25rem;
   }
 
   .inventaire-section {
-    padding: 0rem;
+    padding: 0.95rem;
+    gap: 1rem;
+    border-radius: 12px;
   }
 
   .section-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .section-header h2,
+  .section-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    overflow-wrap: anywhere;
+  }
+
+  .selection-count {
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+
+  .zones-grid,
+  .agent-grid,
+  .zone-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .zone-card-main {
+    grid-template-columns: 48px 1fr;
+    gap: 0.6rem;
+  }
+
+  .zone-icon-box {
+    width: 48px;
+    height: 48px;
+  }
+
+  .zone-status {
+    font-size: 0.88rem;
+  }
+
+  .item-title {
+    font-size: 1.22rem;
+  }
+
+  .zone-detail {
+    padding: 1rem;
+  }
+
+  .connexion-input {
+    flex-direction: column;
+  }
+
+  .launch-button,
+  .return-button,
+  .disconnect-button {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .compact-number-input {
+    flex: 1 1 auto;
+    max-width: 100%;
   }
 }
 </style>
