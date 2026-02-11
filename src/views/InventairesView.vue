@@ -14,6 +14,9 @@
       <div v-if="firebaseError" class="error-message">
         {{ firebaseError }}
       </div>
+      <div v-else-if="submitSuccessMessage" class="success-message">
+        {{ submitSuccessMessage }}
+      </div>
       <template v-if="!hasInventaire">
     <section class="inventaire-section">
       <div class="section-header">
@@ -296,28 +299,39 @@
 
           <div v-if="isInventaireurConnected && !selectedZone && allZonesDone" class="zone-summary global-summary">
             <div class="zone-summary-title">Synthèse de l'inventaire</div>
-            <div class="zone-summary-grid">
-              <button
-                v-for="summary in globalSummaryItems"
-                :key="summary.item.codeMateriel || `${summary.zoneKey}-${summary.index}`"
-                type="button"
-                class="zone-summary-card click-feedback"
-                @click="editGlobalItem(summary)"
-              >
-                <div class="zone-summary-name">{{ summary.item.nomMateriel }}</div>
-                <div class="zone-summary-meta">
-                  {{ summary.zoneName }} · {{ summary.item.codeMateriel }} · {{ summary.item.qteMateriel }}
-                </div>
-                <div class="zone-summary-status" :class="summary.status === 'NOK' ? 'nok' : 'ok'">
-                  {{ summary.status || 'PENDING' }}
-                </div>
-                <div v-if="summary.item.commentaireInventaire" class="zone-summary-comment">
-                  {{ summary.item.commentaireInventaire }}
-                </div>
-              </button>
+            <div class="zone-summary-scroll">
+              <div class="zone-summary-scroll-header">
+                <span>Progression du récapitulatif</span>
+                <span>
+                  {{ globalSummaryProgress.done }} / {{ globalSummaryProgress.total }} ({{ globalSummaryProgress.percent }} %)
+                </span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill zones-progress-fill" :style="{ width: `${globalSummaryProgress.percent}%` }"></div>
+              </div>
+              <div class="zone-summary-grid global-summary-grid">
+                <button
+                  v-for="summary in globalSummaryItems"
+                  :key="summary.item.codeMateriel || `${summary.zoneKey}-${summary.index}`"
+                  type="button"
+                  class="zone-summary-card click-feedback"
+                  @click="editGlobalItem(summary)"
+                >
+                  <div class="zone-summary-name">{{ summary.item.nomMateriel }}</div>
+                  <div class="zone-summary-meta">
+                    {{ summary.zoneName }} · {{ summary.item.codeMateriel }} · {{ summary.item.qteMateriel }}
+                  </div>
+                  <div class="zone-summary-status" :class="summary.status === 'NOK' ? 'nok' : 'ok'">
+                    {{ summary.status || 'PENDING' }}
+                  </div>
+                  <div v-if="summary.item.commentaireInventaire" class="zone-summary-comment">
+                    {{ summary.item.commentaireInventaire }}
+                  </div>
+                </button>
+              </div>
             </div>
             <div class="zone-final">
-              <label class="input-label">Commentaire global (optionnel)</label>
+              <label class="input-label">Commentaire global (recommandé)</label>
               <textarea
                 class="text-area"
                 v-model="inventaireCommentaire"
@@ -923,15 +937,27 @@ const agentsByMatricule = computed(() => {
   }, {});
 });
 
+const getZoneSortOrder = (zone) => {
+  if (!zone || zone.status !== 'DONE') return 0;
+  const materiels = Array.isArray(zone.materiels) ? zone.materiels : [];
+  const relevant = materiels.filter((item) => String(item.noCheck) !== '1');
+  const hasProblem = relevant.some((item) => item.statutInventaire === 'NOK');
+  return hasProblem ? 2 : 1;
+};
+
 const zonesList = computed(() => {
   const zones = inventaireData.value?.zones || {};
   return Object.entries(zones).map(([key, zone]) => ({
     key,
     ...zone
   })).sort((a, b) => {
+    const orderDiff = getZoneSortOrder(a) - getZoneSortOrder(b);
+    if (orderDiff !== 0) {
+      return orderDiff;
+    }
     const nameA = a.nomZone || a.codeZone || '';
     const nameB = b.nomZone || b.codeZone || '';
-    return nameA.localeCompare(nameB);
+    return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
   });
 });
 
@@ -979,6 +1005,7 @@ const currentItemIndex = ref(0);
 const swipeOffset = ref(0);
 const swipeActive = ref(false);
 const swipeStartX = ref(0);
+const swipeFromAsupControl = ref(false);
 const itemError = ref('');
 const showIssueForm = ref(false);
 const issueSelections = ref({
@@ -1015,6 +1042,7 @@ const issueOptionDefinitions = [
 const inventaireCommentaire = ref('');
 const submitError = ref('');
 const submitLoading = ref(false);
+const submitSuccessMessage = ref('');
 const o2Level = ref('');
 const dsaLevel = ref(0);
 const asupChecks = ref({});
@@ -1105,6 +1133,15 @@ const globalSummaryItems = computed(() => {
     });
   });
   return items;
+});
+
+const globalSummaryProgress = computed(() => {
+  const total = globalSummaryItems.value.length;
+  const done = globalSummaryItems.value.filter((summary) => {
+    return summary.status === 'OK' || summary.status === 'NOK';
+  }).length;
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { total, done, percent };
 });
 
 const allZonesDone = computed(() => {
@@ -1216,6 +1253,7 @@ const buildZoneKey = (codeZone) => {
 
 function resetItemState() {
   swipeOffset.value = 0;
+  swipeFromAsupControl.value = false;
   itemError.value = '';
   showIssueForm.value = false;
   issueSelections.value = {
@@ -1414,6 +1452,7 @@ watch(
   () => inventaireData.value,
   (newInventaire) => {
     if (!newInventaire) return;
+    submitSuccessMessage.value = '';
     const zoneEtat = newInventaire?.zones?.etat_vehicule?.etatVehicule;
     const legacyEtat = newInventaire?.etatVehicule;
     const newEtat = zoneEtat || legacyEtat;
@@ -1652,6 +1691,7 @@ const handleSwipeEnd = async () => {
   swipeActive.value = false;
   const direction = swipeOffset.value >= 60 ? 'OK' : swipeOffset.value <= -60 ? 'NOK' : '';
   swipeOffset.value = 0;
+  swipeFromAsupControl.value = false;
   if (direction) {
     await handleSwipe(direction);
   }
@@ -1662,29 +1702,46 @@ const isInteractiveTarget = (target) => {
   return Boolean(target.closest('button, input, label, select, textarea, a, .no-swipe'));
 };
 
+const isAsupSwipeTarget = (target) => {
+  if (!target || typeof target.closest !== 'function') return false;
+  return Boolean(target.closest('.asup-checks, .asup-lot, .asup-check'));
+};
+
+const shouldBlockSwipeStart = (target) => {
+  if (!isInteractiveTarget(target)) return false;
+  if (isAsupRequest(currentItem.value?.item) && isAsupSwipeTarget(target)) {
+    return false;
+  }
+  return true;
+};
+
 const onSwipeStart = (event) => {
   if (showIssueForm.value) return;
-  if (isInteractiveTarget(event.target)) return;
+  if (shouldBlockSwipeStart(event.target)) return;
+  swipeFromAsupControl.value = isAsupRequest(currentItem.value?.item) && isAsupSwipeTarget(event.target);
   swipeActive.value = true;
   swipeStartX.value = event.clientX;
 };
 
 const onSwipeMove = (event) => {
   if (!swipeActive.value) return;
-  swipeOffset.value = Math.max(-120, Math.min(120, event.clientX - swipeStartX.value));
+  const minOffset = swipeFromAsupControl.value ? 0 : -120;
+  swipeOffset.value = Math.max(minOffset, Math.min(120, event.clientX - swipeStartX.value));
 };
 
 const onSwipeTouchStart = (event) => {
   if (!event.touches || !event.touches[0]) return;
   if (showIssueForm.value) return;
-  if (isInteractiveTarget(event.target)) return;
+  if (shouldBlockSwipeStart(event.target)) return;
+  swipeFromAsupControl.value = isAsupRequest(currentItem.value?.item) && isAsupSwipeTarget(event.target);
   swipeActive.value = true;
   swipeStartX.value = event.touches[0].clientX;
 };
 
 const onSwipeTouchMove = (event) => {
   if (!swipeActive.value || !event.touches || !event.touches[0]) return;
-  swipeOffset.value = Math.max(-120, Math.min(120, event.touches[0].clientX - swipeStartX.value));
+  const minOffset = swipeFromAsupControl.value ? 0 : -120;
+  swipeOffset.value = Math.max(minOffset, Math.min(120, event.touches[0].clientX - swipeStartX.value));
 };
 
 const validateOkRequirements = () => {
@@ -1834,6 +1891,11 @@ const buildInventairePayload = () => {
 const submitInventaire = async () => {
   if (!inventaireData.value) return;
   submitError.value = '';
+  submitSuccessMessage.value = '';
+
+  const confirmed = window.confirm('Confirmez-vous la validation finale de cet inventaire ?');
+  if (!confirmed) return;
+
   submitLoading.value = true;
 
   try {
@@ -1871,7 +1933,9 @@ const submitInventaire = async () => {
     }
 
     await set(dbRef(db, 'inventaire'), null);
-    closeZone();
+    inventaireCommentaire.value = '';
+    handleDeconnexion();
+    submitSuccessMessage.value = 'Inventaire validé avec succès.';
   } catch (error) {
     console.error('Erreur validation inventaire:', error);
     submitError.value = error.message || 'Impossible de valider l’inventaire.';
@@ -1983,6 +2047,7 @@ const launchInventaire = async () => {
   }
 
   selectionError.value = '';
+  submitSuccessMessage.value = '';
 
   try {
     const inventaireRef = dbRef(db, 'inventaire');
@@ -2884,10 +2949,37 @@ const launchInventaire = async () => {
   color: #111827;
 }
 
+.zone-summary-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.zone-summary-scroll-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  color: #1f2937;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .zone-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.75rem;
+}
+
+.global-summary-grid {
+  grid-template-columns: 1fr;
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .zone-summary-card {
@@ -3040,7 +3132,7 @@ const launchInventaire = async () => {
   padding: 0.75rem 1.5rem;
   border-radius: 10px;
   border: none;
-  background: #111827;
+  background: #2563eb;
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
@@ -3048,7 +3140,7 @@ const launchInventaire = async () => {
 }
 
 .launch-button:hover:not(:disabled) {
-  background: #1f2937;
+  background: #1d4ed8;
   transform: translateY(-1px);
 }
 
