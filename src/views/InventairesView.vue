@@ -945,12 +945,20 @@ const getZoneSortOrder = (zone) => {
   return hasProblem ? 2 : 1;
 };
 
+const isLotPsInventaire = computed(() => {
+  const vehicule = inventaireData.value?.vehicule || selectedVehicle.value || '';
+  return formatEnginAssetName(vehicule) === 'LOTPS';
+});
+
 const zonesList = computed(() => {
   const zones = inventaireData.value?.zones || {};
   return Object.entries(zones).map(([key, zone]) => ({
     key,
     ...zone
-  })).sort((a, b) => {
+  })).filter((zone) => {
+    if (!isLotPsInventaire.value) return true;
+    return zone.codeZone !== 'ETAT_VEHICULE';
+  }).sort((a, b) => {
     const orderDiff = getZoneSortOrder(a) - getZoneSortOrder(b);
     if (orderDiff !== 0) {
       return orderDiff;
@@ -1149,6 +1157,7 @@ const allZonesDone = computed(() => {
   return Object.values(zones).every((zone) => {
     if (!zone) return false;
     if (zone.codeZone === 'ETAT_VEHICULE') {
+      if (isLotPsInventaire.value) return true;
       return zone.status === 'DONE';
     }
     const materiels = Array.isArray(zone.materiels) ? zone.materiels : [];
@@ -1946,7 +1955,7 @@ const submitInventaire = async () => {
     await set(dbRef(db, 'inventaire'), null);
     inventaireCommentaire.value = '';
     handleDeconnexion();
-    submitSuccessMessage.value = 'Inventaire validé avec succès.';
+    submitSuccessMessage.value = 'L\'inventaire a bien été envoyé.';
   } catch (error) {
     console.error('Erreur validation inventaire:', error);
     submitError.value = error.message || 'Impossible de valider l’inventaire.';
@@ -1998,6 +2007,7 @@ const advanceItem = async () => {
 const buildZonesPayload = () => {
   const materiels = inventaireParVehicule.value[selectedVehicle.value] || [];
   const zones = {};
+  const isLotPsVehicule = formatEnginAssetName(selectedVehicle.value) === 'LOTPS';
 
   materiels.forEach((materiel) => {
     const zoneCodeRaw = String(materiel.zoneMateriel || '').trim();
@@ -2038,15 +2048,17 @@ const buildZonesPayload = () => {
     };
   }
 
-  zones.etat_vehicule = {
-    codeZone: 'ETAT_VEHICULE',
-    nomZone: 'Etat du véhicule',
-    inventaireur: null,
-    infoInventateur: null,
-    status: 'PENDING',
-    materiels: [],
-    etatVehicule: defaultEtatVehicule()
-  };
+  if (!isLotPsVehicule) {
+    zones.etat_vehicule = {
+      codeZone: 'ETAT_VEHICULE',
+      nomZone: 'Etat du véhicule',
+      inventaireur: null,
+      infoInventateur: null,
+      status: 'PENDING',
+      materiels: [],
+      etatVehicule: defaultEtatVehicule()
+    };
+  }
 
   return zones;
 };
@@ -2079,9 +2091,12 @@ const launchInventaire = async () => {
         nom: agent.nom,
         prenom: agent.prenom
       })),
-      zones: buildZonesPayload(),
-      etatVehicule: defaultEtatVehicule()
+      zones: buildZonesPayload()
     };
+
+    if (formatEnginAssetName(selectedVehicle.value) !== 'LOTPS') {
+      payload.etatVehicule = defaultEtatVehicule();
+    }
 
     await set(inventaireRef, payload);
     console.log('Lancement inventaire:', payload);
