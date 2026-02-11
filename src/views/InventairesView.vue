@@ -312,7 +312,7 @@
               <div class="zone-summary-grid global-summary-grid">
                 <button
                   v-for="summary in globalSummaryItems"
-                  :key="summary.item.codeMateriel || `${summary.zoneKey}-${summary.index}`"
+                  :key="summary.item.codeMateriel || `${summary.zoneKey}-${summary.materialIndex}`"
                   type="button"
                   class="zone-summary-card click-feedback"
                   @click="editGlobalItem(summary)"
@@ -341,11 +341,14 @@
               <button
                 type="button"
                 class="launch-button"
-                :disabled="submitLoading"
+                :disabled="submitLoading || hasPendingItemsGlobal"
                 @click="submitInventaire"
               >
                 {{ submitLoading ? 'Validation...' : 'Valider l\'inventaire' }}
               </button>
+              <p v-if="hasPendingItemsGlobal" class="launch-hint">
+                Impossible de valider tant qu'il reste du matériel en statut PENDING.
+              </p>
               <div v-if="submitError" class="error-message">
                 {{ submitError }}
               </div>
@@ -524,10 +527,10 @@
                   <div class="zone-summary-grid">
                     <button
                       v-for="summary in zoneSummaryItems"
-                      :key="summary.item.codeMateriel || summary.index"
+                      :key="summary.item.codeMateriel || summary.materialIndex"
                       type="button"
                       class="zone-summary-card click-feedback"
-                      @click="editZoneItem(summary.index)"
+                      @click="editZoneItem(summary.materialIndex)"
                     >
                       <div class="zone-summary-name">{{ summary.item.nomMateriel }}</div>
                       <div class="zone-summary-meta">
@@ -978,6 +981,10 @@ const zonesProgress = computed(() => {
   return { total, done, percent };
 });
 
+const isItemChecked = (item) => {
+  return item?.statutInventaire === 'OK' || item?.statutInventaire === 'NOK';
+};
+
 const zoneHasProblem = (zone) => {
   if (!zone) return false;
   const materiels = Array.isArray(zone.materiels) ? zone.materiels : [];
@@ -1005,6 +1012,7 @@ const zoneResultClass = (zone) => {
 
 const isInventaireurConnected = computed(() => Boolean(connectedMatricule.value));
 const selectedZoneKey = ref('');
+const pendingZoneJump = ref(null);
 const selectedZone = computed(() => {
   if (!selectedZoneKey.value) return null;
   return zonesList.value.find((zone) => zone.key === selectedZoneKey.value) || null;
@@ -1098,8 +1106,12 @@ const zoneItems = computed(() => {
   }
   const items = selectedZone.value.materiels || [];
   return items
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => String(item.noCheck) !== '1');
+    .map((item, materialIndex) => ({ item, materialIndex }))
+    .filter(({ item }) => String(item.noCheck) !== '1')
+    .map((entry, listIndex) => ({
+      ...entry,
+      listIndex
+    }));
 });
 
 const swipeCardStyle = computed(() => {
@@ -1126,9 +1138,10 @@ const issueOptions = computed(() => {
 
 const zoneSummaryItems = computed(() => {
   if (!selectedZone.value) return [];
-  return zoneItems.value.map(({ item, index }) => ({
+  return zoneItems.value.map(({ item, materialIndex, listIndex }) => ({
     item,
-    index,
+    materialIndex,
+    listIndex,
     status: item.statutInventaire || ''
   }));
 });
@@ -1139,12 +1152,13 @@ const globalSummaryItems = computed(() => {
   Object.entries(zones).forEach(([key, zone]) => {
     if (zone.codeZone === 'ETAT_VEHICULE') return;
     const materiels = Array.isArray(zone.materiels) ? zone.materiels : [];
-    materiels.forEach((item, index) => {
+    materiels.forEach((item, materialIndex) => {
+      if (String(item.noCheck) === '1') return;
       items.push({
         zoneKey: key,
         zoneName: zone.nomZone || zone.codeZone || 'Zone',
         item,
-        index,
+        materialIndex,
         status: item.statutInventaire || ''
       });
     });
@@ -1161,6 +1175,17 @@ const globalSummaryProgress = computed(() => {
   return { total, done, percent };
 });
 
+const hasPendingItemsGlobal = computed(() => {
+  const zones = inventaireData.value?.zones || {};
+  return Object.values(zones).some((zone) => {
+    if (!zone || zone.codeZone === 'ETAT_VEHICULE') return false;
+    const materiels = Array.isArray(zone.materiels) ? zone.materiels : [];
+    return materiels
+      .filter((item) => String(item.noCheck) !== '1')
+      .some((item) => !isItemChecked(item));
+  });
+});
+
 const allZonesDone = computed(() => {
   const zones = inventaireData.value?.zones || {};
   return Object.values(zones).every((zone) => {
@@ -1174,7 +1199,7 @@ const allZonesDone = computed(() => {
     if (relevant.length === 0) {
       return true;
     }
-    return zone.status === 'DONE';
+    return zone.status === 'DONE' && relevant.every((item) => isItemChecked(item));
   });
 });
 
@@ -1294,7 +1319,7 @@ function resetItemState() {
 
 function getFirstPendingIndex() {
   const index = zoneItems.value.findIndex(({ item }) => {
-    return item.statutInventaire !== 'OK' && item.statutInventaire !== 'NOK';
+    return !isItemChecked(item);
   });
   return index === -1 ? zoneItems.value.length : index;
 }
@@ -1302,7 +1327,7 @@ function getFirstPendingIndex() {
 function getNextPendingIndex(startIndex) {
   for (let i = startIndex; i < zoneItems.value.length; i += 1) {
     const item = zoneItems.value[i].item;
-    if (item.statutInventaire !== 'OK' && item.statutInventaire !== 'NOK') {
+    if (!isItemChecked(item)) {
       return i;
     }
   }
@@ -1312,6 +1337,24 @@ function getNextPendingIndex(startIndex) {
 function getPreviousIndex(startIndex) {
   for (let i = startIndex; i >= 0; i -= 1) {
     return i;
+  }
+  return -1;
+}
+
+function findListIndexForZone(zoneKey, materialIndex) {
+  const zone = inventaireData.value?.zones?.[zoneKey];
+  if (!zone || !Array.isArray(zone.materiels)) {
+    return -1;
+  }
+  let listIndex = 0;
+  for (let i = 0; i < zone.materiels.length; i += 1) {
+    if (String(zone.materiels[i].noCheck) === '1') {
+      continue;
+    }
+    if (i === materialIndex) {
+      return listIndex;
+    }
+    listIndex += 1;
   }
   return -1;
 }
@@ -1506,10 +1549,19 @@ watch(
   () => {
     resetItemState();
     if (zoneItems.value.length > 0) {
-      currentItemIndex.value = getFirstPendingIndex();
+      if (pendingZoneJump.value?.zoneKey === selectedZoneKey.value) {
+        const targetIndex = findListIndexForZone(
+          selectedZoneKey.value,
+          pendingZoneJump.value.materialIndex
+        );
+        currentItemIndex.value = targetIndex >= 0 ? targetIndex : getFirstPendingIndex();
+      } else {
+        currentItemIndex.value = getFirstPendingIndex();
+      }
     } else {
       currentItemIndex.value = 0;
     }
+    pendingZoneJump.value = null;
   }
 );
 
@@ -1548,6 +1600,7 @@ const handleDeconnexion = () => {
   connectedAgent.value = null;
   connexionMatricule.value = '';
   connexionError.value = '';
+  pendingZoneJump.value = null;
   selectedZoneKey.value = '';
 };
 
@@ -1593,6 +1646,7 @@ const openZone = async (zone) => {
         infoInventateur
       });
     }
+    pendingZoneJump.value = null;
     selectedZoneKey.value = zone.key;
   } catch (error) {
     console.error('Erreur ouverture zone:', error);
@@ -1601,6 +1655,7 @@ const openZone = async (zone) => {
 };
 
 const closeZone = () => {
+  pendingZoneJump.value = null;
   selectedZoneKey.value = '';
 };
 
@@ -1888,14 +1943,25 @@ const goToPreviousItem = () => {
 };
 
 const editGlobalItem = (summary) => {
-  if (!summary?.zoneKey) return;
+  if (!summary?.zoneKey || typeof summary.materialIndex !== 'number') return;
+  if (selectedZoneKey.value === summary.zoneKey) {
+    editZoneItem(summary.materialIndex);
+    return;
+  }
+  pendingZoneJump.value = {
+    zoneKey: summary.zoneKey,
+    materialIndex: summary.materialIndex
+  };
   selectedZoneKey.value = summary.zoneKey;
-  currentItemIndex.value = summary.index;
-  resetItemState();
 };
 
-const editZoneItem = (index) => {
-  currentItemIndex.value = index;
+const editZoneItem = (materialIndex) => {
+  const listIndex = zoneItems.value.findIndex((entry) => entry.materialIndex === materialIndex);
+  if (listIndex < 0) {
+    itemError.value = 'Impossible d\'ouvrir ce matériel.';
+    return;
+  }
+  currentItemIndex.value = listIndex;
   resetItemState();
 };
 
@@ -1940,6 +2006,10 @@ const submitInventaire = async () => {
   if (!inventaireData.value) return;
   submitError.value = '';
   submitSuccessMessage.value = '';
+  if (hasPendingItemsGlobal.value) {
+    submitError.value = 'Impossible de valider : il reste des matériels en statut PENDING.';
+    return;
+  }
 
   const confirmed = window.confirm('Confirmez-vous la validation finale de cet inventaire ?');
   if (!confirmed) return;
@@ -1999,18 +2069,70 @@ const submitInventaire = async () => {
   }
 };
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const hasExpectedItemState = (item, status, commentaireInventaire) => {
+  const normalizedComment = commentaireInventaire || '';
+  return item?.statutInventaire === status
+    && String(item?.commentaireInventaire || '') === normalizedComment;
+};
+
+const syncLocalItemState = (zoneKey, materialIndex, status, commentaireInventaire) => {
+  const localItem = inventaireData.value?.zones?.[zoneKey]?.materiels?.[materialIndex];
+  if (!localItem) return;
+  localItem.statutInventaire = status;
+  localItem.commentaireInventaire = commentaireInventaire || '';
+};
+
+const waitForItemStatusSync = async (zoneKey, materialIndex, status, commentaireInventaire) => {
+  const timeoutAt = Date.now() + 3000;
+  while (Date.now() < timeoutAt) {
+    const localItem = inventaireData.value?.zones?.[zoneKey]?.materiels?.[materialIndex];
+    if (hasExpectedItemState(localItem, status, commentaireInventaire)) {
+      return true;
+    }
+    await wait(120);
+  }
+  try {
+    const snapshot = await get(
+      dbRef(db, `inventaire/zones/${zoneKey}/materiels/${materialIndex}`)
+    );
+    if (!snapshot.exists()) return false;
+    const remoteItem = snapshot.val();
+    if (!hasExpectedItemState(remoteItem, status, commentaireInventaire)) {
+      return false;
+    }
+    syncLocalItemState(zoneKey, materialIndex, status, commentaireInventaire);
+    return true;
+  } catch (error) {
+    console.error('Erreur synchronisation statut matériel:', error);
+    return false;
+  }
+};
+
 const updateCurrentItem = async (status, commentaireInventaire) => {
   const zone = selectedZone.value;
   const current = currentItem.value;
   if (!zone || !current) return false;
+  const normalizedCommentaire = commentaireInventaire || '';
   try {
     await update(
-      dbRef(db, `inventaire/zones/${zone.key}/materiels/${current.index}`),
+      dbRef(db, `inventaire/zones/${zone.key}/materiels/${current.materialIndex}`),
       {
         statutInventaire: status,
-        commentaireInventaire: commentaireInventaire || ''
+        commentaireInventaire: normalizedCommentaire
       }
     );
+    const synced = await waitForItemStatusSync(
+      zone.key,
+      current.materialIndex,
+      status,
+      normalizedCommentaire
+    );
+    if (!synced) {
+      itemError.value = 'Le statut est en cours de synchronisation. Merci de réessayer.';
+      return false;
+    }
     return true;
   } catch (error) {
     console.error('Erreur update item:', error);
@@ -2020,23 +2142,28 @@ const updateCurrentItem = async (status, commentaireInventaire) => {
 };
 
 const advanceItem = async () => {
-  if (!zoneItems.value.length) return;
+  if (!zoneItems.value.length || !selectedZone.value) return;
   const nextIndex = getNextPendingIndex(currentItemIndex.value + 1);
-  if (nextIndex >= zoneItems.value.length) {
-    const infoInventateur = {
-      matricule: connectedAgent.value?.matricule || connectedMatricule.value,
-      grade: connectedAgent.value?.grade || '',
-      nom: connectedAgent.value?.nom || '',
-      prenom: connectedAgent.value?.prenom || ''
-    };
-    await update(dbRef(db, `inventaire/zones/${selectedZone.value.key}`), {
-      status: 'DONE',
-      infoInventateur
-    });
-    currentItemIndex.value = zoneItems.value.length;
+  if (nextIndex < zoneItems.value.length) {
+    currentItemIndex.value = nextIndex;
     return;
   }
-  currentItemIndex.value = nextIndex;
+  const firstPendingIndex = getFirstPendingIndex();
+  if (firstPendingIndex < zoneItems.value.length) {
+    currentItemIndex.value = firstPendingIndex;
+    return;
+  }
+  const infoInventateur = {
+    matricule: connectedAgent.value?.matricule || connectedMatricule.value,
+    grade: connectedAgent.value?.grade || '',
+    nom: connectedAgent.value?.nom || '',
+    prenom: connectedAgent.value?.prenom || ''
+  };
+  await update(dbRef(db, `inventaire/zones/${selectedZone.value.key}`), {
+    status: 'DONE',
+    infoInventateur
+  });
+  currentItemIndex.value = zoneItems.value.length;
 };
 
 const buildZonesPayload = () => {
