@@ -1877,10 +1877,14 @@ const buildInventairePayload = () => {
       const commentaireInventaire = String(item.commentaireInventaire || '').trim();
       const hasCommentaire = Boolean(commentaireInventaire);
       if (item.statutInventaire === 'NOK' || hasCommentaire) {
+        const status = item.statutInventaire === 'NOK' ? 'NOK' : 'OK';
         inventaire[item.codeMateriel || item.nomMateriel] = {
           nomMateriel: item.nomMateriel || '',
           zone: zone.nomZone || zone.codeZone,
-          commentaire: commentaireInventaire
+          commentaire: commentaireInventaire,
+          CommentaireInventaire: commentaireInventaire,
+          status,
+          Status: status
         };
       }
     });
@@ -1904,6 +1908,8 @@ const submitInventaire = async () => {
     const heureDebutFormatted = formatTime(heureDebut);
     const heureFinFormatted = formatTime(new Date());
     const chef = inventaireData.value.chefDeGarde || '';
+    const vehicule = inventaireData.value.vehicule || '';
+    const isLotPsVehicule = formatEnginAssetName(vehicule) === 'LOTPS';
     const inventaireurs = Array.isArray(inventaireData.value.inventaireurs)
       ? inventaireData.value.inventaireurs.filter((matricule) => matricule !== chef)
       : [];
@@ -1916,11 +1922,16 @@ const submitInventaire = async () => {
       Inventaireur1: inventaireurs[0] || '',
       Inventaireur2: inventaireurs[1] || '',
       Inventaireur3: inventaireurs[2] || '',
+      Vehicule: vehicule,
       Inventaire: buildInventairePayload(),
-      EtatVehicule: inventaireData.value.zones?.etat_vehicule?.etatVehicule || {},
       Status: 'PENDING',
-      Commentaire: inventaireCommentaire.value || ''
+      Commentaire: inventaireCommentaire.value || '',
+      CommentaireInventaire: inventaireCommentaire.value || ''
     };
+
+    if (!isLotPsVehicule) {
+      payload.EtatVehicule = inventaireData.value.zones?.etat_vehicule?.etatVehicule || {};
+    }
 
     const response = await fetch('https://api.cms-collonges.fr/inventaireVehicule', {
       method: 'POST',
