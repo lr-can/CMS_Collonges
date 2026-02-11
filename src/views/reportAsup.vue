@@ -43,9 +43,29 @@
                 <p>
                     <span class="bold">Médicaments :<br></span> {{ detailData.idMedicamentsList ? detailData.idMedicamentsList.length : 'Aucun' }}
                 </p>
-                <p>
-                    <span class="bold">Prescripteur :<br></span> Dr {{ detailData.medecinPrescripteur.nomExercice }} {{ detailData.medecinPrescripteur.prenomExercice }} ({{ detailData.medecinPrescripteur.identifiantRPPS }})
-                </p>
+                <div>
+                    <span class="bold">Prescripteur :</span>
+                    <div class="doctor-card">
+                        <div class="doctor-card-name">{{ formatDoctorDisplayName(detailData.medecinPrescripteur) }}</div>
+                        <div class="doctor-card-rpps">RPPS : {{ formatDoctorRpps(detailData.medecinPrescripteur) }}</div>
+                        <div class="doctor-card-row">
+                            <span class="card-label">Spécialité</span>
+                            <span>{{ formatDoctorSpeciality(detailData.medecinPrescripteur) }}</span>
+                        </div>
+                        <div class="doctor-card-row">
+                            <span class="card-label">Structure</span>
+                            <span>{{ formatDoctorStructure(detailData.medecinPrescripteur) }}</span>
+                        </div>
+                        <div class="doctor-card-row">
+                            <span class="card-label">Ville</span>
+                            <span>{{ formatDoctorCity(detailData.medecinPrescripteur) }}</span>
+                        </div>
+                        <div class="doctor-card-row">
+                            <span class="card-label">Téléphone</span>
+                            <span>{{ formatDoctorPhone(detailData.medecinPrescripteur) }}</span>
+                        </div>
+                    </div>
+                </div>
                 <p>
                     <span class="bold">Effets secondaires :<br></span> {{ detailData.effetsSecondaires != null ? detailData.effetsSecondaires : 'Aucun' }}
                 </p>
@@ -94,7 +114,23 @@
                             </div>
                             <div class="utilisationsASUP-card-row">
                                 <span class="card-label">Prescripteur</span>
-                                <span>Dr {{ item.medecinPrescripteur.nomExercice }}</span>
+                                <span>{{ formatDoctorDisplayName(item.medecinPrescripteur) }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Spécialité</span>
+                                <span>{{ formatDoctorSpeciality(item.medecinPrescripteur) }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Structure</span>
+                                <span>{{ formatDoctorStructure(item.medecinPrescripteur) }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Ville</span>
+                                <span>{{ formatDoctorCity(item.medecinPrescripteur) }}</span>
+                            </div>
+                            <div class="utilisationsASUP-card-row">
+                                <span class="card-label">Téléphone</span>
+                                <span>{{ formatDoctorPhone(item.medecinPrescripteur) }}</span>
                             </div>
                         </div>
                     </div>
@@ -312,6 +348,92 @@ const formatAgentName = (agent) => {
   }
   const nomComplet = [agent.nomAgent, agent.prenomAgent].filter(Boolean).join(' ');
   return nomComplet || 'Agent non renseigné';
+};
+
+const doctorFallbackText = 'Non renseigné';
+
+const isDoctorObject = (doctorData) => {
+    return Boolean(doctorData) && typeof doctorData === 'object' && !Array.isArray(doctorData);
+};
+
+const cleanDoctorValue = (value) => {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value)
+        .replace(/\s*\n\s*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+const splitDoctorValues = (value) => {
+    const cleanedValue = cleanDoctorValue(value);
+    if (!cleanedValue) {
+        return [];
+    }
+    return cleanedValue
+        .split('|')
+        .map(item => item.trim())
+        .filter(Boolean);
+};
+
+const normalizeDoctorPhone = (phoneValue) => {
+    const digitsOnly = cleanDoctorValue(phoneValue).replace(/\D/g, '');
+    if (!digitsOnly) {
+        return '';
+    }
+    if (digitsOnly.startsWith('33') && digitsOnly.length === 11) {
+        return `0${digitsOnly.slice(2)}`;
+    }
+    if (digitsOnly.length === 9) {
+        return `0${digitsOnly}`;
+    }
+    if (digitsOnly.length === 10) {
+        return digitsOnly.startsWith('0') ? digitsOnly : `0${digitsOnly.slice(-9)}`;
+    }
+    return digitsOnly.startsWith('0') ? digitsOnly : `0${digitsOnly}`;
+};
+
+const getDoctorField = (doctorData, fieldName) => {
+    if (!isDoctorObject(doctorData)) {
+        return '';
+    }
+    return cleanDoctorValue(doctorData[fieldName]);
+};
+
+const formatDoctorDisplayName = (doctorData) => {
+    const nom = getDoctorField(doctorData, 'nomExercice');
+    const prenom = getDoctorField(doctorData, 'prenomExercice');
+    const fullName = [nom, prenom].filter(Boolean).join(' ');
+    return fullName ? `Dr ${fullName}` : 'Médecin non renseigné';
+};
+
+const formatDoctorRpps = (doctorData) => {
+    if (!isDoctorObject(doctorData)) {
+        return cleanDoctorValue(doctorData) || doctorFallbackText;
+    }
+    return getDoctorField(doctorData, 'identifiantRPPS') || doctorFallbackText;
+};
+
+const formatDoctorSpeciality = (doctorData) => {
+    return getDoctorField(doctorData, 'specialites') || doctorFallbackText;
+};
+
+const formatDoctorStructure = (doctorData) => {
+    const structures = splitDoctorValues(getDoctorField(doctorData, 'structures'));
+    return structures.length > 0 ? structures.join(' | ') : doctorFallbackText;
+};
+
+const formatDoctorCity = (doctorData) => {
+    const cities = splitDoctorValues(getDoctorField(doctorData, 'communes'));
+    return cities.length > 0 ? cities.join(' | ') : doctorFallbackText;
+};
+
+const formatDoctorPhone = (doctorData) => {
+    const phones = splitDoctorValues(getDoctorField(doctorData, 'telephones'))
+        .map(normalizeDoctorPhone)
+        .filter(Boolean);
+    return phones.length > 0 ? phones.join(' | ') : doctorFallbackText;
 };
 
 const selectedSoin = ref(null);
@@ -604,6 +726,32 @@ const navigate = () => {
 .utilisationsASUP-card-row .agentInfo{
     justify-content: flex-start;
 }
+.doctor-card{
+    border: 1px solid #dffdf7;
+    border-radius: 12px;
+    padding: 0.85rem;
+    background-color: #f7fffd;
+    margin-top: 0.5rem;
+}
+.doctor-card-name{
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #009081;
+    margin-bottom: 0.25rem;
+}
+.doctor-card-rpps{
+    color: #666666;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+.doctor-card-row{
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 0.5rem;
+    align-items: start;
+    padding: 0.25rem 0;
+    font-size: 0.85rem;
+}
 
 .status-card{
     border-radius: 12px;
@@ -690,6 +838,10 @@ const navigate = () => {
 @media (min-width: 900px) {
     .utilisationsASUP-card-row,
     .status-card-row{
+        font-size: 0.95rem;
+        grid-template-columns: 130px 1fr;
+    }
+    .doctor-card-row{
         font-size: 0.95rem;
         grid-template-columns: 130px 1fr;
     }
