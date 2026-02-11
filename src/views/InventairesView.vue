@@ -553,17 +553,18 @@
                     :class="{
                       dragging: swipeActive,
                       disabled: showIssueForm,
-                      'tone-ok': swipeOffset >= 20,
-                      'tone-pb': swipeOffset <= -20
+                      'tone-ok': swipeOffset >= SWIPE_TONE_OFFSET,
+                      'tone-pb': swipeOffset <= -SWIPE_TONE_OFFSET
                     }"
                     :style="swipeCardStyle"
                       @pointerdown="onSwipeStart"
                       @pointermove="onSwipeMove"
                       @pointerup="handleSwipeEnd"
-                      @pointerleave="handleSwipeEnd"
+                      @pointercancel="handleSwipeEnd"
                       @touchstart="onSwipeTouchStart"
                       @touchmove="onSwipeTouchMove"
                       @touchend="handleSwipeEnd"
+                      @touchcancel="handleSwipeEnd"
                   >
                     <div class="item-chip">{{ selectedZone.nomZone }}</div>
                     <div class="item-title">{{ currentItem.item.nomMateriel }}</div>
@@ -1014,6 +1015,8 @@ const swipeOffset = ref(0);
 const swipeActive = ref(false);
 const swipeStartX = ref(0);
 const swipeFromAsupControl = ref(false);
+const swipePointerId = ref(null);
+const swipeTouchId = ref(null);
 const itemError = ref('');
 const showIssueForm = ref(false);
 const issueSelections = ref({
@@ -1057,6 +1060,12 @@ const asupChecks = ref({});
 const asupData = ref([]);
 const asupLoading = ref(false);
 const asupError = ref('');
+const SWIPE_MAX_OFFSET = 150;
+const SWIPE_TRIGGER_OFFSET = 45;
+const SWIPE_TONE_OFFSET = 16;
+const SWIPE_SENSITIVITY = 1.3;
+const SWIPE_ROTATION_DIVISOR = 10;
+
 const asupLots = computed(() => {
   const grouped = {};
   asupData.value.forEach((item) => {
@@ -1097,9 +1106,9 @@ const swipeCardStyle = computed(() => {
   if (showIssueForm.value) {
     return {};
   }
-  const rotate = swipeOffset.value / 12;
+  const rotate = swipeOffset.value / SWIPE_ROTATION_DIVISOR;
   return {
-    transform: `translateX(${swipeOffset.value}px) rotate(${rotate}deg)`
+    transform: `translate3d(${swipeOffset.value}px, 0, 0) rotate(${rotate}deg)`
   };
 });
 
@@ -1263,6 +1272,8 @@ const buildZoneKey = (codeZone) => {
 function resetItemState() {
   swipeOffset.value = 0;
   swipeFromAsupControl.value = false;
+  swipePointerId.value = null;
+  swipeTouchId.value = null;
   itemError.value = '';
   showIssueForm.value = false;
   issueSelections.value = {
@@ -1698,9 +1709,15 @@ const handleSwipeEnd = async () => {
     return;
   }
   swipeActive.value = false;
-  const direction = swipeOffset.value >= 60 ? 'OK' : swipeOffset.value <= -60 ? 'NOK' : '';
+  const direction = swipeOffset.value >= SWIPE_TRIGGER_OFFSET
+    ? 'OK'
+    : swipeOffset.value <= -SWIPE_TRIGGER_OFFSET
+      ? 'NOK'
+      : '';
   swipeOffset.value = 0;
   swipeFromAsupControl.value = false;
+  swipePointerId.value = null;
+  swipeTouchId.value = null;
   if (direction) {
     await handleSwipe(direction);
   }
@@ -1726,31 +1743,49 @@ const shouldBlockSwipeStart = (target) => {
 
 const onSwipeStart = (event) => {
   if (showIssueForm.value) return;
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
   if (shouldBlockSwipeStart(event.target)) return;
   swipeFromAsupControl.value = isAsupRequest(currentItem.value?.item) && isAsupSwipeTarget(event.target);
   swipeActive.value = true;
   swipeStartX.value = event.clientX;
+  swipePointerId.value = event.pointerId;
+  if (typeof event.currentTarget?.setPointerCapture === 'function') {
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Ignorer silencieusement les navigateurs ne supportant pas le capture pointer.
+    }
+  }
 };
 
 const onSwipeMove = (event) => {
   if (!swipeActive.value) return;
-  const minOffset = swipeFromAsupControl.value ? 0 : -120;
-  swipeOffset.value = Math.max(minOffset, Math.min(120, event.clientX - swipeStartX.value));
+  if (swipePointerId.value !== null && event.pointerId !== swipePointerId.value) return;
+  const minOffset = swipeFromAsupControl.value ? 0 : -SWIPE_MAX_OFFSET;
+  const deltaX = (event.clientX - swipeStartX.value) * SWIPE_SENSITIVITY;
+  swipeOffset.value = Math.max(minOffset, Math.min(SWIPE_MAX_OFFSET, deltaX));
 };
 
 const onSwipeTouchStart = (event) => {
   if (!event.touches || !event.touches[0]) return;
   if (showIssueForm.value) return;
   if (shouldBlockSwipeStart(event.target)) return;
+  const activeTouch = event.touches[0];
   swipeFromAsupControl.value = isAsupRequest(currentItem.value?.item) && isAsupSwipeTarget(event.target);
   swipeActive.value = true;
-  swipeStartX.value = event.touches[0].clientX;
+  swipeTouchId.value = activeTouch.identifier;
+  swipeStartX.value = activeTouch.clientX;
 };
 
 const onSwipeTouchMove = (event) => {
-  if (!swipeActive.value || !event.touches || !event.touches[0]) return;
-  const minOffset = swipeFromAsupControl.value ? 0 : -120;
-  swipeOffset.value = Math.max(minOffset, Math.min(120, event.touches[0].clientX - swipeStartX.value));
+  if (!swipeActive.value || !event.touches || !event.touches.length) return;
+  const activeTouch = swipeTouchId.value === null
+    ? event.touches[0]
+    : Array.from(event.touches).find((touch) => touch.identifier === swipeTouchId.value);
+  if (!activeTouch) return;
+  const minOffset = swipeFromAsupControl.value ? 0 : -SWIPE_MAX_OFFSET;
+  const deltaX = (activeTouch.clientX - swipeStartX.value) * SWIPE_SENSITIVITY;
+  swipeOffset.value = Math.max(minOffset, Math.min(SWIPE_MAX_OFFSET, deltaX));
 };
 
 const validateOkRequirements = () => {
@@ -2895,8 +2930,9 @@ const launchInventaire = async () => {
   border-radius: 18px;
   padding: 1.2rem;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.16s ease;
   position: relative;
+  will-change: transform;
 }
 
 .swipe-card.dragging {
