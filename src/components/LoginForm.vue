@@ -95,8 +95,9 @@ const handleLogin = async () => {
     if (!user) {
       error.value = 'Identifiants incorrects. Veuillez réessayer.';
     } else {
-      // Connexion réussie, rediriger vers la page d'accueil
-      router.push({ name: 'home' });
+      // Connexion réussie, rediriger vers la page demandée ou l'accueil
+      const redirect = route.query.redirect;
+      router.push(redirect && redirect.startsWith('/') ? redirect : { name: 'home' });
     }
   } catch (err) {
     console.error('Erreur lors de la connexion:', err);

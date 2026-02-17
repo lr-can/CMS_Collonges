@@ -6,6 +6,18 @@
         Bienvenue sur l'espace de demande d'inscription à une formation.
       </p>
 
+      <div class="info-section">
+        <div class="info-block info-guidelines">
+          <ul>
+            <li>Faire la demande 2 mois au minimum avant votre formation</li>
+            <li>Demande de formation non prise en compte sans ce formulaire</li>
+            <li>Avant chaque demande, bien vérifier si vous avez effectué les prérequis pour votre formation</li>
+            <li>Bien vérifier les conditions d'inscription</li>
+            <li>Privilégier les formations sur le groupement, nous y sommes prioritaires&nbsp;!</li>
+          </ul>
+        </div>
+      </div>
+
       <div v-if="errorMessage" class="error-message">
         {{ errorMessage }}
       </div>
@@ -69,6 +81,12 @@
 
       <!-- Étape 3 : Sélection de la formation -->
       <div v-if="step >= 3 && selectedYear" class="step">
+        <div class="info-block info-block-inline">
+          <p>Les données ont été extraites depuis GEEF. Pour plus de détail, se rendre sur le calendrier des formations. Pour connaître le calendrier des formations, se rendre sur le logiciel GEEF, via un ordinateur de la caserne ou l'accès distant.</p>
+        </div>
+        <div v-if="showAttentionPpbeInc" class="info-block info-attention info-block-inline">
+          <strong>ATTENTION :</strong> Pour les parcours PPBE et INC (engagement différencié), la demande doit être faite directement sur GEEF, depuis un ordinateur de la caserne, ou depuis l'accès distant.
+        </div>
         <div class="subsubtitle">Formation</div>
         <p>Recherchez et sélectionnez une formation</p>
         <div class="filters-row">
@@ -180,6 +198,9 @@
         </div>
 
         <div class="subsubtitle" style="margin-top: 1.5rem">Sélection des sessions (2 vœux)</div>
+        <div class="info-block info-remarque info-block-inline">
+          <strong>REMARQUE :</strong> Sur ce formulaire, il vous sera demandé de renseigner deux sessions distinctes, afin de connaître vos disponibilités en cas de session complète. Vous formulez donc deux vœux. Dans la mesure du possible, vous êtes d'abord inscrit sur votre premier vœu.
+        </div>
         <p>Sélectionnez vos deux sessions préférées par ordre de préférence</p>
 
         <div class="sessions-grid">
@@ -290,7 +311,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, unref } from 'vue'
 import { useSqlStore } from '@/stores/database.js'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -371,6 +392,17 @@ const imageGrade = () => {
 
 const canSearchAgent = computed(() => {
   return matricule.value?.startsWith('V') && matricule.value?.length === 6
+})
+
+const showAttentionPpbeInc = computed(() => {
+  if (!agentInfo.value) return false
+  const data = agentInfo.value
+  const incEq = Number(data.INC_eq ?? data.inc_eq)
+  const divEq = Number(data.DIV_eq ?? data.div_eq)
+  const matriculeNum = parseInt(String(matricule.value || '').replace(/^V/i, ''), 10)
+  if (!Number.isFinite(matriculeNum) || matriculeNum <= 30000) return false
+  if (!Number.isFinite(incEq) || !Number.isFinite(divEq)) return false
+  return incEq === 0 && divEq === 0
 })
 
 const isNextYearDisabled = computed(() => {
@@ -513,12 +545,18 @@ const getAgentInfo = async () => {
   responseError.value = false
   buttonLabel.value = 'Recherche...'
   try {
-    await sqlStore.getAsupAgentInfo(matricule.value)
-    const result = sqlStore.infoAsupAgent
+    let result
+    try {
+      result = await sqlStore.getAgentByMatricule(matricule.value)
+    } catch {
+      await sqlStore.getAsupAgentInfo(matricule.value)
+      const raw = sqlStore.infoAsupAgent
+      result = unref(raw) ?? raw
+    }
 
-    if (result?.message) {
+    if (result?.message || typeof result === 'string') {
       responseError.value = true
-      errorMessage.value = result.message
+      errorMessage.value = typeof result === 'string' ? result : result.message
       buttonLabel.value = 'Rechercher'
       return
     }
@@ -652,7 +690,8 @@ const submitDemande = async () => {
 }
 
 onMounted(async () => {
-  const cachedMatricule = localStorage.getItem('cms_matricule')
+  const authMatricule = localStorage.getItem('cms_auth_matricule')
+  const cachedMatricule = authMatricule || localStorage.getItem('cms_matricule')
   const cachedAgent = localStorage.getItem('cms_agent_info')
 
   if (cachedMatricule) {
@@ -665,9 +704,9 @@ onMounted(async () => {
         showMatriculeInput.value = false
         step.value = 2
       } catch {}
-    } else {
-      await getAgentInfo()
     }
+    // Toujours mettre à jour depuis le serveur (INC_eq, DIV_eq, etc.) comme pour la déclaration ASUP
+    await getAgentInfo()
   }
 
   await loadCatalogue(currentYear.value)
@@ -685,6 +724,56 @@ onMounted(async () => {
 .welcome-text {
   color: #666;
   margin-bottom: 1rem;
+}
+
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-block {
+  padding: 0.875rem 1rem;
+  background: #f0f7ff;
+  border-left: 4px solid #0063cb;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #333;
+}
+
+.info-block-inline {
+  margin-bottom: 1rem;
+}
+
+.info-block.info-attention {
+  background: #fff8e6;
+  border-left-color: #d64d00;
+  color: #8a4a00;
+}
+
+.info-block.info-remarque {
+  background: #f0f9f0;
+  border-left-color: #2e7d32;
+}
+
+.info-block.info-guidelines {
+  background: #f5f5f5;
+  border-left-color: #546e7a;
+}
+
+.info-block.info-guidelines ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.info-block.info-guidelines li {
+  margin-bottom: 0.35rem;
+}
+
+.info-block.info-guidelines li:last-child {
+  margin-bottom: 0;
 }
 
 .error-message {

@@ -343,6 +343,18 @@ export const useSqlStore = defineStore('database', () => {
     }
   }
 
+  async function getAgentByMatricule(idAgent) {
+    const requestOptions = { method: "GET", redirect: "follow" };
+    const response = await fetch(`https://api.cms-collonges.fr/getAgentByMatricule/${idAgent}`, requestOptions);
+    const result = await response.json();
+    if (!response.ok) {
+      infoAsupAgent.value = result?.message ? result : { message: result?.message || `Erreur ${response.status}` };
+      throw new Error(result?.message || `Erreur ${response.status}`);
+    }
+    infoAsupAgent.value = result;
+    return result;
+  }
+
   async function getDoctorInfo(rppsNumber){
     const requestOptions = {
       method: "GET",
@@ -1125,6 +1137,7 @@ async function resetRICount(type, matricule){
     dispoReserve,
     reinitialiserRetourIntervention,
     getAsupAgentInfo,
+    getAgentByMatricule,
     infoAsupAgent,
     getDoctorInfo,
     doctorInfo,
