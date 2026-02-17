@@ -375,7 +375,7 @@
                   <input
                     id="kilometrage"
                     type="number"
-                    class="text-input compact-number-input"
+                    class="text-input number-like-matricule-input"
                     v-model="etatVehicule.kilometrage"
                     @change="saveEtatVehicule"
                     placeholder="Km"
@@ -618,6 +618,80 @@
                       </div>
                     </div>
 
+                    <div v-if="isDemandeSpe(currentItem.item, 'bidon')" class="special-section">
+                      <div class="special-title">Bidon</div>
+                      <label class="input-label" for="bidonLevel">Niveau (sur 5)</label>
+                      <input
+                        id="bidonLevel"
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="1"
+                        class="text-input number-like-matricule-input"
+                        v-model.number="bidonLevel"
+                        @click.stop
+                      />
+                      <label class="toggle-label">
+                        <input
+                          type="checkbox"
+                          v-model="bidonRempli"
+                          @click.stop
+                        />
+                        Bidon rempli
+                      </label>
+                    </div>
+
+                    <div v-if="isDemandeSpe(currentItem.item, 'bouteilleARI')" class="special-section">
+                      <div class="special-title">Bouteille ARI</div>
+                      <label class="input-label" for="bouteilleAriPressure">Pression (bars)</label>
+                      <input
+                        id="bouteilleAriPressure"
+                        type="number"
+                        min="0"
+                        class="text-input number-like-matricule-input"
+                        v-model.number="bouteilleAriPressure"
+                        @click.stop
+                      />
+                      <div v-if="hasBouteilleAriLowPressure" class="special-warning">
+                        Pression inférieure à 270 bars : remplacer la bouteille.
+                      </div>
+                    </div>
+
+                    <div v-if="isDemandeSpe(currentItem.item, 'lspcc')" class="special-section">
+                      <div class="special-title">LSPCC</div>
+                      <label class="toggle-label">
+                        <input
+                          type="checkbox"
+                          v-model="lspccPlombageOk"
+                          @click.stop
+                        />
+                        Plombage intact
+                      </label>
+                    </div>
+
+                    <div v-if="isDemandeSpe(currentItem.item, 'jerrican')" class="special-section">
+                      <div class="special-title">Jerrican</div>
+                      <label class="input-label" for="jerricanLevel">Niveau (sur 5)</label>
+                      <input
+                        id="jerricanLevel"
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="1"
+                        class="text-input number-like-matricule-input"
+                        v-model.number="jerricanLevel"
+                        @click.stop
+                      />
+                      <label class="toggle-label">
+                        <input
+                          type="checkbox"
+                          v-model="jerricanRempli"
+                          @click.stop
+                        />
+                        Jerrican rempli
+                      </label>
+                    </div>
+
                     <div v-if="isDemandeSpe(currentItem.item, 'asup')" class="special-section">
                       <div class="special-title">Contrôle ASUP</div>
                       <div v-if="asupLoading" class="loading-message">Chargement ASUP...</div>
@@ -673,19 +747,44 @@
                     </button>
                   </div>
 
-                  <div v-if="issueSelections.reserve || issueSelections.peremption" class="issue-field">
+                  <div v-if="issueSelections.reserve" class="issue-field">
                     <label class="input-label">Indiquez le nombre d'items pris depuis la réserve :</label>
                     <input
                       type="number"
-                      class="text-input compact-number-input"
+                      class="text-input number-like-matricule-input"
                       v-model="issueReserveCount"
                       min="0"
                     />
                   </div>
 
-                  <div v-if="issueSelections.defectueux" class="issue-field">
-                    <label class="input-label">Commentaire</label>
-                    <input type="text" class="text-input" v-model="issueComment" />
+                  <div v-if="issueSelections.peremption" class="issue-field">
+                    <label class="input-label">Type de problème de péremption</label>
+                    <label class="toggle-label">
+                      <input
+                        type="radio"
+                        v-model="issuePeremptionType"
+                        value="proche"
+                      />
+                      Date de péremption proche : dans les 2 prochains mois
+                    </label>
+                    <label class="toggle-label">
+                      <input
+                        type="radio"
+                        v-model="issuePeremptionType"
+                        value="remplacement"
+                      />
+                      Date de péremption entraînant un remplacement : dans le mois ou périmé
+                    </label>
+                  </div>
+
+                  <div class="issue-field">
+                    <label class="input-label">Commentaire personnalisé (obligatoire)</label>
+                    <textarea
+                      class="text-area issue-comment-area"
+                      rows="3"
+                      v-model="issueCustomComment"
+                      placeholder="Décrivez précisément le problème constaté."
+                    ></textarea>
                   </div>
 
                   <div class="issue-actions">
@@ -1033,7 +1132,8 @@ const issueSelections = ref({
   peremption: false,
   defectueux: false
 });
-const issueComment = ref('');
+const issueCustomComment = ref('');
+const issuePeremptionType = ref('');
 const issueReserveCount = ref('');
 const issueOptionDefinitions = [
   {
@@ -1049,7 +1149,7 @@ const issueOptionDefinitions = [
   {
     key: 'peremption',
     title: 'Péremption',
-    description: 'Date de péremption < 2 mois',
+    description: 'Date proche ou nécessitant remplacement',
     peremptionOnly: true
   },
   {
@@ -1064,6 +1164,12 @@ const submitLoading = ref(false);
 const submitSuccessMessage = ref('');
 const o2Level = ref('');
 const dsaLevel = ref(0);
+const bidonLevel = ref(null);
+const bidonRempli = ref(false);
+const bouteilleAriPressure = ref(null);
+const lspccPlombageOk = ref(false);
+const jerricanLevel = ref(null);
+const jerricanRempli = ref(false);
 const asupChecks = ref({});
 const asupData = ref([]);
 const asupLoading = ref(false);
@@ -1127,6 +1233,17 @@ const swipeCardStyle = computed(() => {
 const currentItem = computed(() => {
   if (!zoneItems.value.length) return null;
   return zoneItems.value[currentItemIndex.value] || null;
+});
+
+const currentItemRequestKey = computed(() => {
+  if (!selectedZoneKey.value || !currentItem.value) return '';
+  return `${selectedZoneKey.value}:${currentItem.value.materialIndex}`;
+});
+
+const hasBouteilleAriLowPressure = computed(() => {
+  const pressure = Number(bouteilleAriPressure.value);
+  if (!Number.isFinite(pressure) || pressure <= 0) return false;
+  return pressure < 270;
 });
 
 const issueOptions = computed(() => {
@@ -1307,10 +1424,17 @@ function resetItemState() {
     peremption: false,
     defectueux: false
   };
-  issueComment.value = '';
+  issueCustomComment.value = '';
+  issuePeremptionType.value = '';
   issueReserveCount.value = '';
   o2Level.value = '';
   dsaLevel.value = 0;
+  bidonLevel.value = null;
+  bidonRempli.value = false;
+  bouteilleAriPressure.value = null;
+  lspccPlombageOk.value = false;
+  jerricanLevel.value = null;
+  jerricanRempli.value = false;
   asupChecks.value = {};
   asupData.value = [];
   asupLoading.value = false;
@@ -1363,10 +1487,25 @@ function getDemandeSpeValue(item) {
   return String(item?.demandeSpe || '').trim();
 }
 
-function isDemandeSpe(item, value) {
+function normalizeDemandeSpeKey(value) {
+  return normalizeAssetPart(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function getDemandeSpeTokens(item) {
   const raw = getDemandeSpeValue(item);
-  if (!raw) return false;
-  return raw.split(',').map((part) => part.trim()).includes(value);
+  if (!raw) return [];
+  return raw
+    .split(/[;,]/)
+    .map((part) => normalizeDemandeSpeKey(part))
+    .filter(Boolean);
+}
+
+function isDemandeSpe(item, value) {
+  const askedValue = normalizeDemandeSpeKey(value);
+  if (!askedValue) return false;
+  return getDemandeSpeTokens(item).includes(askedValue);
 }
 
 function isAsupRequest(item) {
@@ -1392,6 +1531,16 @@ function formatDaysUntil(days) {
   if (days === null || days === undefined) return '—';
   if (days < 0) return `périmé depuis ${Math.abs(days)} jours`;
   return `périme dans ${days} jours`;
+}
+
+function parseNumberValue(value) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function isLevelInputValid(value) {
+  const level = parseNumberValue(value);
+  return level !== null && level >= 0 && level <= 5;
 }
 
 const defaultEtatVehicule = () => ({
@@ -1566,11 +1715,12 @@ watch(
 );
 
 watch(
-  () => currentItem.value,
-  (newItem) => {
+  () => currentItemRequestKey.value,
+  (itemKey) => {
+    if (!itemKey) return;
     resetItemState();
-    if (newItem && isAsupRequest(newItem.item)) {
-      fetchAsupData(newItem.item);
+    if (isAsupRequest(currentItem.value?.item)) {
+      fetchAsupData(currentItem.value.item);
     }
   }
 );
@@ -1852,6 +2002,24 @@ const validateOkRequirements = () => {
   if (isDemandeSpe(item, 'nivDSA') && dsaLevel.value <= 0) {
     return { ok: false, message: 'Veuillez indiquer le niveau de batterie DSA.' };
   }
+  if (isDemandeSpe(item, 'bidon') && !isLevelInputValid(bidonLevel.value)) {
+    return { ok: false, message: 'Veuillez indiquer le niveau du bidon sur 5.' };
+  }
+  if (isDemandeSpe(item, 'bouteilleARI')) {
+    const pressure = parseNumberValue(bouteilleAriPressure.value);
+    if (pressure === null || pressure <= 0) {
+      return { ok: false, message: 'Veuillez indiquer la pression de la bouteille ARI en bars.' };
+    }
+    if (pressure < 270) {
+      return { ok: false, message: 'Pression inférieure à 270 bars : remplacer la bouteille.' };
+    }
+  }
+  if (isDemandeSpe(item, 'lspcc') && !lspccPlombageOk.value) {
+    return { ok: false, message: 'Le plombage LSPCC doit être intact pour valider ce matériel en OK.' };
+  }
+  if (isDemandeSpe(item, 'jerrican') && !isLevelInputValid(jerricanLevel.value)) {
+    return { ok: false, message: 'Veuillez indiquer le niveau du jerrican sur 5.' };
+  }
   if (isDemandeSpe(item, 'asup')) {
     const lots = asupLots.value;
     if (!lots.length) {
@@ -1875,6 +2043,20 @@ const buildOkComment = () => {
   if (isDemandeSpe(item, 'nivDSA')) {
     comments.push(`Niveau batterie DSA : ${dsaLevel.value}/5`);
   }
+  if (isDemandeSpe(item, 'bidon')) {
+    comments.push(`Bidon : ${bidonLevel.value}/5`);
+    comments.push(`Bidon rempli : ${bidonRempli.value ? 'Oui' : 'Non'}`);
+  }
+  if (isDemandeSpe(item, 'bouteilleARI')) {
+    comments.push(`Bouteille ARI : ${bouteilleAriPressure.value} bars`);
+  }
+  if (isDemandeSpe(item, 'lspcc')) {
+    comments.push(`LSPCC plombage : ${lspccPlombageOk.value ? 'Intact' : 'Non intact'}`);
+  }
+  if (isDemandeSpe(item, 'jerrican')) {
+    comments.push(`Jerrican : ${jerricanLevel.value}/5`);
+    comments.push(`Jerrican rempli : ${jerricanRempli.value ? 'Oui' : 'Non'}`);
+  }
   if (isDemandeSpe(item, 'asup')) {
     const lotsChecked = asupLots.value
       .filter((lot) => asupChecks.value[lot.numLot])
@@ -1889,6 +2071,9 @@ const toggleIssueOption = (key) => {
     return;
   }
   issueSelections.value[key] = !issueSelections.value[key];
+  if (key === 'peremption' && !issueSelections.value[key]) {
+    issuePeremptionType.value = '';
+  }
   itemError.value = '';
 };
 
@@ -1899,12 +2084,16 @@ const submitIssue = async () => {
     itemError.value = 'Sélectionnez au moins un problème.';
     return;
   }
-  if ((selected.reserve || selected.peremption) && !issueReserveCount.value) {
+  if (selected.reserve && (issueReserveCount.value === '' || issueReserveCount.value === null)) {
     itemError.value = 'Indiquez le nombre pris depuis la réserve.';
     return;
   }
-  if (selected.defectueux && !issueComment.value.trim()) {
-    itemError.value = 'Veuillez saisir un commentaire pour le matériel défectueux.';
+  if (selected.peremption && !issuePeremptionType.value) {
+    itemError.value = 'Veuillez indiquer le type de problème de péremption.';
+    return;
+  }
+  if (!issueCustomComment.value.trim()) {
+    itemError.value = 'Veuillez saisir un commentaire personnalisé.';
     return;
   }
 
@@ -1916,11 +2105,17 @@ const submitIssue = async () => {
     comments.push('Matériel manquant, à commander');
   }
   if (selected.peremption) {
-    comments.push(`Date de péremption < 2 mois : ${issueReserveCount.value}`);
+    if (issuePeremptionType.value === 'proche') {
+      comments.push('Date de péremption proche : dans les 2 prochains mois');
+    }
+    if (issuePeremptionType.value === 'remplacement') {
+      comments.push('Date de péremption entraînant un remplacement : dans le mois ou périmé');
+    }
   }
   if (selected.defectueux) {
-    comments.push(`Matériel défectueux : ${issueComment.value.trim()}`);
+    comments.push('Matériel défectueux');
   }
+  comments.push(`Commentaire personnalisé : ${issueCustomComment.value.trim()}`);
 
   const updated = await updateCurrentItem('NOK', comments.join(' | '));
   if (updated) {
@@ -2375,11 +2570,9 @@ const launchInventaire = async () => {
   height: 42px;
 }
 
-.compact-number-input {
-  flex: 0 0 150px;
-  max-width: 170px;
-  height: 36px;
-  padding: 0.45rem 0.65rem;
+.number-like-matricule-input {
+  flex: 1 1 220px;
+  max-width: 280px;
 }
 .zone-top-actions {
   display: flex;
@@ -3037,6 +3230,10 @@ const launchInventaire = async () => {
   gap: 0.4rem;
 }
 
+.issue-comment-area {
+  min-height: 96px;
+}
+
 .issue-actions {
   display: flex;
   flex-wrap: wrap;
@@ -3440,7 +3637,7 @@ const launchInventaire = async () => {
     white-space: normal;
   }
 
-  .compact-number-input {
+  .number-like-matricule-input {
     flex: 1 1 auto;
     max-width: 100%;
   }
