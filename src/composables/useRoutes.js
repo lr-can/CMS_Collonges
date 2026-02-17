@@ -100,6 +100,13 @@ export const ROUTES_CONFIG = [
     profile: 'formation',
     requiresAuth: true
   },
+  {
+    path: '/demandeFormation',
+    name: 'Demande de formation',
+    icon: 'searchAgent.svg',
+    profile: 'formation',
+    requiresAuth: false
+  },
   // Routes Publiques
   {
     path: '/asupGrandPublic',

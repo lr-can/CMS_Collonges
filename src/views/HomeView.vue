@@ -334,12 +334,7 @@ const getAllRoutesForProfile = (profile) => {
 };
 
 const isRouteAccessible = (route) => {
-  // Routes temporairement bloquées (en développement)
-  if (route.path === '/demandeFormation') {
-    return false;
-  }
-  
-  // Pour les routes publiques, toujours accessibles (sauf celles bloquées ci-dessus)
+  // Pour les routes publiques, toujours accessibles
   if (route.profile === 'public') {
     return true;
   }
@@ -379,11 +374,6 @@ const getIconPath = (iconName) => {
 
 const handleLockedRouteClick = (route) => {
   if (!isRouteAccessible(route)) {
-    // Si la route est bloquée (en développement), ne rien faire ou afficher un message
-    if (route.path === '/demandeFormation') {
-      // Les routes en développement sont bloquées
-      return;
-    }
     // Si la route n'est pas accessible et que l'utilisateur n'est pas authentifié, rediriger vers login
     if (!isAuthenticated.value) {
       router.push('/login');
