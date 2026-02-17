@@ -1,7 +1,22 @@
 import { fileURLToPath, URL } from 'node:url'
+import { execSync } from 'node:child_process'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const getCommitHash = () => {
+  if (process.env.VITE_COMMIT_HASH) {
+    return process.env.VITE_COMMIT_HASH
+  }
+
+  try {
+    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
+  } catch {
+    return 'unknown'
+  }
+}
+
+const commitHash = getCommitHash()
 
 export default defineConfig({
   plugins: [
@@ -17,6 +32,7 @@ export default defineConfig({
         name: 'CMS Collonges - Manœuvre',
         short_name: 'CMS Collonges',
         description: 'Application de gestion des manœuvres CMS Collonges',
+        version: commitHash,
         theme_color: '#0078f3',
         background_color: '#ffffff',
         display: 'standalone',
@@ -36,7 +52,7 @@ export default defineConfig({
       },
       
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,wav}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,wav,webmanifest}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
       
