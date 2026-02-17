@@ -643,21 +643,43 @@
 
                     <div v-if="isDemandeSpe(currentItem.item, 'bouteilleARI')" class="special-section">
                       <div class="special-title">Bouteille ARI</div>
-                      <label class="input-label" for="bouteilleAriPressure">Pression (bars)</label>
-                      <input
-                        id="bouteilleAriPressure"
-                        type="number"
-                        min="0"
-                        class="text-input number-like-matricule-input"
-                        v-model.number="bouteilleAriPressure"
-                        @click.stop
-                      />
-                      <div v-if="hasBouteilleAriLowPressure" class="special-warning">
-                        Pression inférieure à 270 bars : remplacer la bouteille.
+                      <div class="special-hint">
+                        Renseignez pression et numéro pour
+                        {{ getTrackedNumbersCount(currentItem.item) }}
+                        bouteille{{ getTrackedNumbersCount(currentItem.item) > 1 ? 's' : '' }}.
+                      </div>
+                      <div class="material-number-grid">
+                        <div
+                          v-for="index in getTrackedNumbersCount(currentItem.item)"
+                          :key="`${currentItemRequestKey}-bouteille-ari-${index}`"
+                          class="bouteille-ari-entry"
+                        >
+                          <div class="input-label">Bouteille ARI n°{{ index }}</div>
+                          <div class="bouteille-ari-row">
+                            <input
+                              type="number"
+                              min="0"
+                              class="text-input number-like-matricule-input"
+                              v-model.number="bouteilleAriPressures[index - 1]"
+                              placeholder="Pression (bars)"
+                              @click.stop
+                            />
+                            <input
+                              type="text"
+                              class="text-input number-like-matricule-input"
+                              v-model.trim="trackedMaterialNumbers[index - 1]"
+                              placeholder="Numéro"
+                              @click.stop
+                            />
+                          </div>
+                          <div v-if="isBouteilleAriPressureLow(index - 1)" class="special-warning">
+                            Pression inférieure à 270 bars : remplacer la bouteille.
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div v-if="requiresTrackedNumbers(currentItem.item)" class="special-section">
+                    <div v-if="isDemandeSpe(currentItem.item, 'numeroEPI')" class="special-section">
                       <div class="special-title">{{ getTrackedNumbersTitle(currentItem.item) }}</div>
                       <div class="special-hint">
                         Renseignez {{ getTrackedNumbersCount(currentItem.item) }} numéro{{ getTrackedNumbersCount(currentItem.item) > 1 ? 's' : '' }}.
@@ -1203,7 +1225,7 @@ const o2Level = ref('');
 const dsaLevel = ref(0);
 const bidonLevel = ref(null);
 const bidonRempli = ref(false);
-const bouteilleAriPressure = ref(null);
+const bouteilleAriPressures = ref([]);
 const lspccPlombageOk = ref(false);
 const jerricanLevel = ref(null);
 const jerricanRempli = ref(false);
@@ -1276,12 +1298,6 @@ const currentItem = computed(() => {
 const currentItemRequestKey = computed(() => {
   if (!selectedZoneKey.value || !currentItem.value) return '';
   return `${selectedZoneKey.value}:${currentItem.value.materialIndex}`;
-});
-
-const hasBouteilleAriLowPressure = computed(() => {
-  const pressure = Number(bouteilleAriPressure.value);
-  if (!Number.isFinite(pressure) || pressure <= 0) return false;
-  return pressure < 270;
 });
 
 const issueOptions = computed(() => {
@@ -1476,7 +1492,7 @@ function resetItemState() {
   dsaLevel.value = 0;
   bidonLevel.value = null;
   bidonRempli.value = false;
-  bouteilleAriPressure.value = null;
+  bouteilleAriPressures.value = [];
   lspccPlombageOk.value = false;
   jerricanLevel.value = null;
   jerricanRempli.value = false;
@@ -1614,18 +1630,15 @@ function getTrackedNumbersCount(item) {
   return quantity || 1;
 }
 
-function getTrackedNumbersTitle(item) {
-  if (isDemandeSpe(item, 'bouteilleARI')) {
-    return 'Numéros de bouteilles ARI';
-  }
-  return 'Numéros EPI';
+function getTrackedNumbersTitle() {
+  return 'Numéros des matériels';
 }
 
 function getTrackedNumberInputLabel(item, index) {
   if (isDemandeSpe(item, 'bouteilleARI')) {
-    return `Numéro de bouteille ARI ${index}`;
+    return `Bouteille ARI n°${index}`;
   }
-  return `Numéro EPI ${index}`;
+  return `Matériel n°${index}`;
 }
 
 function buildTrackedNumberValues(item) {
@@ -1643,7 +1656,7 @@ function validateTrackedNumbers(item) {
   const values = buildTrackedNumberValues(item);
   const missingIndex = values.findIndex((value) => !value);
   if (missingIndex !== -1) {
-    const label = isDemandeSpe(item, 'bouteilleARI') ? 'de bouteille ARI' : 'EPI';
+    const label = isDemandeSpe(item, 'bouteilleARI') ? 'de la bouteille ARI' : 'du matériel';
     return {
       ok: false,
       message: `Veuillez renseigner le numéro ${missingIndex + 1} ${label}.`
@@ -1653,20 +1666,73 @@ function validateTrackedNumbers(item) {
 }
 
 function buildTrackedNumberComments(item) {
-  if (!requiresTrackedNumbers(item)) return [];
+  if (!isDemandeSpe(item, 'numeroEPI')) return [];
   const values = buildTrackedNumberValues(item);
-  const label = isDemandeSpe(item, 'bouteilleARI') ? 'Numéro bouteille ARI' : 'Numéro EPI';
-  return values.map((value, index) => `${label} ${index + 1} : ${value}`);
+  return values.map((value, index) => `Matériel n°${index + 1} : ${value}`);
 }
 
-function syncTrackedNumbersForCurrentItem() {
+function buildBouteilleAriPressureValues(item) {
+  if (!isDemandeSpe(item, 'bouteilleARI')) return [];
+  const expectedCount = getTrackedNumbersCount(item);
+  if (expectedCount <= 0) return [];
+  return Array.from({ length: expectedCount }, (_, index) => {
+    return parseNumberValue(bouteilleAriPressures.value[index]);
+  });
+}
+
+function isBouteilleAriPressureLow(index) {
+  const pressure = parseNumberValue(bouteilleAriPressures.value[index]);
+  return pressure !== null && pressure > 0 && pressure < 270;
+}
+
+function validateBouteilleAriInputs(item, { checkMinPressure = false } = {}) {
+  if (!isDemandeSpe(item, 'bouteilleARI')) {
+    return { ok: true, message: '' };
+  }
+  const pressures = buildBouteilleAriPressureValues(item);
+  const missingPressureIndex = pressures.findIndex((pressure) => pressure === null || pressure <= 0);
+  if (missingPressureIndex !== -1) {
+    return {
+      ok: false,
+      message: `Veuillez renseigner la pression de la bouteille ARI n°${missingPressureIndex + 1} en bars.`
+    };
+  }
+  if (checkMinPressure) {
+    const lowPressureIndex = pressures.findIndex((pressure) => pressure < 270);
+    if (lowPressureIndex !== -1) {
+      return {
+        ok: false,
+        message: `Pression inférieure à 270 bars pour la bouteille ARI n°${lowPressureIndex + 1} : remplacer la bouteille.`
+      };
+    }
+  }
+  return { ok: true, message: '' };
+}
+
+function buildBouteilleAriComments(item) {
+  if (!isDemandeSpe(item, 'bouteilleARI')) return [];
+  const pressures = buildBouteilleAriPressureValues(item);
+  const numbers = buildTrackedNumberValues(item);
+  return numbers.map((number, index) => {
+    const pressure = pressures[index];
+    return `Bouteille ARI n°${index + 1} : ${pressure} bars - ${number}`;
+  });
+}
+
+function syncTrackedInputsForCurrentItem() {
   const item = currentItem.value?.item;
   if (!requiresTrackedNumbers(item)) {
     trackedMaterialNumbers.value = [];
+  } else {
+    const expectedCount = getTrackedNumbersCount(item);
+    trackedMaterialNumbers.value = Array.from({ length: expectedCount }, () => '');
+  }
+  if (!isDemandeSpe(item, 'bouteilleARI')) {
+    bouteilleAriPressures.value = [];
     return;
   }
   const expectedCount = getTrackedNumbersCount(item);
-  trackedMaterialNumbers.value = Array.from({ length: expectedCount }, () => '');
+  bouteilleAriPressures.value = Array.from({ length: expectedCount }, () => null);
 }
 
 const defaultEtatVehicule = () => ({
@@ -1714,6 +1780,26 @@ const canOpenZone = (zone) => {
   }
   return true;
 };
+
+let defaultZoneAutoDoneSyncInProgress = false;
+
+async function ensureDefaultZoneDoneIfEmpty(inventaire) {
+  const defaultZone = inventaire?.zones?.default;
+  if (!defaultZone) return;
+  if (defaultZone.status === 'DONE') return;
+  const defaultItems = Array.isArray(defaultZone.materiels) ? defaultZone.materiels : [];
+  const hasItemsToCheck = defaultItems.some((item) => String(item.noCheck) !== '1');
+  if (hasItemsToCheck) return;
+  if (defaultZoneAutoDoneSyncInProgress) return;
+  defaultZoneAutoDoneSyncInProgress = true;
+  try {
+    await update(dbRef(db, 'inventaire/zones/default'), { status: 'DONE' });
+  } catch (error) {
+    console.error('Erreur auto-validation zone default:', error);
+  } finally {
+    defaultZoneAutoDoneSyncInProgress = false;
+  }
+}
 
 const fetchAgents = async () => {
   agentsLoading.value = true;
@@ -1791,6 +1877,7 @@ watch(
   (newInventaire) => {
     if (!newInventaire) return;
     submitSuccessMessage.value = '';
+    ensureDefaultZoneDoneIfEmpty(newInventaire);
     const zoneEtat = newInventaire?.zones?.etat_vehicule?.etatVehicule;
     const legacyEtat = newInventaire?.etatVehicule;
     const newEtat = zoneEtat || legacyEtat;
@@ -1845,7 +1932,7 @@ watch(
   (itemKey) => {
     if (!itemKey) return;
     resetItemState();
-    syncTrackedNumbersForCurrentItem();
+    syncTrackedInputsForCurrentItem();
     if (isAsupRequest(currentItem.value?.item)) {
       fetchAsupData(currentItem.value.item);
     }
@@ -2137,12 +2224,9 @@ const validateOkRequirements = () => {
     return { ok: false, message: 'Veuillez indiquer le niveau du bidon sur 5.' };
   }
   if (isDemandeSpe(item, 'bouteilleARI')) {
-    const pressure = parseNumberValue(bouteilleAriPressure.value);
-    if (pressure === null || pressure <= 0) {
-      return { ok: false, message: 'Veuillez indiquer la pression de la bouteille ARI en bars.' };
-    }
-    if (pressure < 270) {
-      return { ok: false, message: 'Pression inférieure à 270 bars : remplacer la bouteille.' };
+    const bouteilleAriValidation = validateBouteilleAriInputs(item, { checkMinPressure: true });
+    if (!bouteilleAriValidation.ok) {
+      return bouteilleAriValidation;
     }
   }
   if (isDemandeSpe(item, 'lspcc') && !lspccPlombageOk.value) {
@@ -2178,9 +2262,7 @@ const buildOkComment = () => {
     comments.push(`Bidon : ${bidonLevel.value}/5`);
     comments.push(`Bidon rempli : ${bidonRempli.value ? 'Oui' : 'Non'}`);
   }
-  if (isDemandeSpe(item, 'bouteilleARI')) {
-    comments.push(`Bouteille ARI : ${bouteilleAriPressure.value} bars`);
-  }
+  comments.push(...buildBouteilleAriComments(item));
   comments.push(...buildTrackedNumberComments(item));
   if (isDemandeSpe(item, 'lspcc')) {
     comments.push(`LSPCC plombage : ${lspccPlombageOk.value ? 'Intact' : 'Non intact'}`);
@@ -2211,9 +2293,15 @@ const toggleIssueOption = (key) => {
 
 const submitIssue = async () => {
   if (!currentItem.value) return;
-  const trackedNumbersValidation = validateTrackedNumbers(currentItem.value.item);
+  const item = currentItem.value.item;
+  const trackedNumbersValidation = validateTrackedNumbers(item);
   if (!trackedNumbersValidation.ok) {
     itemError.value = trackedNumbersValidation.message;
+    return;
+  }
+  const bouteilleAriValidation = validateBouteilleAriInputs(item);
+  if (!bouteilleAriValidation.ok) {
+    itemError.value = bouteilleAriValidation.message;
     return;
   }
   const selected = issueSelections.value;
@@ -2259,7 +2347,8 @@ const submitIssue = async () => {
   if (selected.bouteilleChangee) {
     comments.push('Bouteille ARI changée');
   }
-  comments.push(...buildTrackedNumberComments(currentItem.value.item));
+  comments.push(...buildBouteilleAriComments(item));
+  comments.push(...buildTrackedNumberComments(item));
   comments.push(`Commentaire personnalisé : ${issueCustomComment.value.trim()}`);
 
   const updated = await updateCurrentItem('NOK', comments.join(' | '));
@@ -2548,6 +2637,14 @@ const buildZonesPayload = () => {
       status: 'PENDING',
       materiels: []
     };
+  }
+
+  if (zones.default) {
+    const defaultItems = Array.isArray(zones.default.materiels) ? zones.default.materiels : [];
+    const hasItemsToCheck = defaultItems.some((item) => String(item.noCheck) !== '1');
+    if (!hasItemsToCheck) {
+      zones.default.status = 'DONE';
+    }
   }
 
   if (!isLotPsVehicule) {
@@ -3256,6 +3353,18 @@ const launchInventaire = async () => {
 
 .material-number-grid {
   display: grid;
+  gap: 0.5rem;
+}
+
+.bouteille-ari-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bouteille-ari-row {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
