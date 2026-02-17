@@ -657,6 +657,29 @@
                       </div>
                     </div>
 
+                    <div v-if="requiresTrackedNumbers(currentItem.item)" class="special-section">
+                      <div class="special-title">{{ getTrackedNumbersTitle(currentItem.item) }}</div>
+                      <div class="special-hint">
+                        Renseignez {{ getTrackedNumbersCount(currentItem.item) }} numéro{{ getTrackedNumbersCount(currentItem.item) > 1 ? 's' : '' }}.
+                      </div>
+                      <div class="material-number-grid">
+                        <label
+                          v-for="index in getTrackedNumbersCount(currentItem.item)"
+                          :key="`${currentItemRequestKey}-tracked-number-${index}`"
+                          class="issue-field"
+                        >
+                          <span class="input-label">{{ getTrackedNumberInputLabel(currentItem.item, index) }}</span>
+                          <input
+                            type="text"
+                            class="text-input number-like-matricule-input"
+                            v-model.trim="trackedMaterialNumbers[index - 1]"
+                            placeholder="Saisissez un numéro"
+                            @click.stop
+                          />
+                        </label>
+                      </div>
+                    </div>
+
                     <div v-if="isDemandeSpe(currentItem.item, 'lspcc')" class="special-section">
                       <div class="special-title">LSPCC</div>
                       <label class="toggle-label">
@@ -1130,7 +1153,9 @@ const issueSelections = ref({
   reserve: false,
   commande: false,
   peremption: false,
-  defectueux: false
+  defectueux: false,
+  dossardModifie: false,
+  bouteilleChangee: false
 });
 const issueCustomComment = ref('');
 const issuePeremptionType = ref('');
@@ -1156,6 +1181,18 @@ const issueOptionDefinitions = [
     key: 'defectueux',
     title: 'Défectueux',
     description: 'Matériel défectueux'
+  },
+  {
+    key: 'dossardModifie',
+    title: 'Dossard modifié',
+    description: 'Le dossard de la bouteille ARI a été modifié',
+    bouteilleAriOnly: true
+  },
+  {
+    key: 'bouteilleChangee',
+    title: 'Bouteille changée',
+    description: 'La bouteille ARI a été remplacée',
+    bouteilleAriOnly: true
   }
 ];
 const inventaireCommentaire = ref('');
@@ -1174,6 +1211,7 @@ const asupChecks = ref({});
 const asupData = ref([]);
 const asupLoading = ref(false);
 const asupError = ref('');
+const trackedMaterialNumbers = ref([]);
 const SWIPE_MAX_OFFSET = 150;
 const SWIPE_TRIGGER_OFFSET = 45;
 const SWIPE_TONE_OFFSET = 16;
@@ -1248,8 +1286,13 @@ const hasBouteilleAriLowPressure = computed(() => {
 
 const issueOptions = computed(() => {
   return issueOptionDefinitions.filter((option) => {
-    if (!option.peremptionOnly) return true;
-    return String(currentItem.value?.item?.isPeremption) === '1';
+    if (option.peremptionOnly && String(currentItem.value?.item?.isPeremption) !== '1') {
+      return false;
+    }
+    if (option.bouteilleAriOnly && !isDemandeSpe(currentItem.value?.item, 'bouteilleARI')) {
+      return false;
+    }
+    return true;
   });
 });
 
@@ -1422,7 +1465,9 @@ function resetItemState() {
     reserve: false,
     commande: false,
     peremption: false,
-    defectueux: false
+    defectueux: false,
+    dossardModifie: false,
+    bouteilleChangee: false
   };
   issueCustomComment.value = '';
   issuePeremptionType.value = '';
@@ -1439,6 +1484,7 @@ function resetItemState() {
   asupData.value = [];
   asupLoading.value = false;
   asupError.value = '';
+  trackedMaterialNumbers.value = [];
 }
 
 function getFirstPendingIndex() {
@@ -1541,6 +1587,86 @@ function parseNumberValue(value) {
 function isLevelInputValid(value) {
   const level = parseNumberValue(value);
   return level !== null && level >= 0 && level <= 5;
+}
+
+function parsePositiveInteger(value) {
+  if (value === undefined || value === null) return null;
+  const raw = String(value).trim().replace(',', '.');
+  if (!raw) return null;
+  const directValue = Number(raw);
+  if (Number.isFinite(directValue) && directValue > 0) {
+    return Math.floor(directValue);
+  }
+  const fallbackMatch = raw.match(/\d+/);
+  if (!fallbackMatch) return null;
+  const fallbackValue = Number.parseInt(fallbackMatch[0], 10);
+  if (!Number.isFinite(fallbackValue) || fallbackValue <= 0) return null;
+  return fallbackValue;
+}
+
+function requiresTrackedNumbers(item) {
+  return isDemandeSpe(item, 'bouteilleARI') || isDemandeSpe(item, 'numeroEPI');
+}
+
+function getTrackedNumbersCount(item) {
+  if (!requiresTrackedNumbers(item)) return 0;
+  const quantity = parsePositiveInteger(item?.qteMateriel);
+  return quantity || 1;
+}
+
+function getTrackedNumbersTitle(item) {
+  if (isDemandeSpe(item, 'bouteilleARI')) {
+    return 'Numéros de bouteilles ARI';
+  }
+  return 'Numéros EPI';
+}
+
+function getTrackedNumberInputLabel(item, index) {
+  if (isDemandeSpe(item, 'bouteilleARI')) {
+    return `Numéro de bouteille ARI ${index}`;
+  }
+  return `Numéro EPI ${index}`;
+}
+
+function buildTrackedNumberValues(item) {
+  const expectedCount = getTrackedNumbersCount(item);
+  if (expectedCount <= 0) return [];
+  return Array.from({ length: expectedCount }, (_, index) => {
+    return String(trackedMaterialNumbers.value[index] || '').trim();
+  });
+}
+
+function validateTrackedNumbers(item) {
+  if (!requiresTrackedNumbers(item)) {
+    return { ok: true, message: '' };
+  }
+  const values = buildTrackedNumberValues(item);
+  const missingIndex = values.findIndex((value) => !value);
+  if (missingIndex !== -1) {
+    const label = isDemandeSpe(item, 'bouteilleARI') ? 'de bouteille ARI' : 'EPI';
+    return {
+      ok: false,
+      message: `Veuillez renseigner le numéro ${missingIndex + 1} ${label}.`
+    };
+  }
+  return { ok: true, message: '' };
+}
+
+function buildTrackedNumberComments(item) {
+  if (!requiresTrackedNumbers(item)) return [];
+  const values = buildTrackedNumberValues(item);
+  const label = isDemandeSpe(item, 'bouteilleARI') ? 'Numéro bouteille ARI' : 'Numéro EPI';
+  return values.map((value, index) => `${label} ${index + 1} : ${value}`);
+}
+
+function syncTrackedNumbersForCurrentItem() {
+  const item = currentItem.value?.item;
+  if (!requiresTrackedNumbers(item)) {
+    trackedMaterialNumbers.value = [];
+    return;
+  }
+  const expectedCount = getTrackedNumbersCount(item);
+  trackedMaterialNumbers.value = Array.from({ length: expectedCount }, () => '');
 }
 
 const defaultEtatVehicule = () => ({
@@ -1719,6 +1845,7 @@ watch(
   (itemKey) => {
     if (!itemKey) return;
     resetItemState();
+    syncTrackedNumbersForCurrentItem();
     if (isAsupRequest(currentItem.value?.item)) {
       fetchAsupData(currentItem.value.item);
     }
@@ -1996,6 +2123,10 @@ const onSwipeTouchMove = (event) => {
 const validateOkRequirements = () => {
   const item = currentItem.value?.item;
   if (!item) return { ok: false, message: 'Aucun matériel sélectionné.' };
+  const trackedNumbersValidation = validateTrackedNumbers(item);
+  if (!trackedNumbersValidation.ok) {
+    return trackedNumbersValidation;
+  }
   if (isDemandeSpe(item, 'nivO2') && !o2Level.value) {
     return { ok: false, message: 'Veuillez indiquer le niveau O2.' };
   }
@@ -2050,6 +2181,7 @@ const buildOkComment = () => {
   if (isDemandeSpe(item, 'bouteilleARI')) {
     comments.push(`Bouteille ARI : ${bouteilleAriPressure.value} bars`);
   }
+  comments.push(...buildTrackedNumberComments(item));
   if (isDemandeSpe(item, 'lspcc')) {
     comments.push(`LSPCC plombage : ${lspccPlombageOk.value ? 'Intact' : 'Non intact'}`);
   }
@@ -2079,8 +2211,14 @@ const toggleIssueOption = (key) => {
 
 const submitIssue = async () => {
   if (!currentItem.value) return;
+  const trackedNumbersValidation = validateTrackedNumbers(currentItem.value.item);
+  if (!trackedNumbersValidation.ok) {
+    itemError.value = trackedNumbersValidation.message;
+    return;
+  }
   const selected = issueSelections.value;
-  if (!selected.reserve && !selected.commande && !selected.peremption && !selected.defectueux) {
+  const hasSelectedIssue = issueOptions.value.some((option) => Boolean(selected[option.key]));
+  if (!hasSelectedIssue) {
     itemError.value = 'Sélectionnez au moins un problème.';
     return;
   }
@@ -2115,6 +2253,13 @@ const submitIssue = async () => {
   if (selected.defectueux) {
     comments.push('Matériel défectueux');
   }
+  if (selected.dossardModifie) {
+    comments.push('Dossard ARI modifié');
+  }
+  if (selected.bouteilleChangee) {
+    comments.push('Bouteille ARI changée');
+  }
+  comments.push(...buildTrackedNumberComments(currentItem.value.item));
   comments.push(`Commentaire personnalisé : ${issueCustomComment.value.trim()}`);
 
   const updated = await updateCurrentItem('NOK', comments.join(' | '));
@@ -3102,6 +3247,16 @@ const launchInventaire = async () => {
 .special-title {
   font-weight: 700;
   color: #111827;
+}
+
+.special-hint {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.material-number-grid {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .chip-group {
