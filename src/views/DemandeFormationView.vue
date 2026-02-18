@@ -197,11 +197,14 @@
           </div>
         </div>
 
-        <div class="subsubtitle" style="margin-top: 1.5rem">Sélection des sessions (2 vœux)</div>
-        <div class="info-block info-remarque info-block-inline">
-          <strong>REMARQUE :</strong> Sur ce formulaire, il vous sera demandé de renseigner deux sessions distinctes, afin de connaître vos disponibilités en cas de session complète. Vous formulez donc deux vœux. Dans la mesure du possible, vous êtes d'abord inscrit sur votre premier vœu.
+        <div class="subsubtitle" style="margin-top: 1.5rem">
+          Sélection des sessions {{ hasSingleSession ? '(1 vœu)' : '(2 vœux)' }}
         </div>
-        <p>Sélectionnez vos deux sessions préférées par ordre de préférence</p>
+        <div class="info-block info-remarque info-block-inline">
+          <strong>REMARQUE :</strong> Sur ce formulaire, il vous sera demandé de renseigner {{ hasSingleSession ? 'la session disponible' : 'deux sessions distinctes' }}, afin de connaître vos disponibilités en cas de session complète. Vous formulez {{ hasSingleSession ? 'un vœu' : 'donc deux vœux' }}. Dans la mesure du possible, vous êtes d'abord inscrit sur votre premier vœu.
+        </div>
+        <p v-if="hasSingleSession">Une seule session disponible. Sélectionnez-la pour formuler votre vœu.</p>
+        <p v-else>Sélectionnez vos deux sessions préférées par ordre de préférence</p>
 
         <div class="sessions-grid">
           <div
@@ -210,6 +213,7 @@
             class="session-card"
             :class="{
               disabled: isSessionPast(session),
+              'session-near-date': isSessionLessThan2Months(session) && !isSessionPast(session),
               'voeu-1': selectedVoeu1 === session,
               'voeu-2': selectedVoeu2 === session
             }"
@@ -217,7 +221,7 @@
           >
             <div class="session-chip">{{ session.sessionId }}</div>
             <div class="session-nom">{{ session.nomShort }}</div>
-            <div class="session-dates">
+            <div class="session-dates" :class="{ 'dates-orange': isSessionLessThan2Months(session) && !isSessionPast(session) }">
               {{ formatDate(session.dateDebut) }} → {{ formatDate(session.dateFin) }}
             </div>
             <div class="session-centre">{{ session.centreFormation }}</div>
@@ -267,7 +271,7 @@
           <p><strong>Email :</strong> {{ agentMail }}</p>
           <p><strong>Formation :</strong> {{ selectedFormation?.intitule }}</p>
           <p><strong>Vœu 1 :</strong> {{ selectedVoeu1?.sessionId }} - {{ selectedVoeu1 ? formatDate(selectedVoeu1.dateDebut) : '-' }}</p>
-          <p><strong>Vœu 2 :</strong> {{ selectedVoeu2?.sessionId }} - {{ selectedVoeu2 ? formatDate(selectedVoeu2.dateDebut) : '-' }}</p>
+          <p v-if="!hasSingleSession"><strong>Vœu 2 :</strong> {{ selectedVoeu2?.sessionId }} - {{ selectedVoeu2 ? formatDate(selectedVoeu2.dateDebut) : '-' }}</p>
           <p v-if="showHebergementStep"><strong>Hébergement :</strong> {{ hebergement ? 'Oui' : 'Non' }}</p>
           <p v-if="commentaire"><strong>Commentaire :</strong> {{ commentaire }}</p>
         </div>
@@ -297,7 +301,7 @@
       <button class="back-button" @click="$router.push('/')">Retour à l'accueil</button>
     </div>
 
-    <!-- Dialog : Session < 2 mois -->
+    <!-- Dialog : Session < 2 mois - confirmation -->
     <Dialog
       v-model:visible="showSessionWarningDialog"
       header="Attention"
@@ -305,7 +309,12 @@
       :closable="true"
       :style="{ width: '90vw', maxWidth: '400px' }"
     >
-      <p>Session inférieure à deux mois, les inscriptions doivent se faire au moins deux mois à l'avance.</p>
+      <p>Session inférieure à deux mois. Les inscriptions doivent normalement se faire au moins deux mois à l'avance.</p>
+      <p><strong>Souhaitez-vous quand même formuler ce vœu ?</strong></p>
+      <template #footer>
+        <button class="nav-button" @click="showSessionWarningDialog = false; pendingSessionConfirm = null">Annuler</button>
+        <button class="submit-button" @click="confirmSessionNearDate">Confirmer le vœu</button>
+      </template>
     </Dialog>
   </div>
 </template>
@@ -369,6 +378,7 @@ const selectedVoeu2 = ref(null)
 const hebergement = ref(false)
 const commentaire = ref('')
 const showSessionWarningDialog = ref(false)
+const pendingSessionConfirm = ref(null)
 
 const dictGrades = {
   'Sap 2CL': Sap2CL,
@@ -473,6 +483,8 @@ const availableSessions = computed(() => {
   if (!selectedFormation.value) return []
   return (selectedFormation.value.sessions || []).filter((s) => !s.annulee)
 })
+
+const hasSingleSession = computed(() => availableSessions.value.length === 1)
 
 const showHebergementStep = computed(() => {
   if (!selectedFormation.value || !selectedVoeu1.value) return false
@@ -614,10 +626,23 @@ const selectFormation = (formation) => {
 const selectSession = (session) => {
   if (isSessionPast(session)) return
   if (isSessionLessThan2Months(session)) {
+    pendingSessionConfirm.value = session
     showSessionWarningDialog.value = true
     return
   }
 
+  applySessionSelection(session)
+}
+
+const confirmSessionNearDate = () => {
+  if (pendingSessionConfirm.value) {
+    applySessionSelection(pendingSessionConfirm.value)
+    pendingSessionConfirm.value = null
+    showSessionWarningDialog.value = false
+  }
+}
+
+const applySessionSelection = (session) => {
   if (selectedVoeu1.value === session) {
     selectedVoeu1.value = null
     if (selectedVoeu2.value) {
@@ -633,6 +658,7 @@ const selectSession = (session) => {
 
   if (!selectedVoeu1.value) {
     selectedVoeu1.value = session
+    if (hasSingleSession.value) step.value = 5
   } else if (!selectedVoeu2.value) {
     selectedVoeu2.value = session
     step.value = 5
@@ -642,7 +668,12 @@ const selectSession = (session) => {
 const isSubmitting = ref(false)
 
 const submitDemande = async () => {
-  if (!selectedVoeu1.value || !selectedVoeu2.value) {
+  const needsTwoVoeux = !hasSingleSession.value
+  if (!selectedVoeu1.value) {
+    errorMessage.value = 'Veuillez sélectionner au moins une session'
+    return
+  }
+  if (needsTwoVoeux && !selectedVoeu2.value) {
     errorMessage.value = 'Veuillez sélectionner deux sessions (vœu 1 et vœu 2)'
     return
   }
@@ -1111,6 +1142,11 @@ onMounted(async () => {
   font-size: 0.8rem;
   color: #666;
   margin-top: 0.25rem;
+}
+
+.session-dates.dates-orange {
+  color: #d64d00;
+  font-weight: 600;
 }
 
 .session-centre {
