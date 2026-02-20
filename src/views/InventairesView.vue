@@ -5,6 +5,15 @@
       <p class="inventaire-subtitle">
         {{ subtitleText }}
       </p>
+      <div v-if="canLaunchSecondInventaire && !showSecondInventaireSetup" class="header-actions">
+        <button
+          type="button"
+          class="launch-button secondary-action-button"
+          @click="startSecondInventaireSetup"
+        >
+          Lancer un deuxième inventaire
+        </button>
+      </div>
     </header>
 
     <div v-if="firebaseLoading" class="loading-message">
@@ -17,12 +26,12 @@
       <div v-else-if="submitSuccessMessage" class="success-message">
         {{ submitSuccessMessage }}
       </div>
-      <template v-if="!hasInventaire">
+      <template v-if="showLaunchSetup">
     <section class="inventaire-section">
       <div class="section-header">
-        <h2>Réalisateurs de l'inventaire</h2>
+        <h2>{{ showSecondInventaireSetup ? 'Réalisateurs du deuxième inventaire' : 'Réalisateurs de l\'inventaire' }}</h2>
         <div class="selection-count">
-          {{ selectedAgents.length }} / 4 sélectionnés
+          {{ launchSelectionCountText }}
         </div>
       </div>
 
@@ -161,15 +170,50 @@
           :disabled="!canLaunch"
           @click="launchInventaire"
         >
-          Lancer l'inventaire
+          {{ launchButtonLabel }}
+        </button>
+        <button
+          v-if="showSecondInventaireSetup"
+          type="button"
+          class="return-button"
+          @click="cancelSecondInventaireSetup"
+        >
+          Annuler
         </button>
         <p v-if="!canLaunch" class="launch-hint">
-          Sélectionnez 4 agents et un engin pour continuer.
+          {{ launchHintText }}
         </p>
       </div>
     </section>
       </template>
-      <template v-else>
+      <template v-if="hasInventaire">
+        <section class="inventaire-section">
+          <div class="section-header">
+            <h2>Bilans en cours</h2>
+            <div class="selection-count">
+              {{ activeInventaires.length }} / 2 actifs
+            </div>
+          </div>
+          <div class="inventaire-slot-grid">
+            <button
+              v-for="entry in activeInventaires"
+              :key="entry.slot"
+              type="button"
+              class="inventaire-slot-card"
+              :class="{ selected: selectedInventaireSlot === entry.slot }"
+              @click="selectInventaireSlot(entry.slot)"
+            >
+              <div class="slot-title">{{ formatSlotLabel(entry.slot) }}</div>
+              <div class="slot-meta">
+                {{ entry.data.vehicule || 'Engin non renseigné' }}
+              </div>
+              <div class="slot-meta">
+                Début : {{ formatDateTime(entry.data.heureDebut) }}
+              </div>
+            </button>
+          </div>
+        </section>
+
         <section class="inventaire-section">
           <div class="disconnect-row" v-if="isInventaireurConnected">
             <button type="button" class="disconnect-button" @click="handleDeconnexion">
@@ -178,8 +222,8 @@
           </div>
           <div class="section-header">
             <h2>Connexion</h2>
-            <div class="selection-count" v-if="inventaireData?.vehicule">
-              Inventaire en cours · {{ inventaireData.vehicule }}
+            <div class="selection-count" v-if="selectedInventaireSlot">
+              {{ formatSlotLabel(selectedInventaireSlot) }}<span v-if="inventaireData?.vehicule"> · {{ inventaireData.vehicule }}</span>
             </div>
           </div>
 
@@ -211,7 +255,7 @@
             </div>
           </div>
           <div v-else class="success-message">
-            Connecté en tant que {{ formatAgentDisplay(connectedAgent) }}
+            Connecté en tant que {{ formatAgentDisplay(connectedAgent) }} sur {{ formatSlotLabel(selectedInventaireSlot) }}
           </div>
 
           <div v-if="isInventaireurConnected && !selectedZone" class="zones-section">
@@ -618,7 +662,7 @@
                       </div>
                     </div>
 
-                    <div v-if="isDemandeSpe(currentItem.item, 'bidon')" class="special-section">
+                    <div v-if="isBidonLevelRequest(currentItem.item)" class="special-section">
                       <div class="special-title">Bidon</div>
                       <label class="input-label" for="bidonLevel">Niveau (sur 5)</label>
                       <input
@@ -639,6 +683,21 @@
                         />
                         Bidon rempli
                       </label>
+                    </div>
+
+                    <div v-if="isMaterialTestRequest(currentItem.item)" class="special-section">
+                      <div class="special-title">Test du matériel</div>
+                      <label class="toggle-label">
+                        <input
+                          type="checkbox"
+                          v-model="materialTested"
+                          @click.stop
+                        />
+                        Matériel testé
+                      </label>
+                      <div class="special-hint">
+                        Information non bloquante, enregistrée dans le commentaire.
+                      </div>
                     </div>
 
                     <div v-if="isDemandeSpe(currentItem.item, 'bouteilleARI')" class="special-section">
@@ -888,6 +947,8 @@ import LotIcon from '@/assets/icons/Lot.png';
 
 const AGENTS_URL = 'https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%2012';
 const INVENTAIRE_URL = 'https://api.cms-collonges.fr/inventaireVehicule';
+const INVENTAIRE_ROOT_PATH = 'inventaire';
+const INVENTAIRE_SLOTS = ['bilan1', 'bilan2'];
 
 const statusLegend = [
   { key: 'DIP', short: 'DIP', label: 'Disponibilité Programmée', color: '#9CFF9C' },
@@ -905,7 +966,15 @@ const enginsStatus = ref([]);
 const inventaireLoading = ref(false);
 const inventaireError = ref('');
 
+const makeEmptyInventairesBySlot = () => ({
+  bilan1: null,
+  bilan2: null
+});
+
 const inventaireData = ref(null);
+const inventairesBySlot = ref(makeEmptyInventairesBySlot());
+const selectedInventaireSlot = ref('');
+const showSecondInventaireSetup = ref(false);
 const firebaseLoading = ref(true);
 const firebaseError = ref('');
 
@@ -1050,16 +1119,64 @@ const toggleGroup = (group) => {
   expandedStatus.value[group.key] = !expandedStatus.value[group.key];
 };
 
-const canLaunch = computed(() => {
-  return selectedAgents.value.length === 4 && Boolean(selectedVehicle.value);
+const activeInventaires = computed(() => {
+  return INVENTAIRE_SLOTS
+    .map((slot) => ({
+      slot,
+      data: inventairesBySlot.value[slot]
+    }))
+    .filter((entry) => Boolean(entry.data));
 });
 
-const hasInventaire = computed(() => Boolean(inventaireData.value));
+const hasInventaire = computed(() => activeInventaires.value.length > 0);
+
+const canLaunchSecondInventaire = computed(() => activeInventaires.value.length === 1);
+const showLaunchSetup = computed(() => !hasInventaire.value || showSecondInventaireSetup.value);
+
+const isLotPsSelection = computed(() => {
+  if (!selectedVehicle.value) return false;
+  return formatEnginAssetName(selectedVehicle.value) === 'LOTPS';
+});
+
+const canLaunch = computed(() => {
+  if (!selectedVehicle.value) {
+    return false;
+  }
+  if (isLotPsSelection.value) {
+    return selectedAgents.value.length >= 2 && selectedAgents.value.length <= 4;
+  }
+  return selectedAgents.value.length === 4;
+});
+
+const launchSelectionCountText = computed(() => {
+  if (isLotPsSelection.value) {
+    return `${selectedAgents.value.length} / 4 sélectionnés (minimum 2)`;
+  }
+  return `${selectedAgents.value.length} / 4 sélectionnés`;
+});
+
+const launchHintText = computed(() => {
+  if (!selectedVehicle.value) {
+    return 'Sélectionnez un engin puis les agents requis pour continuer.';
+  }
+  if (isLotPsSelection.value) {
+    return 'Pour le LOTPS, sélectionnez entre 2 et 4 agents.';
+  }
+  return 'Sélectionnez 4 agents et un engin pour continuer.';
+});
+
+const launchButtonLabel = computed(() => {
+  return showSecondInventaireSetup.value ? 'Lancer le deuxième inventaire' : 'Lancer l\'inventaire';
+});
 
 const subtitleText = computed(() => {
-  return hasInventaire.value
-    ? 'Un inventaire est en cours. Connectez-vous pour continuer.'
-    : 'Sélectionnez 4 agents et un engin pour préparer l\'inventaire.';
+  if (!hasInventaire.value) {
+    return 'Sélectionnez les agents et un engin pour préparer l\'inventaire.';
+  }
+  if (activeInventaires.value.length === 1) {
+    return 'Un inventaire est en cours. Connectez-vous pour continuer ou lancez-en un deuxième.';
+  }
+  return 'Deux inventaires sont en cours. Sélectionnez le bilan concerné pour travailler.';
 });
 
 const vehicles = computed(() => {
@@ -1084,6 +1201,120 @@ const agentsByMatricule = computed(() => {
     return acc;
   }, {});
 });
+
+const normalizeSlot = (slot) => {
+  return INVENTAIRE_SLOTS.includes(slot) ? slot : '';
+};
+
+const formatSlotLabel = (slot) => {
+  return slot === 'bilan2' ? 'Bilan 2' : 'Bilan 1';
+};
+
+const isLegacyInventairePayload = (payload) => {
+  if (!payload || typeof payload !== 'object') return false;
+  if (INVENTAIRE_SLOTS.some((slot) => Object.prototype.hasOwnProperty.call(payload, slot))) {
+    return false;
+  }
+  return Boolean(payload.zones);
+};
+
+const normalizeInventairesPayload = (payload) => {
+  const normalized = makeEmptyInventairesBySlot();
+  if (!payload || typeof payload !== 'object') {
+    return normalized;
+  }
+  if (isLegacyInventairePayload(payload)) {
+    normalized.bilan1 = payload;
+    return normalized;
+  }
+  INVENTAIRE_SLOTS.forEach((slot) => {
+    const value = payload[slot];
+    if (value && typeof value === 'object') {
+      normalized[slot] = value;
+    }
+  });
+  return normalized;
+};
+
+const getInventaireSlotPath = (slot) => {
+  return `${INVENTAIRE_ROOT_PATH}/${slot}`;
+};
+
+const getCurrentInventairePath = (suffix = '') => {
+  const slot = normalizeSlot(selectedInventaireSlot.value);
+  if (!slot) {
+    return '';
+  }
+  const basePath = getInventaireSlotPath(slot);
+  if (!suffix) {
+    return basePath;
+  }
+  return `${basePath}/${suffix}`;
+};
+
+const getCurrentInventaireRef = (suffix = '') => {
+  const path = getCurrentInventairePath(suffix);
+  if (!path) {
+    return null;
+  }
+  return dbRef(db, path);
+};
+
+const syncCurrentInventaireData = () => {
+  const activeSlots = activeInventaires.value.map((entry) => entry.slot);
+  const selectedSlot = normalizeSlot(selectedInventaireSlot.value);
+  if (selectedSlot && activeSlots.includes(selectedSlot)) {
+    inventaireData.value = inventairesBySlot.value[selectedSlot];
+    return;
+  }
+  if (activeSlots.length > 0) {
+    selectedInventaireSlot.value = activeSlots[0];
+    inventaireData.value = inventairesBySlot.value[activeSlots[0]];
+    return;
+  }
+  selectedInventaireSlot.value = '';
+  inventaireData.value = null;
+};
+
+const resetLaunchSelection = () => {
+  selectedAgents.value = [];
+  selectedVehicle.value = '';
+  selectionError.value = '';
+};
+
+const startSecondInventaireSetup = () => {
+  if (!canLaunchSecondInventaire.value) {
+    return;
+  }
+  showSecondInventaireSetup.value = true;
+  resetLaunchSelection();
+};
+
+const cancelSecondInventaireSetup = () => {
+  showSecondInventaireSetup.value = false;
+  resetLaunchSelection();
+};
+
+const selectInventaireSlot = (slot) => {
+  const normalizedSlot = normalizeSlot(slot);
+  if (!normalizedSlot || !inventairesBySlot.value[normalizedSlot]) {
+    return;
+  }
+  if (connectedMatricule.value) {
+    const allowed = Array.isArray(inventairesBySlot.value[normalizedSlot]?.inventaireurs)
+      ? inventairesBySlot.value[normalizedSlot].inventaireurs.map(normalizeMatricule)
+      : [];
+    if (!allowed.includes(connectedMatricule.value)) {
+      connexionError.value = 'Vous n\'êtes pas affecté à ce bilan.';
+      return;
+    }
+  }
+  connexionError.value = '';
+  selectedZoneKey.value = '';
+  pendingZoneJump.value = null;
+  selectedInventaireSlot.value = normalizedSlot;
+  inventaireData.value = inventairesBySlot.value[normalizedSlot];
+};
 
 const getZoneSortOrder = (zone) => {
   if (!zone || zone.status !== 'DONE') return 0;
@@ -1225,6 +1456,7 @@ const o2Level = ref('');
 const dsaLevel = ref(0);
 const bidonLevel = ref(null);
 const bidonRempli = ref(false);
+const materialTested = ref(true);
 const bouteilleAriPressures = ref([]);
 const lspccPlombageOk = ref(false);
 const jerricanLevel = ref(null);
@@ -1492,6 +1724,7 @@ function resetItemState() {
   dsaLevel.value = 0;
   bidonLevel.value = null;
   bidonRempli.value = false;
+  materialTested.value = true;
   bouteilleAriPressures.value = [];
   lspccPlombageOk.value = false;
   jerricanLevel.value = null;
@@ -1559,7 +1792,7 @@ function getDemandeSpeTokens(item) {
   const raw = getDemandeSpeValue(item);
   if (!raw) return [];
   return raw
-    .split(/[;,]/)
+    .split(/[\s,;]+/)
     .map((part) => normalizeDemandeSpeKey(part))
     .filter(Boolean);
 }
@@ -1572,6 +1805,21 @@ function isDemandeSpe(item, value) {
 
 function isAsupRequest(item) {
   return isDemandeSpe(item, 'asup');
+}
+
+function isBidonLevelRequest(item) {
+  return isDemandeSpe(item, 'bidon') || isDemandeSpe(item, 'nivBidon');
+}
+
+function isMaterialTestRequest(item) {
+  return isDemandeSpe(item, 'testeMat') || isDemandeSpe(item, 'testeM');
+}
+
+function buildMaterialTestComment(item) {
+  if (!isMaterialTestRequest(item)) {
+    return '';
+  }
+  return `Matériel testé : ${materialTested.value ? 'Oui' : 'Non'}`;
 }
 
 function formatShortDate(dateValue) {
@@ -1781,23 +2029,25 @@ const canOpenZone = (zone) => {
   return true;
 };
 
-let defaultZoneAutoDoneSyncInProgress = false;
+const defaultZoneAutoDoneSyncInProgress = {};
 
-async function ensureDefaultZoneDoneIfEmpty(inventaire) {
+async function ensureDefaultZoneDoneIfEmpty(inventaire, slot) {
+  const normalizedSlot = normalizeSlot(slot);
+  if (!normalizedSlot) return;
   const defaultZone = inventaire?.zones?.default;
   if (!defaultZone) return;
   if (defaultZone.status === 'DONE') return;
   const defaultItems = Array.isArray(defaultZone.materiels) ? defaultZone.materiels : [];
   const hasItemsToCheck = defaultItems.some((item) => String(item.noCheck) !== '1');
   if (hasItemsToCheck) return;
-  if (defaultZoneAutoDoneSyncInProgress) return;
-  defaultZoneAutoDoneSyncInProgress = true;
+  if (defaultZoneAutoDoneSyncInProgress[normalizedSlot]) return;
+  defaultZoneAutoDoneSyncInProgress[normalizedSlot] = true;
   try {
-    await update(dbRef(db, 'inventaire/zones/default'), { status: 'DONE' });
+    await update(dbRef(db, `${getInventaireSlotPath(normalizedSlot)}/zones/default`), { status: 'DONE' });
   } catch (error) {
     console.error('Erreur auto-validation zone default:', error);
   } finally {
-    defaultZoneAutoDoneSyncInProgress = false;
+    defaultZoneAutoDoneSyncInProgress[normalizedSlot] = false;
   }
 }
 
@@ -1851,17 +2101,51 @@ onUnmounted(() => {
 });
 
 let unsubscribeInventaire = null;
+let legacyStructureMigrationInProgress = false;
 
 const setupInventaireListener = () => {
-  const inventaireRef = dbRef(db, 'inventaire');
+  const inventaireRef = dbRef(db, INVENTAIRE_ROOT_PATH);
   unsubscribeInventaire = onValue(
     inventaireRef,
     (snapshot) => {
-      if (snapshot.exists()) {
-        inventaireData.value = snapshot.val();
-      } else {
-        inventaireData.value = null;
+      const rawPayload = snapshot.exists() ? snapshot.val() : null;
+
+      if (isLegacyInventairePayload(rawPayload) && !legacyStructureMigrationInProgress) {
+        legacyStructureMigrationInProgress = true;
+        const migratedPayload = {
+          bilan1: rawPayload,
+          bilan2: null
+        };
+        set(inventaireRef, migratedPayload)
+          .catch((error) => {
+            console.error('Erreur migration structure inventaire:', error);
+          })
+          .finally(() => {
+            legacyStructureMigrationInProgress = false;
+          });
       }
+
+      inventairesBySlot.value = normalizeInventairesPayload(rawPayload);
+      syncCurrentInventaireData();
+
+      activeInventaires.value.forEach((entry) => {
+        ensureDefaultZoneDoneIfEmpty(entry.data, entry.slot);
+      });
+
+      if (!hasInventaire.value) {
+        showSecondInventaireSetup.value = false;
+      }
+
+      if (connectedMatricule.value) {
+        const selectedData = inventairesBySlot.value[selectedInventaireSlot.value];
+        const allowed = Array.isArray(selectedData?.inventaireurs)
+          ? selectedData.inventaireurs.map(normalizeMatricule)
+          : [];
+        if (!selectedData || !allowed.includes(connectedMatricule.value)) {
+          handleDeconnexion();
+        }
+      }
+
       firebaseLoading.value = false;
     },
     (error) => {
@@ -1877,7 +2161,6 @@ watch(
   (newInventaire) => {
     if (!newInventaire) return;
     submitSuccessMessage.value = '';
-    ensureDefaultZoneDoneIfEmpty(newInventaire);
     const zoneEtat = newInventaire?.zones?.etat_vehicule?.etatVehicule;
     const legacyEtat = newInventaire?.etatVehicule;
     const newEtat = zoneEtat || legacyEtat;
@@ -1897,6 +2180,15 @@ watch(
     }
   },
   { immediate: true }
+);
+
+watch(
+  () => selectedInventaireSlot.value,
+  () => {
+    syncCurrentInventaireData();
+    pendingZoneJump.value = null;
+    selectedZoneKey.value = '';
+  }
 );
 
 watch(
@@ -1946,17 +2238,37 @@ const handleConnexion = () => {
     connexionError.value = 'Veuillez entrer un matricule.';
     return;
   }
-  if (!inventaireData.value || !Array.isArray(inventaireData.value.inventaireurs)) {
+  const slot = normalizeSlot(selectedInventaireSlot.value);
+  if (!slot || !inventairesBySlot.value[slot]) {
+    connexionError.value = 'Sélectionnez un bilan actif.';
+    return;
+  }
+  const currentInventaire = inventairesBySlot.value[slot];
+  if (!currentInventaire || !Array.isArray(currentInventaire.inventaireurs)) {
     connexionError.value = 'Aucun inventaire actif.';
     return;
   }
-  const allowed = inventaireData.value.inventaireurs.map(normalizeMatricule);
+  const allowed = currentInventaire.inventaireurs.map(normalizeMatricule);
   if (!allowed.includes(input)) {
-    connexionError.value = 'Vous ne faites pas partie des inventaireurs autorisés.';
+    const availableSlots = activeInventaires.value
+      .filter((entry) => {
+        const inventaireurs = Array.isArray(entry.data?.inventaireurs) ? entry.data.inventaireurs : [];
+        return inventaireurs.map(normalizeMatricule).includes(input);
+      })
+      .map((entry) => formatSlotLabel(entry.slot));
+    if (availableSlots.length > 0) {
+      connexionError.value = `Vous êtes affecté à ${availableSlots.join(' et ')}. Sélectionnez ce bilan.`;
+    } else {
+      connexionError.value = 'Vous ne faites pas partie des inventaireurs autorisés.';
+    }
     return;
   }
+  selectedInventaireSlot.value = slot;
+  inventaireData.value = currentInventaire;
   connectedMatricule.value = input;
   connectedAgent.value = agentsByMatricule.value[input] || { matricule: input };
+  selectedZoneKey.value = '';
+  pendingZoneJump.value = null;
 };
 
 const handleDeconnexion = () => {
@@ -1973,8 +2285,13 @@ const saveEtatVehicule = async () => {
   if (!hasInventaire.value) {
     return;
   }
+  const etatVehiculeRef = getCurrentInventaireRef('zones/etat_vehicule/etatVehicule');
+  if (!etatVehiculeRef) {
+    etatVehiculeError.value = 'Aucun bilan sélectionné.';
+    return;
+  }
   try {
-    await update(dbRef(db, 'inventaire/zones/etat_vehicule/etatVehicule'), etatVehicule.value);
+    await update(etatVehiculeRef, etatVehicule.value);
   } catch (error) {
     console.error('Erreur sauvegarde état véhicule:', error);
     etatVehiculeError.value = 'Impossible d\'enregistrer l\'état du véhicule.';
@@ -1990,7 +2307,11 @@ const openZone = async (zone) => {
     return;
   }
 
-  const zonePath = `inventaire/zones/${zone.key}`;
+  const zonePath = getCurrentInventairePath(`zones/${zone.key}`);
+  if (!zonePath) {
+    connexionError.value = 'Aucun bilan sélectionné.';
+    return;
+  }
   const infoInventateur = {
     matricule: connectedAgent.value.matricule || connectedMatricule.value,
     grade: connectedAgent.value.grade || '',
@@ -2039,8 +2360,14 @@ const completeEtatVehicule = async () => {
     prenom: connectedAgent.value.prenom || ''
   };
 
+  const etatVehiculeZoneRef = getCurrentInventaireRef('zones/etat_vehicule');
+  if (!etatVehiculeZoneRef) {
+    connexionError.value = 'Aucun bilan sélectionné.';
+    return;
+  }
+
   try {
-    await update(dbRef(db, 'inventaire/zones/etat_vehicule'), {
+    await update(etatVehiculeZoneRef, {
       status: 'DONE',
       infoInventateur
     });
@@ -2220,7 +2547,7 @@ const validateOkRequirements = () => {
   if (isDemandeSpe(item, 'nivDSA') && dsaLevel.value <= 0) {
     return { ok: false, message: 'Veuillez indiquer le niveau de batterie DSA.' };
   }
-  if (isDemandeSpe(item, 'bidon') && !isLevelInputValid(bidonLevel.value)) {
+  if (isBidonLevelRequest(item) && !isLevelInputValid(bidonLevel.value)) {
     return { ok: false, message: 'Veuillez indiquer le niveau du bidon sur 5.' };
   }
   if (isDemandeSpe(item, 'bouteilleARI')) {
@@ -2258,7 +2585,7 @@ const buildOkComment = () => {
   if (isDemandeSpe(item, 'nivDSA')) {
     comments.push(`Niveau batterie DSA : ${dsaLevel.value}/5`);
   }
-  if (isDemandeSpe(item, 'bidon')) {
+  if (isBidonLevelRequest(item)) {
     comments.push(`Bidon : ${bidonLevel.value}/5`);
     comments.push(`Bidon rempli : ${bidonRempli.value ? 'Oui' : 'Non'}`);
   }
@@ -2276,6 +2603,10 @@ const buildOkComment = () => {
       .filter((lot) => asupChecks.value[lot.numLot])
       .map((lot) => lot.numLot);
     comments.push(`ASUP OK (lots: ${lotsChecked.join(', ')})`);
+  }
+  const materialTestComment = buildMaterialTestComment(item);
+  if (materialTestComment) {
+    comments.push(materialTestComment);
   }
   return comments.join(' | ');
 };
@@ -2349,6 +2680,10 @@ const submitIssue = async () => {
   }
   comments.push(...buildBouteilleAriComments(item));
   comments.push(...buildTrackedNumberComments(item));
+  const materialTestComment = buildMaterialTestComment(item);
+  if (materialTestComment) {
+    comments.push(materialTestComment);
+  }
   comments.push(`Commentaire personnalisé : ${issueCustomComment.value.trim()}`);
 
   const updated = await updateCurrentItem('NOK', comments.join(' | '));
@@ -2446,6 +2781,10 @@ const submitInventaire = async () => {
   submitLoading.value = true;
 
   try {
+    const currentInventairePath = getCurrentInventairePath();
+    if (!currentInventairePath) {
+      throw new Error('Aucun bilan sélectionné.');
+    }
     const heureDebut = inventaireData.value.heureDebut || new Date().toISOString();
     const date = formatDate(heureDebut);
     const heureDebutFormatted = formatTime(heureDebut);
@@ -2486,7 +2825,7 @@ const submitInventaire = async () => {
       throw new Error('Erreur lors de la validation de l’inventaire.');
     }
 
-    await set(dbRef(db, 'inventaire'), null);
+    await set(dbRef(db, currentInventairePath), null);
     inventaireCommentaire.value = '';
     handleDeconnexion();
     submitSuccessMessage.value = 'L\'inventaire a bien été envoyé.';
@@ -2523,8 +2862,12 @@ const waitForItemStatusSync = async (zoneKey, materialIndex, status, commentaire
     await wait(120);
   }
   try {
+    const materialRef = getCurrentInventaireRef(`zones/${zoneKey}/materiels/${materialIndex}`);
+    if (!materialRef) {
+      return false;
+    }
     const snapshot = await get(
-      dbRef(db, `inventaire/zones/${zoneKey}/materiels/${materialIndex}`)
+      materialRef
     );
     if (!snapshot.exists()) return false;
     const remoteItem = snapshot.val();
@@ -2544,9 +2887,14 @@ const updateCurrentItem = async (status, commentaireInventaire) => {
   const current = currentItem.value;
   if (!zone || !current) return false;
   const normalizedCommentaire = commentaireInventaire || '';
+  const materialRef = getCurrentInventaireRef(`zones/${zone.key}/materiels/${current.materialIndex}`);
+  if (!materialRef) {
+    itemError.value = 'Aucun bilan sélectionné.';
+    return false;
+  }
   try {
     await update(
-      dbRef(db, `inventaire/zones/${zone.key}/materiels/${current.materialIndex}`),
+      materialRef,
       {
         statutInventaire: status,
         commentaireInventaire: normalizedCommentaire
@@ -2588,7 +2936,12 @@ const advanceItem = async () => {
     nom: connectedAgent.value?.nom || '',
     prenom: connectedAgent.value?.prenom || ''
   };
-  await update(dbRef(db, `inventaire/zones/${selectedZone.value.key}`), {
+  const zoneRef = getCurrentInventaireRef(`zones/${selectedZone.value.key}`);
+  if (!zoneRef) {
+    itemError.value = 'Aucun bilan sélectionné.';
+    return;
+  }
+  await update(zoneRef, {
     status: 'DONE',
     infoInventateur
   });
@@ -2664,7 +3017,9 @@ const buildZonesPayload = () => {
 
 const launchInventaire = async () => {
   if (!canLaunch.value) {
-    selectionError.value = 'Sélectionnez 4 agents et un engin avant de lancer.';
+    selectionError.value = isLotPsSelection.value
+      ? 'Pour le LOTPS, sélectionnez entre 2 et 4 agents et un engin.'
+      : 'Sélectionnez 4 agents et un engin avant de lancer.';
     return;
   }
 
@@ -2672,10 +3027,15 @@ const launchInventaire = async () => {
   submitSuccessMessage.value = '';
 
   try {
-    const inventaireRef = dbRef(db, 'inventaire');
+    const targetSlot = INVENTAIRE_SLOTS.find((slot) => !inventairesBySlot.value[slot]);
+    if (!targetSlot) {
+      selectionError.value = 'Deux inventaires sont déjà en cours.';
+      return;
+    }
+    const inventaireRef = dbRef(db, getInventaireSlotPath(targetSlot));
     const existing = await get(inventaireRef);
     if (existing.exists()) {
-      selectionError.value = 'Un inventaire est déjà en cours.';
+      selectionError.value = `${formatSlotLabel(targetSlot)} est déjà en cours d'utilisation.`;
       return;
     }
 
@@ -2698,6 +3058,9 @@ const launchInventaire = async () => {
     }
 
     await set(inventaireRef, payload);
+    showSecondInventaireSetup.value = false;
+    resetLaunchSelection();
+    submitSuccessMessage.value = `${formatSlotLabel(targetSlot)} lancé avec succès.`;
     console.log('Lancement inventaire:', payload);
   } catch (error) {
     console.error('Erreur lancement inventaire:', error);
@@ -2724,6 +3087,19 @@ const launchInventaire = async () => {
   margin: 0;
   color: #5f6b7a;
   font-size: 1.05rem;
+}
+
+.header-actions {
+  margin-top: 0.9rem;
+  display: flex;
+}
+
+.secondary-action-button {
+  background: #0f766e;
+}
+
+.secondary-action-button:hover:not(:disabled) {
+  background: #0d5f5a;
 }
 
 .inventaire-section {
@@ -2753,6 +3129,47 @@ const launchInventaire = async () => {
 .selection-count {
   font-weight: 600;
   color: #2563eb;
+}
+
+.inventaire-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.inventaire-slot-card {
+  border: 1px solid #dbe3f1;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: border 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.inventaire-slot-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+
+.inventaire-slot-card.selected {
+  border-color: #2563eb;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+  background: #eff6ff;
+}
+
+.slot-title {
+  font-weight: 700;
+  color: #111827;
+}
+
+.slot-meta {
+  color: #475569;
+  font-size: 0.9rem;
 }
 
 .inventaire-info {
@@ -3801,6 +4218,7 @@ const launchInventaire = async () => {
 
 .agent-card:active,
 .zone-card:active,
+.inventaire-slot-card:active,
 .vehicle-item:active,
 .zone-summary-card:active,
 .issue-card:active,
@@ -3864,7 +4282,8 @@ const launchInventaire = async () => {
 
   .zones-grid,
   .agent-grid,
-  .zone-summary-grid {
+  .zone-summary-grid,
+  .inventaire-slot-grid {
     grid-template-columns: 1fr;
   }
 
