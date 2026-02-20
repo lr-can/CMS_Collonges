@@ -189,7 +189,7 @@
       <template v-if="hasInventaire">
         <section class="inventaire-section">
           <div class="section-header">
-            <h2>Bilans en cours</h2>
+            <h2>Inventaires en cours</h2>
             <div class="selection-count">
               {{ activeInventaires.length }} / 2 actifs
             </div>
@@ -1176,7 +1176,7 @@ const subtitleText = computed(() => {
   if (activeInventaires.value.length === 1) {
     return 'Un inventaire est en cours. Connectez-vous pour continuer ou lancez-en un deuxième.';
   }
-  return 'Deux inventaires sont en cours. Sélectionnez le bilan concerné pour travailler.';
+  return 'Deux inventaires sont en cours. Sélectionnez l\'inventaire concerné pour travailler.';
 });
 
 const vehicles = computed(() => {
@@ -1207,7 +1207,7 @@ const normalizeSlot = (slot) => {
 };
 
 const formatSlotLabel = (slot) => {
-  return slot === 'bilan2' ? 'Bilan 2' : 'Bilan 1';
+  return slot === 'bilan2' ? 'Inventaire 2' : 'Inventaire 1';
 };
 
 const isLegacyInventairePayload = (payload) => {
@@ -1305,7 +1305,7 @@ const selectInventaireSlot = (slot) => {
       ? inventairesBySlot.value[normalizedSlot].inventaireurs.map(normalizeMatricule)
       : [];
     if (!allowed.includes(connectedMatricule.value)) {
-      connexionError.value = 'Vous n\'êtes pas affecté à ce bilan.';
+      connexionError.value = 'Vous n\'êtes pas affecté à cet inventaire.';
       return;
     }
   }
@@ -2240,7 +2240,7 @@ const handleConnexion = () => {
   }
   const slot = normalizeSlot(selectedInventaireSlot.value);
   if (!slot || !inventairesBySlot.value[slot]) {
-    connexionError.value = 'Sélectionnez un bilan actif.';
+    connexionError.value = 'Sélectionnez un inventaire actif.';
     return;
   }
   const currentInventaire = inventairesBySlot.value[slot];
@@ -2257,7 +2257,7 @@ const handleConnexion = () => {
       })
       .map((entry) => formatSlotLabel(entry.slot));
     if (availableSlots.length > 0) {
-      connexionError.value = `Vous êtes affecté à ${availableSlots.join(' et ')}. Sélectionnez ce bilan.`;
+      connexionError.value = `Vous êtes affecté à ${availableSlots.join(' et ')}. Sélectionnez cet inventaire.`;
     } else {
       connexionError.value = 'Vous ne faites pas partie des inventaireurs autorisés.';
     }
@@ -2287,7 +2287,7 @@ const saveEtatVehicule = async () => {
   }
   const etatVehiculeRef = getCurrentInventaireRef('zones/etat_vehicule/etatVehicule');
   if (!etatVehiculeRef) {
-    etatVehiculeError.value = 'Aucun bilan sélectionné.';
+    etatVehiculeError.value = 'Aucun inventaire sélectionné.';
     return;
   }
   try {
@@ -2309,7 +2309,7 @@ const openZone = async (zone) => {
 
   const zonePath = getCurrentInventairePath(`zones/${zone.key}`);
   if (!zonePath) {
-    connexionError.value = 'Aucun bilan sélectionné.';
+    connexionError.value = 'Aucun inventaire sélectionné.';
     return;
   }
   const infoInventateur = {
@@ -2362,7 +2362,7 @@ const completeEtatVehicule = async () => {
 
   const etatVehiculeZoneRef = getCurrentInventaireRef('zones/etat_vehicule');
   if (!etatVehiculeZoneRef) {
-    connexionError.value = 'Aucun bilan sélectionné.';
+    connexionError.value = 'Aucun inventaire sélectionné.';
     return;
   }
 
@@ -2783,7 +2783,7 @@ const submitInventaire = async () => {
   try {
     const currentInventairePath = getCurrentInventairePath();
     if (!currentInventairePath) {
-      throw new Error('Aucun bilan sélectionné.');
+      throw new Error('Aucun inventaire sélectionné.');
     }
     const heureDebut = inventaireData.value.heureDebut || new Date().toISOString();
     const date = formatDate(heureDebut);
@@ -2889,7 +2889,7 @@ const updateCurrentItem = async (status, commentaireInventaire) => {
   const normalizedCommentaire = commentaireInventaire || '';
   const materialRef = getCurrentInventaireRef(`zones/${zone.key}/materiels/${current.materialIndex}`);
   if (!materialRef) {
-    itemError.value = 'Aucun bilan sélectionné.';
+    itemError.value = 'Aucun inventaire sélectionné.';
     return false;
   }
   try {
@@ -2938,7 +2938,7 @@ const advanceItem = async () => {
   };
   const zoneRef = getCurrentInventaireRef(`zones/${selectedZone.value.key}`);
   if (!zoneRef) {
-    itemError.value = 'Aucun bilan sélectionné.';
+    itemError.value = 'Aucun inventaire sélectionné.';
     return;
   }
   await update(zoneRef, {
