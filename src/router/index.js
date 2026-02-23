@@ -19,6 +19,9 @@ import RIGrandPublic from '@/views/RIGrandPublic.vue'
 import LoginView from '@/views/LoginView.vue'
 import InventairesView from '@/views/InventairesView.vue'
 import DemandeFormationView from '@/views/DemandeFormationView.vue'
+import KitCreateView from '@/views/KitCreateView.vue'
+import KitUpdateView from '@/views/KitUpdateView.vue'
+import KitInventaireView from '@/views/KitInventaireView.vue'
 
 // Configuration des routes avec leurs permissions
 const ROUTE_PERMISSIONS = {
@@ -27,6 +30,9 @@ const ROUTE_PERMISSIONS = {
   '/search': { requiresAuth: true, profile: 'pharmacie' },
   '/reception': { requiresAuth: true, profile: 'pharmacie' },
   '/peremptions': { requiresAuth: true, profile: 'pharmacie' },
+  '/kits/create': { requiresAuth: true, profile: 'pharmacie' },
+  '/kits/update': { requiresAuth: true, profile: 'pharmacie' },
+  '/kits/inventaire': { requiresAuth: true, profile: 'pharmacie' },
   '/replaceAsup': { requiresAuth: true, profile: 'asup' },
   '/expiryAsup': { requiresAuth: true, profile: 'asup' },
   '/reportAsup': { requiresAuth: true, profile: 'asup' },
@@ -179,6 +185,24 @@ const router = createRouter({
       name: 'peremptions',
       component: peremptions,
       beforeEnter: createRouteGuard(ROUTE_PERMISSIONS['/peremptions'])
+    },
+    {
+      path: '/kits/create',
+      name: 'kitCreate',
+      component: KitCreateView,
+      beforeEnter: createRouteGuard(ROUTE_PERMISSIONS['/kits/create'])
+    },
+    {
+      path: '/kits/update',
+      name: 'kitUpdate',
+      component: KitUpdateView,
+      beforeEnter: createRouteGuard(ROUTE_PERMISSIONS['/kits/update'])
+    },
+    {
+      path: '/kits/inventaire',
+      name: 'kitInventaire',
+      component: KitInventaireView,
+      beforeEnter: createRouteGuard(ROUTE_PERMISSIONS['/kits/inventaire'])
     },
     {
       path: '/profile',

@@ -201,6 +201,7 @@ async function submitForm() {
     await getTheoryCount();
     await getRealCount();
     getDelta();
+    await addMaterielManquantKits();
     }
     isGenerating.value = false;
     generatingSound.pause();
@@ -285,6 +286,62 @@ const getDelta = () => {
         }
     }
 }
+
+const MATERIELS_KIT_NON_COMMANDABLES = [
+    'CONDUITE A TENIR',
+    'PRINCIPE DE DECLARATION SPP ET PATS',
+    'PRINCIPE DE DECLARATION SPV',
+    'PROCEDURE ORANGE',
+    'PROCEDURE ROUGE',
+    'ORDONNANCE (A DEMANDER PAR MAIL A PHARMACIE@SDMIS.FR)'
+];
+
+function isMaterielNonCommandable(nomCommande) {
+    if (!nomCommande) return false;
+    const n = String(nomCommande).toUpperCase().trim();
+    return MATERIELS_KIT_NON_COMMANDABLES.some((m) => n.includes(m.toUpperCase()));
+}
+
+async function addMaterielManquantKits() {
+    const manquant = await sqlStore.getKitsMaterielManquant(4);
+    if (!Array.isArray(manquant)) return;
+    const byMaterial = new Map();
+    const exclus = [];
+    for (const item of manquant) {
+        if (item.manquant <= 0) continue;
+        const nom = item.nomCommande || item.nomCommun;
+        if (isMaterielNonCommandable(nom)) {
+            exclus.push(nom);
+            continue;
+        }
+        const key = item.materielKitId ?? (item.nomCommande || item.nomCommun || '');
+        const nomKit = item.nomKit || 'kit';
+        const existing = byMaterial.get(key);
+        if (existing) {
+            existing.quantity += item.manquant;
+            if (!existing.kits.includes(nomKit)) existing.kits.push(nomKit);
+        } else {
+            byMaterial.set(key, {
+                quantity: item.manquant,
+                nom,
+                kits: [nomKit],
+                materielKitId: item.materielKitId
+            });
+        }
+    }
+    if (exclus.length > 0) {
+        alert('Les documents suivants ne peuvent pas être commandés via le guichet unique : ' + [...new Set(exclus)].join(', ') + '.\n\nConsultez Point Éclair ou contactez pharmacie@sdmis.fr pour les obtenir.');
+    }
+    for (const [, v] of byMaterial) {
+        const kitsStr = v.kits.sort().join(', ');
+        commande.value.push({
+            quantity: v.quantity,
+            nomCommande: `${v.nom} (${kitsStr})`,
+            idMateriel: `kit_${v.materielKitId}`
+        });
+    }
+}
+
 const modifyCommande = () => {
     loading.play();
     let index = commande.value.findIndex(item => item.idMateriel === selectedMaterielOperation.value.idMateriel);

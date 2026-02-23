@@ -63,6 +63,27 @@ export const ROUTES_CONFIG = [
     profile: 'pharmacie',
     requiresAuth: true
   },
+  {
+    path: '/kits/create',
+    name: 'Créer un kit',
+    icon: 'kit.svg',
+    profile: 'pharmacie',
+    requiresAuth: true
+  },
+  {
+    path: '/kits/update',
+    name: 'Modifier un kit',
+    icon: 'kit.svg',
+    profile: 'pharmacie',
+    requiresAuth: true
+  },
+  {
+    path: '/kits/inventaire',
+    name: 'Inventaire kits',
+    icon: 'kit.svg',
+    profile: 'pharmacie',
+    requiresAuth: true
+  },
   // Routes ASUP
   {
     path: '/replaceAsup',

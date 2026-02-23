@@ -1079,6 +1079,167 @@ async function RI_checked(idMateriel) {
   }
 }
 
+// === API KITS ===
+const API_BASE = 'https://api.cms-collonges.fr';
+
+async function getKitsMaterielKit(nomKitOrKitPour) {
+  try {
+    const param = nomKitOrKitPour ? `nomKit=${encodeURIComponent(nomKitOrKitPour)}` : '';
+    const url = param ? `${API_BASE}/kits/materielKit?${param}` : `${API_BASE}/kits/materielKit`;
+    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return Array.isArray(result) ? result : (result.data || []);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+async function getKitsStockDisponible(idMateriel) {
+  try {
+    const q = idMateriel ? `?idMateriel=${encodeURIComponent(idMateriel)}` : '';
+    const response = await fetch(`${API_BASE}/kits/stockDisponible${q}`, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return Array.isArray(result) ? result : (result.data || []);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+async function getKitsStockDisponibleParMateriel() {
+  try {
+    const response = await fetch(`${API_BASE}/kits/stockDisponibleParMateriel`, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return Array.isArray(result) ? result : (result.data || []);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+async function getKitsNomsKits() {
+  try {
+    const response = await fetch(`${API_BASE}/kits/nomsKits`, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return Array.isArray(result) ? result : (result.data || []);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+async function getKitsNextIdKit(nomKit) {
+  try {
+    const url = nomKit ? `${API_BASE}/kits/nextIdKit?nomKit=${encodeURIComponent(nomKit)}` : `${API_BASE}/kits/nextIdKit`;
+    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return result?.suggestion || null;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+async function postKitsCompletKit(data) {
+  const myHeaders = new Headers();
+  myHeaders.append('Content-Type', 'application/json');
+  const requestOptions = { method: 'POST', headers: myHeaders, body: JSON.stringify(data), redirect: 'follow' };
+  try {
+    const response = await fetch(`${API_BASE}/kits/completKit`, requestOptions);
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+async function postKitsRealiser(data) {
+  const myHeaders = new Headers();
+  myHeaders.append('Content-Type', 'application/json');
+  const requestOptions = { method: 'POST', headers: myHeaders, body: JSON.stringify(data), redirect: 'follow' };
+  try {
+    const response = await fetch(`${API_BASE}/kits/realiser`, requestOptions);
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+async function getKitsCompletKit(params = {}) {
+  try {
+    const q = new URLSearchParams(params).toString();
+    const url = `${API_BASE}/kits/completKit${q ? '?' + q : ''}`;
+    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return Array.isArray(result) ? result : (result.data || []);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+async function getKitsPerimantBientot() {
+  try {
+    const response = await fetch(`${API_BASE}/kits/perimantBientot`, { method: 'GET', redirect: 'follow' });
+    if (response.ok) {
+      const result = await response.json();
+      return Array.isArray(result) ? result : (result.data || []);
+    }
+  } catch {}
+  const kits = await getKitsCompletKit();
+  const now = new Date();
+  const deuxMoisPlusTard = new Date(now);
+  deuxMoisPlusTard.setMonth(deuxMoisPlusTard.getMonth() + 2);
+  return (kits || []).filter((k) => {
+    if (!k.datePeremption) return false;
+    const d = new Date(k.datePeremption);
+    return !isNaN(d.getTime()) && d <= deuxMoisPlusTard;
+  });
+}
+
+async function getKitsCompletKitById(idKit) {
+  try {
+    const response = await fetch(`${API_BASE}/kits/completKit/${encodeURIComponent(idKit)}`, { method: 'GET', redirect: 'follow' });
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+async function getKitsMaterielManquant(nbKits = 4) {
+  try {
+    const response = await fetch(`${API_BASE}/kits/materielManquant?nbKits=${nbKits}`, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return Array.isArray(result) ? result : (result.data || []);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+async function getRecapCommande() {
+  try {
+    const response = await fetch(`${API_BASE}/generatePDF/commande`, { method: 'GET', redirect: 'follow' });
+    const result = await response.json();
+    return result;
+  } catch {
+    try {
+      const response = await fetch(`${API_BASE}/getRecap/commande`, { method: 'GET', redirect: 'follow' });
+      return await response.json();
+    } catch (err) {
+      console.error(err);
+      return { materielsClassiques: [], materielManquantKits: [] };
+    }
+  }
+}
+
+function getKitDetailUrl(idKit) {
+  return `${API_BASE}/kitDetail?idKit=${encodeURIComponent(idKit)}`;
+}
+
 async function resetRICount(type, matricule){
   const requestOptions = {
     method: "GET",
@@ -1105,6 +1266,8 @@ async function resetRICount(type, matricule){
 
 
   return {
+    getKitsStockDisponible,
+    getKitsStockDisponibleParMateriel,
     NextPeremptions,
     getNextPeremptions,
     PeremptionsDisplayData,
@@ -1194,6 +1357,19 @@ async function resetRICount(type, matricule){
     getVehiculesRI,
     sendRIResult,
     RI_checked,
-    resetRICount
+    resetRICount,
+    getKitsStockDisponible,
+    getKitsStockDisponibleParMateriel,
+    getKitsMaterielKit,
+    getKitsNomsKits,
+    getKitsNextIdKit,
+    postKitsCompletKit,
+    postKitsRealiser,
+    getKitsCompletKit,
+    getKitsPerimantBientot,
+    getKitsCompletKitById,
+    getKitsMaterielManquant,
+    getRecapCommande,
+    getKitDetailUrl
   };
 });

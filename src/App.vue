@@ -133,6 +133,7 @@ initialise();
       <RouterLink to="/disposition" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Disposition" src="@/assets/icons/disposition.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/search" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Search" src="@/assets/icons/search.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/order" v-if="isAuthenticated && currentProfile == 'pharmacie'"><img alt="Order" src="@/assets/icons/order.svg" width="30" height="auto" /></RouterLink>
+      <RouterLink to="/kits/create" v-if="isAuthenticated && currentProfile == 'pharmacie'" title="Kits"><img alt="Kits" src="@/assets/icons/kit.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/asupGrandPublic" v-if="!isAuthenticated || currentProfile == ''"><img alt="ASUP" src="@/assets/icons/asup.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/RIGrandPublic" v-if="!isAuthenticated || currentProfile == ''"><img alt="RI" src="@/assets/icons/report.svg" width="30" height="auto" /></RouterLink>
       <RouterLink to="/replaceAsup" v-if="isAuthenticated && currentProfile == 'asup'"><img alt="Order" src="@/assets/icons/replace.svg" width="25" height="auto" /></RouterLink>

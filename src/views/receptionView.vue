@@ -9,7 +9,19 @@
         </div>
         <form autocomplete="off">
             <label for="materiel">Matériel<span class="mandatory">*</span>
-                <Dropdown id='materiel' v-model="selectedMateriel" editable :options="materiels" optionLabel="nomMateriel" placeholder="Sélectionnez un matériel" required class="form-item"/>
+                <Dropdown
+                    id="materiel"
+                    v-model="selectedMateriel"
+                    editable
+                    :options="materielsOptionsGrouped"
+                    optionGroupLabel="label"
+                    optionGroupChildren="items"
+                    optionLabel="nomMateriel"
+                    placeholder="Sélectionnez un matériel"
+                    required
+                    class="form-item"
+                    @change="onMaterielChange"
+                />
             </label>
             <label for="peremptionDate">Date de péremption
                 <Calendar id="peremptionDate" v-model="peremptionDate" dateFormat="dd/mm/yy" class="form-item" placeholder="Insérez une date" />
@@ -26,7 +38,7 @@
                     class="form-item form-item-large" 
                     placeholder="Nombre de produits" 
                     required 
-                    @blur="validateNbProduits"
+                    @blur="tryAutoFetchIds"
                 />
                 <span v-if="nbProduitsError" class="error-message">{{ nbProduitsError }}</span>
             </label>
@@ -39,10 +51,9 @@
                     <InputText 
                         id="firstId" 
                         v-model="firstId" 
-                        type="number"
-                        inputmode="numeric"
+                        type="text"
                         class="form-item form-item-large first-id-input" 
-                        placeholder="Premier ID" 
+                        placeholder="Ex. 101 ou K01" 
                         :disabled="loadingIds"
                         @blur="validateFirstId"
                     />
@@ -93,6 +104,8 @@ const { user: authUser } = useAuth();
 const sqlStore = useSqlStore();
 
 const materiels = ref([]);
+const materielKitItems = ref([]);
+const materielsOptionsGrouped = ref([]);
 const selectedMateriel = ref();
 const peremptionDate = ref();
 const numLot = ref();
@@ -107,6 +120,20 @@ const loadingIds = ref(false);
 const labels = ref([]);
 const warningSound = new Audio(Warning);
 const errorSound = new Audio(InputError);
+
+function onMaterielChange() {
+    firstId.value = '';
+    retrievedIds.value = [];
+}
+
+// Récupérer automatiquement le premier ID disponible à partir du plus proche, au blur du champ nbProduits
+async function tryAutoFetchIds() {
+    validateNbProduits();
+    if (nbProduitsError.value || loadingIds.value || firstId.value) return;
+    const count = Number(String(nbProduits.value || ''));
+    if (count < 1 || count > 100) return;
+    await getNextAvailableIds(count);
+}
 
 // Validation du nombre de produits
 const validateNbProduits = () => {
@@ -137,27 +164,23 @@ const validateNbProduits = () => {
     return true;
 };
 
-// Validation du premier ID
+// Validation du premier ID (entier ou K+entier ex. K01, K02)
 const validateFirstId = () => {
     firstIdError.value = '';
-    const valueStr = firstId.value ? String(firstId.value).trim() : '';
-    
-    if (!valueStr) {
-        return true; // Optionnel
-    }
-    
-    const num = Number(valueStr);
-    if (isNaN(num) || !Number.isInteger(num)) {
-        firstIdError.value = 'Veuillez entrer un nombre entier valide';
-        return false;
-    }
-    
-    if (num < 1) {
+    const valueStr = (firstId.value != null ? String(firstId.value) : '').trim();
+    if (!valueStr) return true;
+
+    const m = valueStr.match(/^K(\d+)$/i);
+    if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 1) return true;
         firstIdError.value = 'L\'ID doit être au moins 1';
         return false;
     }
-    
-    return true;
+    const num = Number(valueStr);
+    if (!isNaN(num) && Number.isInteger(num) && num >= 1) return true;
+    firstIdError.value = 'Entrez un entier (ex. 101) ou K+entier (ex. K01)';
+    return false;
 };
 
 // Computed pour vérifier si le nombre de produits est valide
@@ -170,43 +193,93 @@ const isNbProduitsValid = computed(() => {
 
 // Computed pour vérifier si tous les champs obligatoires sont remplis et valides
 const isFormValid = computed(() => {
-    // Vérifier que le matériel est sélectionné
     if (!selectedMateriel.value) return false;
-    
-    // Vérifier que le numéro de lot est rempli
     const numLotStr = numLot.value ? String(numLot.value).trim() : '';
     if (!numLotStr) return false;
-    
-    // Vérifier que le nombre de produits est valide
     if (!isNbProduitsValid.value) return false;
-    
-    // Vérifier qu'il n'y a pas d'erreurs de validation
     if (nbProduitsError.value) return false;
+
     const firstIdStr = firstId.value ? String(firstId.value) : '';
     if (firstIdStr && firstIdStr.trim() && firstIdError.value) return false;
-    
     return true;
 });
 
+const KITS_A_EXCLURE = ['kit aev/aes', 'kit accouchement', 'kit membre sectionné', 'kit aes', 'kit aev'];
+
+function normalizeForExclude(str) {
+    return String(str || '').toLowerCase().trim();
+}
+
+function isKitExclu(item) {
+    const nom = normalizeForExclude(item?.nomMateriel || item?.nomCommun);
+    return KITS_A_EXCLURE.some((k) => nom.includes(k) || nom === k);
+}
+
+async function fetchMaterielKit() {
+    if (typeof sqlStore.getKitsMaterielKit === 'function') {
+        return await sqlStore.getKitsMaterielKit();
+    }
+    try {
+        const res = await fetch('https://api.cms-collonges.fr/kits/materielKit', { method: 'GET', redirect: 'follow' });
+        const data = await res.json();
+        return Array.isArray(data) ? data : (data?.data || []);
+    } catch {
+        return [];
+    }
+}
+
 async function getMateriels() {
     await sqlStore.getMateriels();
-    materiels.value = await sqlStore.materielsList;
+    const classic = await sqlStore.materielsList;
+    const classicArr = Array.isArray(classic) ? classic : Object.values(classic || {});
+    const classicFiltered = classicArr.filter((m) => !isKitExclu(m));
+    materiels.value = classicFiltered;
+
+    const mk = await fetchMaterielKit();
+    materielKitItems.value = mk || [];
+
+    const groups = [];
+
+    groups.push({
+        label: 'Matériel classique',
+        items: classicFiltered.map((m) => ({
+            ...m,
+            nomMateriel: m.nomMateriel || m.nomCommande,
+            idMateriel: m.idMateriel || m.id,
+            isKitItem: false
+        }))
+    });
+
+    const kitItems = materielKitItems.value.map((m) => ({
+        id: m.id,
+        idMateriel: m.id,
+        nomMateriel: m.nomCommun || m.nomCommande,
+        isKitItem: true,
+        materielKit: m
+    }));
+
+    if (kitItems.length > 0) {
+        groups.push({ label: 'Matériel pour kits', items: kitItems });
+    }
+
+    materielsOptionsGrouped.value = groups;
 }
 
 onMounted(() => {
     getMateriels();
 });
 
-// Récupérer les IDs disponibles automatiquement
+// Récupérer les IDs disponibles automatiquement (classique ou stockKit pour matériel kit)
 async function getNextAvailableIds(count) {
     loadingIds.value = true;
     retrievedIds.value = [];
+    const isKit = selectedMateriel.value?.isKitItem === true;
+    const url = isKit
+        ? `https://api.cms-collonges.fr/kits/nextAvailableStockKitIds/${count}`
+        : `https://api.cms-collonges.fr/nextAvailableIds/${count}`;
     try {
-        const requestOptions = {
-            method: "GET",
-            redirect: "follow"
-        };
-        const response = await fetch(`https://api.cms-collonges.fr/nextAvailableIds/${count}`, requestOptions);
+        const requestOptions = { method: "GET", redirect: "follow" };
+        const response = await fetch(url, requestOptions);
         const result = await response.json();
         if (result.nextIds && result.nextIds.length > 0) {
             firstId.value = result.nextIds[0];
@@ -252,73 +325,47 @@ async function submitForm() {
     }
 
     loading.value = true;
-    
+
     try {
         const nbProduitsNum = Number(String(nbProduits.value || ''));
-        
-        // Générer les IDs : soit depuis l'API, soit à partir du firstId si modifié manuellement
+        const peremptionDateStr = !peremptionDate.value
+            ? new Date('2999-12-31').toISOString().split('T')[0]
+            : new Date(peremptionDate.value).toISOString().split('T')[0];
+        const currentDate = new Date();
+        labels.value = [];
+
         let ids = [];
         const firstIdStr = firstId.value ? String(firstId.value).trim() : '';
         if (firstIdStr) {
             const firstIdNum = Number(firstIdStr);
             if (firstIdNum > 0) {
-                // Si l'utilisateur a modifié le premier ID manuellement, générer une séquence
                 for (let i = 0; i < nbProduitsNum; i++) {
                     ids.push(firstIdNum + i);
                 }
             }
         }
-        
         if (ids.length === 0) {
-            // Sinon, récupérer depuis l'API
             ids = await getNextAvailableIds(nbProduitsNum);
             if (ids.length !== nbProduitsNum) {
                 throw new Error('Nombre d\'IDs insuffisant');
             }
         }
-
-        // Préparer la date de péremption
-        let peremptionDateStr;
-        if (!peremptionDate.value) {
-            peremptionDateStr = new Date('2999-12-31').toISOString().split('T')[0];
-        } else {
-            peremptionDateStr = new Date(peremptionDate.value).toISOString().split('T')[0];
-        }
-
-        // Récupérer le matricule de l'utilisateur depuis le cache
         let idAgent = null;
         const utilisateur = authUser.value;
-        if (utilisateur && utilisateur.profile && utilisateur.profile[0]) {
-            idAgent = utilisateur.profile[0];
-        } else {
-            // Fallback : récupérer depuis le cache localStorage
-            idAgent = localStorage.getItem('cms_auth_matricule');
-        }
-
-        // Créer toutes les entrées dans la base de données
-        const currentDate = new Date();
-        labels.value = [];
-        
-        // Construire un tableau de données à envoyer à l'API en une seule requête
-        const dataList = ids.map(id => {
-            const idStock = parseInt(id);
-            return {
-                'idStock': idStock,
-                'idMateriel': selectedMateriel.value.idMateriel,
-                'idStatut': 1,
-                'dateCreation': currentDate,
-                'datePeremption': peremptionDateStr,
-                'numLot': numLot.value,
-                'idAgent': idAgent
-            };
-        });
-
-        // Envoyer la liste à la base de données (adapter l'API pour supporter ce format)
-        await sqlStore.createMateriel(dataList);
-
-        // Ajouter à la liste des étiquettes
-        labels.value = ids.map(id => ({
+        if (utilisateur?.profile?.[0]) idAgent = utilisateur.profile[0];
+        else idAgent = localStorage.getItem('cms_auth_matricule');
+        const dataList = ids.map((id) => ({
             idStock: parseInt(id),
+            idMateriel: selectedMateriel.value.idMateriel,
+            idStatut: 1,
+            dateCreation: currentDate,
+            datePeremption: peremptionDateStr,
+            numLot: numLot.value,
+            idAgent: idAgent
+        }));
+        await sqlStore.createMateriel(dataList);
+        labels.value = ids.map((id) => ({
+            idStock: toIdStock(id),
             nomMateriel: selectedMateriel.value.nomMateriel,
             datePeremption: peremptionDateStr,
             numLot: numLot.value
