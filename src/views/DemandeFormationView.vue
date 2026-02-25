@@ -198,12 +198,28 @@
         </div>
 
         <div class="subsubtitle" style="margin-top: 1.5rem">
-          Sélection des sessions {{ hasSingleSession ? '(1 vœu)' : '(2 vœux)' }}
+          Sélection des sessions {{ needsTwoVoeux ? '(2 vœux)' : '(1 vœu)' }}
+        </div>
+        <div v-if="!hasSingleSession" class="voeu-choice-section">
+          <div class="info-block info-attention info-block-inline">
+            <strong>ATTENTION :</strong> Il est fortement recommandé de formuler deux vœux dans le cas où la session de votre vœu n°1 serait complète ou annulée.
+          </div>
+          <div class="voeu-choice-options">
+            <label class="radio-option">
+              <input type="radio" v-model="singleVoeuOnly" :value="true" />
+              Ne garder qu'un seul vœu
+            </label>
+            <label class="radio-option">
+              <input type="radio" v-model="singleVoeuOnly" :value="false" />
+              Formuler un deuxième vœu
+            </label>
+          </div>
         </div>
         <div class="info-block info-remarque info-block-inline">
-          <strong>REMARQUE :</strong> Sur ce formulaire, il vous sera demandé de renseigner {{ hasSingleSession ? 'la session disponible' : 'deux sessions distinctes' }}, afin de connaître vos disponibilités en cas de session complète. Vous formulez {{ hasSingleSession ? 'un vœu' : 'donc deux vœux' }}. Dans la mesure du possible, vous êtes d'abord inscrit sur votre premier vœu.
+          <strong>REMARQUE :</strong> Sur ce formulaire, il vous sera demandé de renseigner {{ needsTwoVoeux ? 'deux sessions distinctes' : 'la session disponible' }}, afin de connaître vos disponibilités en cas de session complète. Vous formulez {{ needsTwoVoeux ? 'donc deux vœux' : 'un vœu' }}. Dans la mesure du possible, vous êtes d'abord inscrit sur votre premier vœu.
         </div>
         <p v-if="hasSingleSession">Une seule session disponible. Sélectionnez-la pour formuler votre vœu.</p>
+        <p v-else-if="singleVoeuOnly">Sélectionnez la session de votre choix.</p>
         <p v-else>Sélectionnez vos deux sessions préférées par ordre de préférence</p>
 
         <div class="sessions-grid">
@@ -234,7 +250,7 @@
           <div v-if="selectedVoeu1">
             <strong>Vœu 1 :</strong> {{ selectedVoeu1.sessionId }} - {{ formatDate(selectedVoeu1.dateDebut) }} - {{ selectedVoeu1.centreFormation }}
           </div>
-          <div v-if="selectedVoeu2">
+          <div v-if="selectedVoeu2 && needsTwoVoeux">
             <strong>Vœu 2 :</strong> {{ selectedVoeu2.sessionId }} - {{ formatDate(selectedVoeu2.dateDebut) }} - {{ selectedVoeu2.centreFormation }}
           </div>
         </div>
@@ -271,7 +287,7 @@
           <p><strong>Email :</strong> {{ agentMail }}</p>
           <p><strong>Formation :</strong> {{ selectedFormation?.intitule }}</p>
           <p><strong>Vœu 1 :</strong> {{ selectedVoeu1?.sessionId }} - {{ selectedVoeu1 ? formatDate(selectedVoeu1.dateDebut) : '-' }}</p>
-          <p v-if="!hasSingleSession"><strong>Vœu 2 :</strong> {{ selectedVoeu2?.sessionId }} - {{ selectedVoeu2 ? formatDate(selectedVoeu2.dateDebut) : '-' }}</p>
+          <p v-if="needsTwoVoeux"><strong>Vœu 2 :</strong> {{ selectedVoeu2?.sessionId }} - {{ selectedVoeu2 ? formatDate(selectedVoeu2.dateDebut) : '-' }}</p>
           <p v-if="showHebergementStep"><strong>Hébergement :</strong> {{ hebergement ? 'Oui' : 'Non' }}</p>
           <p v-if="commentaire"><strong>Commentaire :</strong> {{ commentaire }}</p>
         </div>
@@ -320,7 +336,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, unref } from 'vue'
+import { ref, computed, onMounted, watch, unref } from 'vue'
 import { useSqlStore } from '@/stores/database.js'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -375,6 +391,7 @@ const selectedPublics = ref(['SPV'])
 const selectedFormation = ref(null)
 const selectedVoeu1 = ref(null)
 const selectedVoeu2 = ref(null)
+const singleVoeuOnly = ref(false) // true = ne garder qu'un seul vœu
 const hebergement = ref(false)
 const commentaire = ref('')
 const showSessionWarningDialog = ref(false)
@@ -485,6 +502,13 @@ const availableSessions = computed(() => {
 })
 
 const hasSingleSession = computed(() => availableSessions.value.length === 1)
+
+/** true si le formulaire exige deux vœux (plusieurs sessions ET l'utilisateur n'a pas choisi "un seul vœu") */
+const needsTwoVoeux = computed(() => !hasSingleSession.value && !singleVoeuOnly.value)
+
+watch(singleVoeuOnly, (v) => {
+  if (v) selectedVoeu2.value = null
+})
 
 const showHebergementStep = computed(() => {
   if (!selectedFormation.value || !selectedVoeu1.value) return false
@@ -620,6 +644,7 @@ const selectFormation = (formation) => {
   selectedFormation.value = formation
   selectedVoeu1.value = null
   selectedVoeu2.value = null
+  singleVoeuOnly.value = false
   step.value = 4
 }
 
@@ -658,7 +683,7 @@ const applySessionSelection = (session) => {
 
   if (!selectedVoeu1.value) {
     selectedVoeu1.value = session
-    if (hasSingleSession.value) step.value = 5
+    if (hasSingleSession.value || singleVoeuOnly.value) step.value = 5
   } else if (!selectedVoeu2.value) {
     selectedVoeu2.value = session
     step.value = 5
@@ -668,12 +693,11 @@ const applySessionSelection = (session) => {
 const isSubmitting = ref(false)
 
 const submitDemande = async () => {
-  const needsTwoVoeux = !hasSingleSession.value
   if (!selectedVoeu1.value) {
     errorMessage.value = 'Veuillez sélectionner au moins une session'
     return
   }
-  if (needsTwoVoeux && !selectedVoeu2.value) {
+  if (needsTwoVoeux.value && !selectedVoeu2.value) {
     errorMessage.value = 'Veuillez sélectionner deux sessions (vœu 1 et vœu 2)'
     return
   }
@@ -1172,6 +1196,17 @@ onMounted(async () => {
   background: #f6f6f6;
   border-radius: 8px;
   font-size: 0.9rem;
+}
+
+.voeu-choice-section {
+  margin-bottom: 1rem;
+}
+
+.voeu-choice-options {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .hebergement-section {
