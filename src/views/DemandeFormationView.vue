@@ -200,26 +200,10 @@
         <div class="subsubtitle" style="margin-top: 1.5rem">
           Sélection des sessions {{ needsTwoVoeux ? '(2 vœux)' : '(1 vœu)' }}
         </div>
-        <div v-if="!hasSingleSession" class="voeu-choice-section">
-          <div class="info-block info-attention info-block-inline">
-            <strong>ATTENTION :</strong> Il est fortement recommandé de formuler deux vœux dans le cas où la session de votre vœu n°1 serait complète ou annulée.
-          </div>
-          <div class="voeu-choice-options">
-            <label class="radio-option">
-              <input type="radio" v-model="singleVoeuOnly" :value="true" />
-              Ne garder qu'un seul vœu
-            </label>
-            <label class="radio-option">
-              <input type="radio" v-model="singleVoeuOnly" :value="false" />
-              Formuler un deuxième vœu
-            </label>
-          </div>
-        </div>
         <div class="info-block info-remarque info-block-inline">
           <strong>REMARQUE :</strong> Sur ce formulaire, il vous sera demandé de renseigner {{ needsTwoVoeux ? 'deux sessions distinctes' : 'la session disponible' }}, afin de connaître vos disponibilités en cas de session complète. Vous formulez {{ needsTwoVoeux ? 'donc deux vœux' : 'un vœu' }}. Dans la mesure du possible, vous êtes d'abord inscrit sur votre premier vœu.
         </div>
         <p v-if="hasSingleSession">Une seule session disponible. Sélectionnez-la pour formuler votre vœu.</p>
-        <p v-else-if="singleVoeuOnly">Sélectionnez la session de votre choix.</p>
         <p v-else>Sélectionnez vos deux sessions préférées par ordre de préférence</p>
 
         <div class="sessions-grid">
@@ -254,10 +238,20 @@
             <strong>Vœu 2 :</strong> {{ selectedVoeu2.sessionId }} - {{ formatDate(selectedVoeu2.dateDebut) }} - {{ selectedVoeu2.centreFormation }}
           </div>
         </div>
+
+        <div v-if="selectedVoeu1 && !hasSingleSession && !selectedVoeu2" class="single-voeu-checkbox-section">
+          <div class="info-block info-attention info-block-inline">
+            <strong>ATTENTION :</strong> Il est fortement recommandé de formuler deux vœux dans le cas où la session de votre vœu n°1 serait complète ou annulée.
+          </div>
+          <label class="checkbox-option">
+            <input type="checkbox" v-model="singleVoeuOnly" />
+            Ne formuler qu'un vœu
+          </label>
+        </div>
       </div>
 
-      <!-- Étape 5 : Hébergement, Commentaire et récapitulatif -->
-      <div v-if="step >= 5" class="step">
+      <!-- Étape 5 : Hébergement, Commentaire et récapitulatif (bloquée tant que 2 vœux ou "Ne formuler qu'un vœu" cochée) -->
+      <div v-if="step >= 5 && canAccessStep5" class="step">
         <div v-if="showHebergementStep" class="hebergement-section">
           <div class="subsubtitle">Hébergement</div>
           <p>Souhaitez-vous faire une demande d'hébergement ?</p>
@@ -506,9 +500,26 @@ const hasSingleSession = computed(() => availableSessions.value.length === 1)
 /** true si le formulaire exige deux vœux (plusieurs sessions ET l'utilisateur n'a pas choisi "un seul vœu") */
 const needsTwoVoeux = computed(() => !hasSingleSession.value && !singleVoeuOnly.value)
 
-watch(singleVoeuOnly, (v) => {
-  if (v) selectedVoeu2.value = null
+/** true si l'utilisateur peut accéder à l'étape 5 (commentaire) : 2 vœux sélectionnés OU case "Ne formuler qu'un vœu" cochée */
+const canAccessStep5 = computed(() => {
+  if (!selectedVoeu1.value) return false
+  if (hasSingleSession.value) return true
+  return singleVoeuOnly.value || !!selectedVoeu2.value
 })
+
+watch(singleVoeuOnly, (v) => {
+  if (v) {
+    selectedVoeu2.value = null
+    if (selectedVoeu1.value) step.value = 5
+  }
+})
+
+watch(
+  () => [step.value, canAccessStep5.value],
+  ([s, canAccess]) => {
+    if (s === 5 && !canAccess) step.value = 4
+  }
+)
 
 const showHebergementStep = computed(() => {
   if (!selectedFormation.value || !selectedVoeu1.value) return false
@@ -1198,15 +1209,16 @@ onMounted(async () => {
   font-size: 0.9rem;
 }
 
-.voeu-choice-section {
-  margin-bottom: 1rem;
+.single-voeu-checkbox-section {
+  margin-top: 1rem;
 }
 
-.voeu-choice-options {
+.single-voeu-checkbox-section .checkbox-option {
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
   margin-top: 0.75rem;
-  flex-wrap: wrap;
 }
 
 .hebergement-section {
