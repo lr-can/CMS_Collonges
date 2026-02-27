@@ -281,10 +281,41 @@ async function getNextAvailableIds(count) {
         const requestOptions = { method: "GET", redirect: "follow" };
         const response = await fetch(url, requestOptions);
         const result = await response.json();
-        if (result.nextIds && result.nextIds.length > 0) {
-            firstId.value = result.nextIds[0];
-            retrievedIds.value = result.nextIds;
-            return result.nextIds;
+        let rawIds = result.nextIds || [];
+
+        // Pour les kits, conserver les IDs textuels (ex: "K01")
+        if (isKit) {
+            const kitIds = rawIds.map((v) => {
+                if (typeof v === 'object' && v !== null) {
+                    if (v.idStock != null) return String(v.idStock);
+                    if (v.id != null) return String(v.id);
+                }
+                return String(v);
+            }).filter((s) => s && s.trim().length > 0);
+
+            if (kitIds.length > 0) {
+                firstId.value = kitIds[0];
+                retrievedIds.value = kitIds;
+                return kitIds;
+            }
+            return [];
+        }
+
+        // Pour le matériel classique, normaliser en entiers positifs
+        const normalizedIds = rawIds
+            .map((v) => {
+                if (typeof v === 'object' && v !== null) {
+                    if (v.idStock != null) return Number(v.idStock);
+                    if (v.id != null) return Number(v.id);
+                }
+                return Number(v);
+            })
+            .filter((n) => !isNaN(n) && Number.isInteger(n) && n > 0);
+
+        if (normalizedIds.length > 0) {
+            firstId.value = normalizedIds[0];
+            retrievedIds.value = normalizedIds;
+            return normalizedIds;
         }
         return [];
     } catch (error) {
@@ -354,8 +385,9 @@ async function submitForm() {
         const utilisateur = authUser.value;
         if (utilisateur?.profile?.[0]) idAgent = utilisateur.profile[0];
         else idAgent = localStorage.getItem('cms_auth_matricule');
+        const isKitItem = selectedMateriel.value?.isKitItem === true;
         const dataList = ids.map((id) => ({
-            idStock: parseInt(id),
+            idStock: isKitItem ? String(id) : Number(id),
             idMateriel: selectedMateriel.value.idMateriel,
             idStatut: 1,
             dateCreation: currentDate,
@@ -365,7 +397,7 @@ async function submitForm() {
         }));
         await sqlStore.createMateriel(dataList);
         labels.value = ids.map((id) => ({
-            idStock: toIdStock(id),
+            idStock: id,
             nomMateriel: selectedMateriel.value.nomMateriel,
             datePeremption: peremptionDateStr,
             numLot: numLot.value

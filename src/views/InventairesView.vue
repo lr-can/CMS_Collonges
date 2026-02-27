@@ -101,7 +101,7 @@
             <span class="toggle-indicator" :class="{ muted: group.items.length === 0 }">
               {{ group.items.length === 0 ? 'Aucun agent disponible' : (expandedStatus[group.key] ? 'Réduire' : 'Afficher') }}
             </span>
-          </button>
+      </button>
           <div v-if="group.items.length > 0 && expandedStatus[group.key]" class="agent-grid">
             <button
               v-for="agent in group.items"
@@ -120,8 +120,8 @@
                 />
                 <div class="agent-name">
                   {{ agent.nom }} {{ agent.prenom }}
-                </div>
-              </div>
+    </div>
+  </div>
               <div class="agent-matricule">
                 <span class="matricule-chip">{{ agent.matricule }}</span>
               </div>
@@ -4107,7 +4107,7 @@ const launchInventaire = async () => {
   border: 1px solid #d1d5db;
   border-radius: 10px;
   padding: 0.65rem 0.85rem;
-  font-size: 1rem;
+    font-size: 1rem;
   resize: vertical;
 }
 
