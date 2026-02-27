@@ -42,7 +42,7 @@
         />
       </div>
       <div class="scan-section" v-if="showScanner">
-        <div v-if="cameras.length > 1" class="camera-select-row">
+        <div v-if="cameras.length >= 1" class="camera-select-row">
           <label for="cameraSelect">Caméra :</label>
           <Dropdown
             id="cameraSelect"
@@ -55,15 +55,17 @@
           />
         </div>
         <QrcodeStream
-          v-if="selectedCamera"
+          v-if="showScanner"
+          :key="selectedCamera || 'default'"
           :paused="paused"
           :formats="scanFormats"
           @detect="onDetect"
           @error="onScanError"
+          @camera-on="onCameraOn"
           :constraints="cameraConstraints"
           class="qr-reader"
         />
-        <p v-else class="camera-hint">Autorisez l'accès à la caméra pour scanner le QR code ou le code-barres.</p>
+        <p v-if="cameraError" class="camera-hint camera-error">{{ cameraError }}</p>
       </div>
       <div class="actions-row">
         <button type="button" class="secondary-btn" @click="toggleScanner">
@@ -81,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import { QrcodeStream } from 'vue-qrcode-reader';
@@ -89,6 +91,7 @@ import { useSqlStore } from '@/stores/database.js';
 
 const sqlStore = useSqlStore();
 const API_BASE = 'https://api.cms-collonges.fr';
+const STORAGE_KEY_CAMERA = 'kit-update-last-camera';
 
 const completKits = ref([]);
 const selectedKit = ref(null);
@@ -99,6 +102,7 @@ const paused = ref(false);
 const cameras = ref([]);
 const selectedCamera = ref(null);
 const errorMessage = ref('');
+const cameraError = ref('');
 
 const scanFormats = ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'];
 
@@ -117,10 +121,31 @@ const cameraConstraints = computed(() => ({
 
 function extractIdKit(raw) {
   const s = String(raw || '').trim();
-  const urlMatch = s.match(/kitDetail(?:\.html)?[?&]idKit=([^&\s]+)/i) || s.match(/[?&]idKit=([^&\s]+)/i) || s.match(/[?&]id=([^&\s]+)/i);
-  if (urlMatch) return decodeURIComponent(urlMatch[1]);
+  // Lien API ou URL contenant idKit= / id= : on ne garde que l’ID
+  const urlMatch =
+    s.match(/kitDetail(?:\.html)?[?&]idKit=([^&\s#]+)/i) ||
+    s.match(/[?&]idKit=([^&\s#]+)/i) ||
+    s.match(/[?&]id=([^&\s#]+)/i);
+  if (urlMatch) return decodeURIComponent(urlMatch[1].trim());
+  // Sinon, si c’est déjà un identifiant type KIT-XXX
   if (/^KIT-[A-Z0-9\-\/]+$/i.test(s)) return s;
   return s;
+}
+
+function playErrorSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 400;
+    osc.type = 'square';
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  } catch (_) {}
 }
 
 function onDetect(payload) {
@@ -129,10 +154,18 @@ function onDetect(payload) {
   const extracted = extractIdKit(first.rawValue);
   idKit.value = extracted;
   const found = completKits.value.find((k) => k.idKit === extracted);
-  if (found) selectedKit.value = found;
-  paused.value = true;
-  if (navigator.vibrate) navigator.vibrate(200);
-  setTimeout(() => { paused.value = false; }, 1500);
+  if (found) {
+    errorMessage.value = '';
+    selectedKit.value = found;
+    paused.value = true;
+    if (navigator.vibrate) navigator.vibrate(200);
+    setTimeout(() => { paused.value = false; }, 1500);
+  } else {
+    errorMessage.value = 'Kit non trouvé.';
+    playErrorSound();
+    paused.value = true;
+    setTimeout(() => { paused.value = false; }, 2000);
+  }
 }
 
 function getCurrentIdKit() {
@@ -161,25 +194,51 @@ function onKitSelect() {
 
 function toggleScanner() {
   showScanner.value = !showScanner.value;
-  if (showScanner.value && cameras.value.length === 0) initCamera();
+  if (showScanner.value) {
+    cameraError.value = '';
+    if (cameras.value.length === 0) initCamera();
+  }
 }
 
 async function initCamera() {
   try {
+    cameraError.value = '';
     const devices = await navigator.mediaDevices.enumerateDevices();
     const videoInputs = devices.filter((d) => d.kind === 'videoinput');
     cameras.value = videoInputs;
     if (videoInputs.length > 0) {
-      selectedCamera.value = videoInputs.length > 1 ? videoInputs[videoInputs.length - 1].deviceId : videoInputs[0].deviceId;
+      const lastUsedId = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CAMERA) : null;
+      const lastUsed = lastUsedId ? videoInputs.find((d) => d.deviceId === lastUsedId) : null;
+      selectedCamera.value = lastUsed ? lastUsed.deviceId : videoInputs[videoInputs.length - 1].deviceId;
+    } else {
+      cameraError.value = 'Aucune caméra détectée. Branchez une caméra ou autorisez l\'accès.';
     }
   } catch (e) {
     console.error(e);
-    errorMessage.value = 'Impossible d\'accéder à la caméra.';
+    cameraError.value = 'Impossible d\'accéder à la caméra.';
   }
 }
 
+watch(selectedCamera, (deviceId) => {
+  if (deviceId && typeof localStorage !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY_CAMERA, deviceId);
+  }
+});
+
 function onScanError(err) {
   console.error('Scan error:', err);
+  if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission')) {
+    cameraError.value = 'Accès à la caméra refusé. Autorisez l\'accès dans les paramètres du navigateur.';
+  } else if (err?.name === 'NotFoundError') {
+    cameraError.value = 'Aucune caméra trouvée.';
+  } else if (err) {
+    cameraError.value = 'Impossible d\'ouvrir la caméra. Vérifiez les autorisations.';
+  }
+}
+
+function onCameraOn() {
+  cameraError.value = '';
+  if (cameras.value.length === 0 || cameras.value.some((d) => !d.label)) initCamera();
 }
 
 function openKitDetail() {
@@ -282,6 +341,11 @@ onMounted(() => {
 .camera-hint {
   padding: 2rem;
   color: #666;
+}
+
+.camera-hint.camera-error {
+  color: #c00;
+  font-weight: 600;
 }
 
 .actions-row {
